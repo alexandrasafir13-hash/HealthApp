@@ -4,11 +4,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import DataSourceCard from '@/components/DataSourceCard';
 import { Text } from '@/components/Themed';
+import { useHealth } from '@/context/HealthContext';
+import { dataMethodOptions } from '@/data/onboardingOptions';
 import { mockDataSources } from '@/data/mockSources';
 import { palette } from '@/constants/theme';
+
 export default function DataScreen() {
   const insets = useSafeAreaInsets();
+  const { profile } = useHealth();
   const [sources, setSources] = useState(mockDataSources);
+  const setupMethods = dataMethodOptions.filter((m) => profile?.dataMethods?.includes(m.id));
 
   const toggleSource = (id: string) => {
     setSources((prev) =>
@@ -34,6 +39,15 @@ export default function DataScreen() {
       <Text style={styles.subtitle}>
         Healthy unifies sleep, heart rate, HRV, activity, and your daily check-ins to explain patterns—not just charts.
       </Text>
+
+      {setupMethods.length > 0 && (
+        <View style={styles.setupBox}>
+          <Text style={styles.setupTitle}>Your setup</Text>
+          <Text style={styles.setupBody}>
+            {setupMethods.map((m) => m.title).join(' · ')}
+          </Text>
+        </View>
+      )}
 
       <View style={styles.statsRow}>
         <StatBox value={String(connected.length)} label="Sources linked" />
@@ -85,6 +99,23 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: palette.slateMuted,
     marginBottom: 20,
+  },
+  setupBox: {
+    backgroundColor: palette.sageLight,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+  },
+  setupTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: palette.tealDark,
+    marginBottom: 4,
+  },
+  setupBody: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: palette.slateMuted,
   },
   statsRow: {
     flexDirection: 'row',

@@ -11,7 +11,8 @@ import { palette } from '@/constants/theme';
 
 export default function TodayScreen() {
   const insets = useSafeAreaInsets();
-  const { insights } = useHealth();
+  const { insights, profile } = useHealth();
+  const greeting = profile?.name ? `Good morning, ${profile.name}` : 'Good morning';
   const priority = insights.filter((i) => i.severity === 'high' || i.severity === 'medium');
   const topInsight = priority[0] ?? insights[0];
 
@@ -21,7 +22,7 @@ export default function TodayScreen() {
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]}>
       <View style={styles.hero}>
         <View style={styles.heroRow}>
-          <Text style={styles.greeting}>Good morning</Text>
+          <Text style={styles.greeting}>{greeting}</Text>
           <Link href="/modal">
             <Text style={styles.infoLink}>About</Text>
           </Link>

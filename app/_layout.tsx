@@ -11,7 +11,7 @@ import { palette } from '@/constants/theme';
 export { ErrorBoundary } from 'expo-router';
 
 export const unstable_settings = {
-  initialRouteName: '(tabs)',
+  initialRouteName: 'index',
 };
 
 SplashScreen.preventAutoHideAsync();
@@ -68,9 +68,11 @@ function RootLayoutNav() {
   return (
     <HealthProvider>
       <ThemeProvider value={colorScheme === 'dark' ? HealthyDarkTheme : HealthyLightTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="insight/[id]" options={{ title: 'Body insight' }} />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="onboarding" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="insight/[id]" options={{ headerShown: true, title: 'Body insight' }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'About Healthy' }} />
         </Stack>
       </ThemeProvider>
