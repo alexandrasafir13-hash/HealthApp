@@ -22,7 +22,7 @@ export default function HealthScoreRing({ status }: Props) {
     <View style={styles.container}>
       <View style={styles.ring}>
         <Text style={styles.score}>{status.score}</Text>
-        <Text style={styles.scoreLabel}>body readiness</Text>
+        <Text style={styles.scoreLabel}>Body readiness</Text>
       </View>
       <View style={styles.textBlock}>
         <View style={styles.labelRow}>
@@ -66,8 +66,8 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '600',
     color: palette.slateMuted,
-    textTransform: 'uppercase',
     letterSpacing: 0.3,
+    textAlign: 'center',
   },
   textBlock: {
     flex: 1,

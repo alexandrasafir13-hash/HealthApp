@@ -230,8 +230,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: palette.teal,
     marginBottom: 6,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    letterSpacing: 0.2,
   },
   title: {
     fontSize: 28,

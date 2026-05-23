@@ -21,7 +21,11 @@ export default function DataSourceCard({ source, onToggle }: Props) {
       </View>
       <View style={styles.content}>
         <Text style={styles.name}>{source.name}</Text>
-        <Text style={styles.metrics}>{source.metrics.join(' · ')}</Text>
+        {source.description ? (
+          <Text style={styles.metrics}>{source.description}</Text>
+        ) : (
+          <Text style={styles.metrics}>{source.metrics.join(' · ')}</Text>
+        )}
         {source.lastSync && (
           <Text style={styles.sync}>Last sync: {source.lastSync}</Text>
         )}

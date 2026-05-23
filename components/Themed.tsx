@@ -4,6 +4,8 @@
  */
 import { Text as DefaultText, View as DefaultView } from 'react-native';
 
+import { capitalizeSentences } from '@/lib/formatText';
+
 import { useColorScheme } from './useColorScheme';
 
 import Colors from '@/constants/Colors';
@@ -31,10 +33,15 @@ export function useThemeColor(
 }
 
 export function Text(props: TextProps) {
-  const { style, lightColor, darkColor, ...otherProps } = props;
+  const { style, lightColor, darkColor, children, ...otherProps } = props;
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+  const content = typeof children === 'string' ? capitalizeSentences(children) : children;
 
-  return <DefaultText style={[{ color }, style]} {...otherProps} />;
+  return (
+    <DefaultText style={[{ color }, style]} {...otherProps}>
+      {content}
+    </DefaultText>
+  );
 }
 
 export function View(props: ViewProps) {

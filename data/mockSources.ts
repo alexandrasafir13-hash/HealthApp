@@ -1,45 +1,4 @@
-import { DataSource } from '@/types/health';
-
-export const mockDataSources: DataSource[] = [
-  {
-    id: 'apple-health',
-    name: 'Apple Health',
-    icon: 'heart.fill',
-    connected: true,
-    lastSync: '12 min ago',
-    metrics: ['Sleep', 'Steps', 'Heart rate', 'HRV', 'Workouts'],
-  },
-  {
-    id: 'oura',
-    name: 'Oura Ring',
-    icon: 'circle.circle',
-    connected: true,
-    lastSync: '12 min ago',
-    metrics: ['Sleep stages', 'HRV', 'Body temperature', 'Readiness'],
-  },
-  {
-    id: 'whoop',
-    name: 'WHOOP',
-    icon: 'waveform.path.ecg',
-    connected: false,
-    metrics: ['Strain', 'Recovery', 'Sleep performance'],
-  },
-  {
-    id: 'fitbit',
-    name: 'Fitbit',
-    icon: 'figure.walk',
-    connected: false,
-    metrics: ['Activity', 'Sleep', 'SpO₂'],
-  },
-  {
-    id: 'manual',
-    name: 'Manual check-ins',
-    icon: 'square.and.pencil',
-    connected: true,
-    lastSync: 'Today',
-    metrics: ['Energy', 'Symptoms', 'Stress'],
-  },
-];
+export { getAllDataSources, mockDataSources } from '@/data/dataSources';
 
 export const defaultHabits = [
   {

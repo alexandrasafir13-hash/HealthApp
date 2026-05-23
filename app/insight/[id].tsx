@@ -2,9 +2,11 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import CauseEffectAction from '@/components/CauseEffectAction';
+import RichInsightSummary from '@/components/RichInsightSummary';
 import { Text } from '@/components/Themed';
 import { categoryColors, palette, severityColors } from '@/constants/theme';
 import { useHealth } from '@/context/HealthContext';
+import { CATEGORY_DISPLAY_NAMES } from '@/lib/insightAttention';
 
 export default function InsightDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -33,7 +35,9 @@ export default function InsightDetailScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.badges}>
           <View style={[styles.pill, { backgroundColor: categoryColor + '22' }]}>
-            <Text style={[styles.pillText, { color: categoryColor }]}>{insight.category}</Text>
+            <Text style={[styles.pillText, { color: categoryColor }]}>
+              {CATEGORY_DISPLAY_NAMES[insight.category]}
+            </Text>
           </View>
           <View style={[styles.pill, { backgroundColor: severityColor + '22' }]}>
             <Text style={[styles.pillText, { color: severityColor }]}>
@@ -43,15 +47,8 @@ export default function InsightDetailScreen() {
         </View>
 
         <Text style={styles.title}>{insight.title}</Text>
-        <Text style={styles.summary}>{insight.summary}</Text>
+        <RichInsightSummary insight={insight} variant="detail" />
 
-        <View style={styles.metricsBox}>
-          <Text style={styles.metricsTitle}>Connected signals</Text>
-          <Text style={styles.metricsList}>{insight.connectedMetrics.join(' · ')}</Text>
-          <Text style={styles.confidence}>{insight.confidence}% model confidence</Text>
-        </View>
-
-        <Text style={styles.flowTitle}>Cause → Effect → Action</Text>
         <CauseEffectAction insight={insight} />
 
         <View style={styles.actionsSection}>
@@ -122,40 +119,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     marginBottom: 10,
-    color: palette.slate,
-  },
-  summary: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: palette.slateMuted,
-    marginBottom: 20,
-  },
-  metricsBox: {
-    backgroundColor: palette.sageLight,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 24,
-  },
-  metricsTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    color: palette.tealDark,
-    marginBottom: 6,
-  },
-  metricsList: {
-    fontSize: 14,
-    marginBottom: 6,
-    color: palette.slate,
-  },
-  confidence: {
-    fontSize: 12,
-    color: palette.slateSubtle,
-  },
-  flowTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 16,
     color: palette.slate,
   },
   actionsSection: {
