@@ -5,6 +5,20 @@ export const mockInsights: BodyInsight[] = [
     id: 'sleep-debt-1',
     title: 'Sleep debt is building',
     summary: 'You averaged 5.8 hours over 3 nights. Recovery and immunity are likely affected.',
+    summaryHighlights: [
+      { text: 'You averaged ', tone: 'body' },
+      {
+        text: '5.8 hours',
+        metric: { value: 5.8, min: 2, max: 10, unit: 'h', goodMin: 7, cautionMin: 5.5 },
+      },
+      { text: ' over ', tone: 'body' },
+      { text: '3 nights', tone: 'body' },
+      { text: '. ', tone: 'body' },
+      { text: 'Recovery', tone: 'body' },
+      { text: ' and ', tone: 'body' },
+      { text: 'Immunity', tone: 'body' },
+      { text: ' are likely affected.', tone: 'body' },
+    ],
     category: 'sleep',
     severity: 'high',
     cause: {
@@ -50,12 +64,32 @@ export const mockInsights: BodyInsight[] = [
     id: 'hrv-dip-1',
     title: 'Recovery is lagging',
     summary: 'Heart rate variability dropped 14% vs your baseline. Your body may still be stressed from recent load.',
+    summaryHighlights: [
+      { text: 'Heart rate variability dropped ', tone: 'body' },
+      {
+        text: '14%',
+        metric: {
+          value: 14,
+          min: 0,
+          max: 30,
+          unit: '%',
+          display: '−14%',
+          lowerIsBetter: true,
+          goodMax: 5,
+          cautionMax: 12,
+        },
+      },
+      {
+        text: ' vs your baseline. Your body may still be stressed from recent load.',
+        tone: 'body',
+      },
+    ],
     category: 'recovery',
     severity: 'medium',
     cause: {
       headline: 'Training + poor sleep overlap',
       detail: 'Two harder workouts this week combined with short sleep created a recovery deficit.',
-      signals: ['HRV: −14%', 'Resting HR: +4 bpm', 'Workout strain: elevated'],
+      signals: ['HRV: −14%', 'Resting HR: +4 bpm', 'Workout strain: Elevated'],
     },
     effect: {
       headline: 'Autonomic nervous system stays sympathetic',
@@ -85,8 +119,38 @@ export const mockInsights: BodyInsight[] = [
   },
   {
     id: 'immunity-watch-1',
-    title: 'Early sickness signals',
+    title: 'Prevention',
     summary: 'Resting heart rate is elevated with slightly lower SpO₂. Worth acting early before symptoms peak.',
+    summaryHighlights: [
+      { text: 'Resting heart rate is elevated ', tone: 'body' },
+      {
+        text: '+6 bpm',
+        metric: {
+          value: 6,
+          min: 0,
+          max: 15,
+          unit: 'bpm',
+          display: '+6 bpm',
+          lowerIsBetter: true,
+          goodMax: 2,
+          cautionMax: 4,
+        },
+      },
+      { text: ' with slightly lower ', tone: 'body' },
+      {
+        text: 'SpO₂',
+        metric: {
+          value: 96,
+          min: 90,
+          max: 100,
+          unit: '%',
+          display: '96%',
+          goodMin: 97,
+          cautionMin: 95,
+        },
+      },
+      { text: '. Worth acting early before symptoms peak.', tone: 'body' },
+    ],
     category: 'immunity',
     severity: 'medium',
     cause: {
@@ -131,7 +195,28 @@ export const mockInsights: BodyInsight[] = [
   {
     id: 'stress-elevated-1',
     title: 'Stress load is elevated',
-    summary: 'Evening heart rate and respiratory rate suggest your nervous system has not fully downshifted.',
+    summary:
+      'Evening heart rate is above your baseline. Respiratory rate suggests your nervous system has not fully downshifted.',
+    summaryHighlights: [
+      { text: 'Evening heart rate is ', tone: 'body' },
+      {
+        text: '+8%',
+        metric: {
+          value: 8,
+          min: 0,
+          max: 20,
+          unit: '%',
+          display: '+8%',
+          lowerIsBetter: true,
+          goodMax: 3,
+          cautionMax: 7,
+        },
+      },
+      {
+        text: ' above your baseline. Respiratory rate suggests your nervous system has not fully downshifted.',
+        tone: 'body',
+      },
+    ],
     category: 'stress',
     severity: 'low',
     cause: {

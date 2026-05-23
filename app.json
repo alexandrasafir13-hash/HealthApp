@@ -34,6 +34,12 @@
           "resizeMode": "contain",
           "backgroundColor": "#F7FAF9"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Healthy to access your photos to upload lab test results."
+        }
       ]
     ],
     "experiments": {

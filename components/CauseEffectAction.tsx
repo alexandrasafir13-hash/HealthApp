@@ -1,63 +1,82 @@
-import { StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
-import { palette } from '@/constants/theme';
+import { flowBlue, flowBlueLight, flowBlueText, palette } from '@/constants/theme';
 import { BodyInsight } from '@/types/health';
+
+type FlowSection = 'cause' | 'effect' | 'action';
 
 interface Props {
   insight: BodyInsight;
   compact?: boolean;
 }
 
+function FlowDot({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.dotItem, pressed && styles.dotItemPressed]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ expanded: active }}
+      accessibilityLabel={label}>
+      <View style={[styles.dot, active && styles.dotActive]} />
+      <Text style={[styles.dotLabel, active && styles.dotLabelActive]}>{label}</Text>
+    </Pressable>
+  );
+}
+
 export default function CauseEffectAction({ insight, compact }: Props) {
-  const steps = [
-    {
-      key: 'cause',
-      label: 'Cause',
-      color: '#5B7FD4',
-      headline: insight.cause.headline,
-      detail: insight.cause.detail,
-      bullets: insight.cause.signals,
-    },
-    {
-      key: 'effect',
-      label: 'Effect',
-      color: palette.amber,
-      headline: insight.effect.headline,
-      detail: insight.effect.detail,
-      bullets: insight.effect.bodySignals,
-    },
-  ];
+  const [open, setOpen] = useState<FlowSection | null>(null);
+
+  const toggle = (section: FlowSection) => {
+    setOpen((current) => (current === section ? null : section));
+  };
 
   return (
     <View style={styles.container}>
-      {steps.map((step, index) => (
-        <View key={step.key}>
-          <View style={styles.stepRow}>
-            <View style={[styles.badge, { backgroundColor: step.color }]}>
-              <Text style={styles.badgeText}>{index + 1}</Text>
+      <View style={styles.dotRow}>
+        <FlowDot label="Cause" active={open === 'cause'} onPress={() => toggle('cause')} />
+        <FlowDot label="Effect" active={open === 'effect'} onPress={() => toggle('effect')} />
+        <FlowDot label="Action" active={open === 'action'} onPress={() => toggle('action')} />
+      </View>
+
+      {open === 'cause' && (
+        <View style={styles.panel}>
+          <Text style={styles.headline}>{insight.cause.headline}</Text>
+          {!compact && <Text style={styles.detail}>{insight.cause.detail}</Text>}
+          {insight.cause.signals.map((b) => (
+            <View key={b} style={styles.bulletRow}>
+              <Text style={styles.bulletDot}>•</Text>
+              <Text style={styles.bulletText}>{b}</Text>
             </View>
-            <View style={styles.stepContent}>
-              <Text style={[styles.stepLabel, { color: step.color }]}>{step.label}</Text>
-              <Text style={styles.headline}>{step.headline}</Text>
-              {!compact && <Text style={styles.detail}>{step.detail}</Text>}
-              {step.bullets.map((b) => (
-                <View key={b} style={styles.bulletRow}>
-                  <Text style={styles.bulletDot}>•</Text>
-                  <Text style={styles.bulletText}>{b}</Text>
-                </View>
-              ))}
+          ))}
+        </View>
+      )}
+
+      {open === 'effect' && (
+        <View style={styles.panel}>
+          <Text style={styles.headline}>{insight.effect.headline}</Text>
+          {!compact && <Text style={styles.detail}>{insight.effect.detail}</Text>}
+          {insight.effect.bodySignals.map((b) => (
+            <View key={b} style={styles.bulletRow}>
+              <Text style={styles.bulletDot}>•</Text>
+              <Text style={styles.bulletText}>{b}</Text>
             </View>
-          </View>
-          {index < steps.length - 1 && <View style={styles.connector} />}
+          ))}
         </View>
-      ))}
-      <View style={styles.actionBlock}>
-        <View style={[styles.badge, { backgroundColor: palette.teal }]}>
-          <Text style={styles.badgeText}>→</Text>
-        </View>
-        <View style={styles.stepContent}>
-          <Text style={[styles.stepLabel, { color: palette.teal }]}>Action</Text>
+      )}
+
+      {open === 'action' && (
+        <View style={styles.panel}>
           <Text style={styles.headline}>What to do now</Text>
           {insight.actions.map((action) => (
             <View key={action.id} style={styles.actionItem}>
@@ -69,49 +88,61 @@ export default function CauseEffectAction({ insight, compact }: Props) {
             </View>
           ))}
         </View>
-      </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    gap: 4,
+    gap: 12,
   },
-  stepRow: {
+  dotRow: {
     flexDirection: 'row',
-    gap: 14,
-  },
-  actionBlock: {
-    flexDirection: 'row',
-    gap: 14,
-    marginTop: 8,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: palette.border,
-  },
-  badge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    justifyContent: 'space-around',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: 4,
   },
-  badgeText: {
-    color: '#fff',
-    fontSize: 13,
+  dotItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  dotItemPressed: {
+    opacity: 0.75,
+  },
+  dot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: flowBlueLight,
+    borderWidth: 1,
+    borderColor: flowBlue,
+  },
+  dotActive: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: flowBlue,
+    borderColor: flowBlueText,
+  },
+  dotLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: flowBlueText,
+  },
+  dotLabelActive: {
     fontWeight: '700',
+    color: palette.slate,
   },
-  stepContent: {
-    flex: 1,
-    paddingBottom: 8,
-  },
-  stepLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginBottom: 4,
+  panel: {
+    backgroundColor: palette.card,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: flowBlueLight,
   },
   headline: {
     fontSize: 17,
@@ -132,19 +163,13 @@ const styles = StyleSheet.create({
   },
   bulletDot: {
     fontSize: 14,
-    color: palette.slateSubtle,
+    fontWeight: '700',
+    color: flowBlueText,
   },
   bulletText: {
     fontSize: 14,
     flex: 1,
     color: palette.slateMuted,
-  },
-  connector: {
-    width: 2,
-    height: 16,
-    backgroundColor: palette.border,
-    marginLeft: 13,
-    marginVertical: 4,
   },
   actionItem: {
     marginBottom: 12,

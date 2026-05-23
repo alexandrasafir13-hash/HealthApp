@@ -3,19 +3,24 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { habitCatalog } from '@/data/onboardingOptions';
 import { defaultHabits } from '@/data/mockSources';
 import { mockInsights } from '@/data/mockInsights';
+import { loadCustomHabits, saveCustomHabits } from '@/lib/customHabitsStorage';
 import { loadUserProfile, saveUserProfile } from '@/lib/onboardingStorage';
-import { BodyInsight, DailyCheckIn, PreventionHabit } from '@/types/health';
+import { BodyInsight, CustomHabit, DailyCheckIn, PreventionHabit } from '@/types/health';
 import { DataMethodId, UserProfile } from '@/types/onboarding';
 
 interface HealthContextValue {
   insights: BodyInsight[];
   habits: PreventionHabit[];
+  customHabits: CustomHabit[];
   completedActions: Set<string>;
   todayCheckIn: DailyCheckIn | null;
   profile: UserProfile | null;
   onboardingComplete: boolean;
   isReady: boolean;
   toggleHabit: (id: string) => void;
+  addCustomHabit: (title: string, time: string) => void;
+  toggleCustomHabit: (id: string) => void;
+  removeCustomHabit: (id: string) => void;
   completeAction: (insightId: string, actionId: string) => void;
   saveCheckIn: (checkIn: Omit<DailyCheckIn, 'date'>) => void;
   completeOnboarding: (input: {
@@ -41,6 +46,7 @@ function habitsFromIds(ids: string[]): PreventionHabit[] {
 
 export function HealthProvider({ children }: { children: React.ReactNode }) {
   const [habits, setHabits] = useState(defaultHabits);
+  const [customHabits, setCustomHabits] = useState<CustomHabit[]>([]);
   const [completedActions, setCompletedActions] = useState<Set<string>>(new Set());
   const [todayCheckIn, setTodayCheckIn] = useState<DailyCheckIn | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -48,17 +54,51 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    loadUserProfile().then((saved) => {
+    Promise.all([loadUserProfile(), loadCustomHabits()]).then(([saved, savedCustom]) => {
       if (!mounted) return;
       if (saved) {
         setProfile(saved);
         setHabits(habitsFromIds(saved.habitIds));
       }
+      setCustomHabits(savedCustom);
       setIsReady(true);
     });
     return () => {
       mounted = false;
     };
+  }, []);
+
+  const addCustomHabit = useCallback(
+    (title: string, time: string) => {
+      const habit: CustomHabit = {
+        id: `custom-${Date.now()}`,
+        title,
+        time,
+        completed: false,
+      };
+      setCustomHabits((prev) => {
+        const next = [...prev, habit];
+        void saveCustomHabits(next);
+        return next;
+      });
+    },
+    []
+  );
+
+  const toggleCustomHabit = useCallback((id: string) => {
+    setCustomHabits((prev) => {
+      const next = prev.map((h) => (h.id === id ? { ...h, completed: !h.completed } : h));
+      void saveCustomHabits(next);
+      return next;
+    });
+  }, []);
+
+  const removeCustomHabit = useCallback((id: string) => {
+    setCustomHabits((prev) => {
+      const next = prev.filter((h) => h.id !== id);
+      void saveCustomHabits(next);
+      return next;
+    });
   }, []);
 
   const completeOnboarding = useCallback(
@@ -80,6 +120,7 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       insights: mockInsights,
       habits,
+      customHabits,
       completedActions,
       todayCheckIn,
       profile,
@@ -90,6 +131,9 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
           prev.map((h) => (h.id === id ? { ...h, completed: !h.completed } : h))
         );
       },
+      addCustomHabit,
+      toggleCustomHabit,
+      removeCustomHabit,
       completeAction: (insightId, actionId) => {
         setCompletedActions((prev) => new Set(prev).add(`${insightId}:${actionId}`));
       },
@@ -101,7 +145,18 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       },
       completeOnboarding,
     }),
-    [habits, completedActions, todayCheckIn, profile, isReady, completeOnboarding]
+    [
+      habits,
+      customHabits,
+      completedActions,
+      todayCheckIn,
+      profile,
+      isReady,
+      completeOnboarding,
+      addCustomHabit,
+      toggleCustomHabit,
+      removeCustomHabit,
+    ]
   );
 
   return <HealthContext.Provider value={value}>{children}</HealthContext.Provider>;
