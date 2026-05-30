@@ -26,10 +26,10 @@ export default function HabitListCard({
       accessibilityRole="checkbox"
       accessibilityState={{ checked: completed }}
       accessibilityHint={onLongPress ? 'Long press to remove this habit' : undefined}>
-      <View style={[styles.checkbox, completed && styles.checkboxDone]}>
+      <View pointerEvents="none" style={[styles.checkbox, completed && styles.checkboxDone]}>
         {completed && <Text style={styles.checkmark}>✓</Text>}
       </View>
-      <View style={styles.habitContent}>
+      <View pointerEvents="none" style={styles.habitContent}>
         <Text style={[styles.habitTitle, completed && styles.habitTitleDone]}>{title}</Text>
         <Text style={styles.habitReason}>{reason}</Text>
       </View>

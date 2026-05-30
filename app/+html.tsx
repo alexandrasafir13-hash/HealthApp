@@ -28,9 +28,6 @@ export default function Root({ children }: { children: ReactNode }) {
   );
 }
 
-/** Keep in sync with PAGE_MAX_WIDTH in hooks/useBreakpoint.ts */
-const PAGE_MAX_WIDTH_PX = 720;
-
 const responsiveBackground = `
 html,
 body,
@@ -45,9 +42,6 @@ body {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: ${PAGE_MAX_WIDTH_PX}px;
-  margin-left: auto;
-  margin-right: auto;
 }
 @media (prefers-color-scheme: dark) {
   body {

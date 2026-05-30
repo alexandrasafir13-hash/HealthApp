@@ -1,11 +1,16 @@
 import { SymbolView } from 'expo-symbols';
 import { Tabs } from 'expo-router';
+import { useWindowDimensions } from 'react-native';
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
+import { PAGE_MAX_WIDTH } from '@/hooks/useBreakpoint';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { width } = useWindowDimensions();
+  const gutter = Math.max(0, (width - PAGE_MAX_WIDTH) / 2);
+  const tabBarWidth = Math.min(width, PAGE_MAX_WIDTH);
 
   return (
     <Tabs
@@ -14,6 +19,10 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: Colors[colorScheme ?? 'light'].card,
           borderTopColor: Colors[colorScheme ?? 'light'].border,
+          width: tabBarWidth,
+          maxWidth: PAGE_MAX_WIDTH,
+          marginLeft: gutter,
+          marginRight: gutter,
         },
         headerShown: false,
       }}>

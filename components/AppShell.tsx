@@ -1,26 +1,16 @@
 import { StyleSheet, View } from 'react-native';
 
 import { palette } from '@/constants/theme';
-import { PAGE_MAX_WIDTH } from '@/hooks/useBreakpoint';
 
+/** Full-width shell; content width is capped in usePageLayout, not here. */
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  return (
-    <View style={styles.outer}>
-      <View style={styles.frame}>{children}</View>
-    </View>
-  );
+  return <View style={styles.root}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
-  outer: {
+  root: {
     flex: 1,
     width: '100%',
-    alignItems: 'center',
     backgroundColor: palette.background,
-  },
-  frame: {
-    flex: 1,
-    width: '100%',
-    maxWidth: PAGE_MAX_WIDTH,
   },
 });

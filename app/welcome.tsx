@@ -11,12 +11,13 @@ export default function WelcomeScreen() {
   const router = useRouter();
 
   return (
-    <View
-      style={[
-        pageStyles.scroll,
-        styles.page,
-        { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 20 },
-      ]}>
+    <View style={[pageStyles.scroll, styles.screen]}>
+      <View
+        style={[
+          pageStyles.pageColumn,
+          styles.page,
+          { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 20 },
+        ]}>
       <View style={styles.hero}>
         <Image source={require('../assets/images/icon.png')} style={styles.icon} resizeMode="contain" />
         <Text style={styles.title}>Welcome to Healthy</Text>
@@ -29,11 +30,15 @@ export default function WelcomeScreen() {
         accessibilityLabel="Continue as guest">
         <Text style={styles.guestButtonText}>Continue as guest</Text>
       </Pressable>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    alignItems: 'center',
+  },
   page: {
     flex: 1,
     justifyContent: 'space-between',
