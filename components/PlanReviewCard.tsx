@@ -2,7 +2,7 @@ import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
 import ActivePlanCard from '@/components/ActivePlanCard';
 import { palette } from '@/constants/theme';
-import { AdaptivePlan } from '@/types/plan';
+import { AdaptivePlan, normalizeStoredPlan } from '@/types/plan';
 
 type Props = {
   plan: AdaptivePlan;
@@ -11,9 +11,11 @@ type Props = {
 };
 
 export default function PlanReviewCard({ plan, onAccept, error }: Props) {
+  const normalizedPlan = normalizeStoredPlan(plan);
+
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.wrap} showsVerticalScrollIndicator={false}>
-      <ActivePlanCard plan={plan} activeWeekNumber={1} />
+      <ActivePlanCard plan={normalizedPlan} activeWeekNumber={1} />
 
       <Pressable style={styles.acceptButton} onPress={onAccept} accessibilityRole="button">
         <Text style={styles.acceptButtonText}>Start Week 1</Text>

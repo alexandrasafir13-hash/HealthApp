@@ -15,7 +15,7 @@ export default function ActivePlanCard({
   activeWeekNumber = 1,
   showIntro = true,
 }: Props) {
-  const weeks = [...plan.weeks].sort((a, b) => a.weekNumber - b.weekNumber);
+  const weeks = [...(plan.weeks ?? [])].sort((a, b) => a.weekNumber - b.weekNumber);
 
   return (
     <View style={styles.card}>
@@ -31,6 +31,7 @@ export default function ActivePlanCard({
       <View style={styles.weekList}>
         {weeks.map((week) => {
           const isActive = week.weekNumber === activeWeekNumber;
+          const planSteps = week.planSteps ?? [];
           return (
             <View
               key={week.weekNumber}
@@ -42,9 +43,9 @@ export default function ActivePlanCard({
               <Text style={styles.focus}>{week.focus}</Text>
               <Text style={styles.weeklyTarget}>{week.weeklyTarget}</Text>
               {week.whyThisWeek ? <Text style={styles.whyThisWeek}>{week.whyThisWeek}</Text> : null}
-              {week.planSteps.length > 0 ? (
+              {planSteps.length > 0 ? (
                 <View style={styles.stepsList}>
-                  {week.planSteps.map((step) => (
+                  {planSteps.map((step) => (
                     <Text key={step} style={styles.planStep}>
                       • {step}
                     </Text>

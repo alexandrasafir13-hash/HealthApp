@@ -101,8 +101,12 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     setPlanError(null);
     try {
       const result = await generateAdaptivePlan(nextProfile);
-      await savePendingPlan(result);
-      setPendingPlan(result);
+      const normalized = {
+        ...result,
+        plan: normalizeStoredPlan(result.plan),
+      };
+      await savePendingPlan(normalized);
+      setPendingPlan(normalized);
     } catch (e) {
       setPlanError(e instanceof Error ? e.message : 'Could not build your plan');
     } finally {
@@ -144,7 +148,12 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
           activeWeekNumber: savedPlan.activeWeekNumber,
         });
       }
-      if (savedPending) setPendingPlan(savedPending);
+      if (savedPending) {
+        setPendingPlan({
+          ...savedPending,
+          plan: normalizeStoredPlan(savedPending.plan),
+        });
+      }
       setCheckInLog(savedLog);
       setPlanCheckInLog(savedPlanCheckIns);
 
