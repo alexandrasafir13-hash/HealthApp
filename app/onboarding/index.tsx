@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/Themed';
+import { pageStyles, usePageLayout } from '@/hooks/usePageLayout';
 import { useHealth } from '@/context/HealthContext';
 import { dataMethodOptions, habitCatalog } from '@/data/onboardingOptions';
 import { palette } from '@/constants/theme';
@@ -29,6 +30,7 @@ const STEP_LABELS: Record<Step, string> = {
 
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
+  const { pageStyle, isTabletUp } = usePageLayout();
   const router = useRouter();
   const { completeOnboarding } = useHealth();
 
@@ -87,9 +89,16 @@ export default function OnboardingScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.flex}
+      style={pageStyles.scroll}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={[styles.container, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}>
+      <View style={[styles.shell, isTabletUp && styles.shellTablet]}>
+        <View
+          style={[
+            styles.container,
+            pageStyle,
+            isTabletUp ? styles.containerTablet : styles.containerPhone,
+            { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 },
+          ]}>
         <View style={styles.header}>
           <Text style={styles.kicker}>Welcome to Healthy</Text>
           <Text style={styles.title}>{STEP_LABELS[step]}</Text>
@@ -208,19 +217,28 @@ export default function OnboardingScreen() {
             </Text>
           </Pressable>
         </View>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: {
+  shell: {
     flex: 1,
-    backgroundColor: palette.background,
+    width: '100%',
+  },
+  shellTablet: {
+    alignItems: 'center',
   },
   container: {
     flex: 1,
+  },
+  containerPhone: {
     paddingHorizontal: 20,
+  },
+  containerTablet: {
+    paddingHorizontal: 32,
   },
   header: {
     marginBottom: 16,

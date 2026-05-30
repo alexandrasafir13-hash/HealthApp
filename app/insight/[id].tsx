@@ -7,9 +7,11 @@ import { Text } from '@/components/Themed';
 import { categoryColors, palette, severityColors } from '@/constants/theme';
 import { useHealth } from '@/context/HealthContext';
 import { CATEGORY_DISPLAY_NAMES } from '@/lib/insightAttention';
+import { pageStyles, usePageLayout } from '@/hooks/usePageLayout';
 
 export default function InsightDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { contentContainerStyle, pageStyle } = usePageLayout();
   const { insights, completedActions, completeAction } = useHealth();
   const insight = insights.find((i) => i.id === id);
 
@@ -32,7 +34,8 @@ export default function InsightDetailScreen() {
           headerBackTitle: 'Back',
         }}
       />
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView style={pageStyles.scroll} contentContainerStyle={contentContainerStyle}>
+        <View style={pageStyle}>
         <View style={styles.badges}>
           <View style={[styles.pill, { backgroundColor: categoryColor + '22' }]}>
             <Text style={[styles.pillText, { color: categoryColor }]}>
@@ -81,20 +84,13 @@ export default function InsightDetailScreen() {
             Healthy explains patterns from your data—it does not diagnose illness. See a clinician if symptoms worsen or persist.
           </Text>
         </View>
+        </View>
       </ScrollView>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-    backgroundColor: palette.background,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
   centered: {
     flex: 1,
     alignItems: 'center',

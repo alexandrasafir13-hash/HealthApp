@@ -16,7 +16,10 @@ export function usePageLayout() {
       isTabletUp && pageStyles.contentTablet,
       { paddingTop: insets.top + (isTabletUp ? 24 : 8) },
     ],
-    pageStyle: [pageStyles.page, pageMaxWidth != null && { maxWidth: pageMaxWidth, width: '100%' }],
+    pageStyle: [
+      pageStyles.page,
+      pageMaxWidth != null && { maxWidth: pageMaxWidth, width: '100%' as const },
+    ],
   };
 }
 

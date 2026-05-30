@@ -3,10 +3,14 @@ import { Platform, ScrollView, StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
 import { palette } from '@/constants/theme';
+import { pageStyles, usePageLayout } from '@/hooks/usePageLayout';
 
 export default function ModalScreen() {
+  const { contentContainerStyle, pageStyle } = usePageLayout();
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={pageStyles.scroll} contentContainerStyle={contentContainerStyle}>
+      <View style={pageStyle}>
       <Text style={styles.title}>About Healthy</Text>
       <Text style={styles.lead}>
         Healthy connects your wearables and daily check-ins to explain what your body is doing—and what to do about it.
@@ -38,15 +42,12 @@ export default function ModalScreen() {
       </Text>
 
       <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 24,
-    paddingBottom: 40,
-  },
   title: {
     fontSize: 24,
     fontWeight: '800',
