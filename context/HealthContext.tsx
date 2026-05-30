@@ -6,7 +6,7 @@ import { mockInsights } from '@/data/mockInsights';
 import { loadCustomHabits, saveCustomHabits } from '@/lib/customHabitsStorage';
 import { loadUserProfile, saveUserProfile } from '@/lib/onboardingStorage';
 import { BodyInsight, CustomHabit, DailyCheckIn, PreventionHabit } from '@/types/health';
-import { DataMethodId, UserProfile } from '@/types/onboarding';
+import { BiologicalSex, DataMethodId, UserProfile } from '@/types/onboarding';
 
 interface HealthContextValue {
   insights: BodyInsight[];
@@ -25,6 +25,10 @@ interface HealthContextValue {
   saveCheckIn: (checkIn: Omit<DailyCheckIn, 'date'>) => void;
   completeOnboarding: (input: {
     name: string;
+    age: number;
+    sex: BiologicalSex;
+    weightKg: number;
+    heightCm: number;
     dataMethods: DataMethodId[];
     habitIds: string[];
   }) => Promise<void>;
@@ -102,9 +106,21 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const completeOnboarding = useCallback(
-    async (input: { name: string; dataMethods: DataMethodId[]; habitIds: string[] }) => {
+    async (input: {
+      name: string;
+      age: number;
+      sex: BiologicalSex;
+      weightKg: number;
+      heightCm: number;
+      dataMethods: DataMethodId[];
+      habitIds: string[];
+    }) => {
       const nextProfile: UserProfile = {
         name: input.name.trim(),
+        age: input.age,
+        sex: input.sex,
+        weightKg: input.weightKg,
+        heightCm: input.heightCm,
         dataMethods: input.dataMethods,
         habitIds: input.habitIds,
         completedAt: new Date().toISOString(),

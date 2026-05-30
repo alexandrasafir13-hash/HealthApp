@@ -1,6 +1,12 @@
-import { Activity, Apple, FileUp, NotebookPen } from 'lucide-react-native';
+import { Activity, Apple, FileUp } from 'lucide-react-native';
 
-import { DataMethodOption, HabitOption } from '@/types/onboarding';
+import { DataMethodOption, HabitOption, SexOption } from '@/types/onboarding';
+
+export const sexOptions: SexOption[] = [
+  { id: 'female', label: 'Female' },
+  { id: 'male', label: 'Male' },
+  { id: 'other', label: 'Prefer not to say' },
+];
 
 export const dataMethodOptions: DataMethodOption[] = [
   {
@@ -22,12 +28,6 @@ export const dataMethodOptions: DataMethodOption[] = [
     title: 'Upload documents',
     description: 'Add lab results, doctor notes, or PDF reports.',
     icon: FileUp,
-  },
-  {
-    id: 'manual',
-    title: 'Log it manually',
-    description: 'Daily check-ins for energy, sleep, stress, and symptoms.',
-    icon: NotebookPen,
   },
 ];
 
