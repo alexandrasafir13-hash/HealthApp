@@ -1,162 +1,110 @@
-import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { useMemo } from 'react';
+import { StyleSheet, View } from 'react-native';
 
 import CheckInMetricRow from '@/components/CheckInMetricRow';
 import { Text } from '@/components/Themed';
+import {
+  SLEEP_TRACKING_TIMEFRAME,
+  WEEKLY_HABIT_TRACKING_LABEL,
+} from '@/lib/deriveWeeklyInsights';
+import { deriveRoutineMetrics, routineHabitsForMetric } from '@/lib/deriveCheckInFromRoutine';
+import { formatRoutineMetricsSummary } from '@/lib/deriveInsightsFromCheckIn';
 import { palette } from '@/constants/theme';
 import { useHealth } from '@/context/HealthContext';
 
-const PRESET_SYMPTOMS = ['None', 'Fatigue', 'Headache', 'Sore throat', 'Congestion', 'Body aches'];
-
-function parseCustomSymptoms(text: string): string[] {
-  return text
-    .split(/[,;]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+interface Props {
+  selectedDate: string;
 }
 
-function splitSavedSymptoms(all: string[]) {
-  const presets = all.filter((s) => (PRESET_SYMPTOMS as readonly string[]).includes(s));
-  const custom = all.filter((s) => !(PRESET_SYMPTOMS as readonly string[]).includes(s));
-  return { presets, custom };
-}
+export default function CheckInForm({ selectedDate }: Props) {
+  const { getHabitsForDate, isReady } = useHealth();
 
-export default function CheckInForm() {
-  const { todayCheckIn, saveCheckIn } = useHealth();
-  const initial = useMemo(
-    () => splitSavedSymptoms(todayCheckIn?.symptoms ?? ['None']),
-    [todayCheckIn?.symptoms]
+  const { habits, customHabits, completed, total } = useMemo(
+    () => getHabitsForDate(selectedDate),
+    [getHabitsForDate, selectedDate],
   );
 
-  const [energy, setEnergy] = useState(todayCheckIn?.energy ?? 3);
-  const [sleepQuality, setSleepQuality] = useState(todayCheckIn?.sleepQuality ?? 3);
-  const [stress, setStress] = useState(todayCheckIn?.stress ?? 3);
-  const [symptoms, setSymptoms] = useState<string[]>(
-    initial.presets.length > 0 ? initial.presets : ['None']
-  );
-  const [otherActive, setOtherActive] = useState(initial.custom.length > 0);
-  const [otherText, setOtherText] = useState(initial.custom.join(', '));
-  const [saved, setSaved] = useState(!!todayCheckIn);
+  const checkIn = useMemo(() => {
+    const hasActivity = total > 0 && [...habits, ...customHabits].some((h) => h.completed);
+    if (!hasActivity) return null;
+    return deriveRoutineMetrics(habits, customHabits);
+  }, [habits, customHabits, total]);
 
-  const customSymptoms = useMemo(() => parseCustomSymptoms(otherText), [otherText]);
+  if (!isReady) return null;
 
-  const toggleSymptom = (s: string) => {
-    if (s === 'None') {
-      setSymptoms(['None']);
-      setOtherActive(false);
-      setOtherText('');
-      return;
-    }
-    setSymptoms((prev) => {
-      const without = prev.filter((x) => x !== 'None' && x !== s);
-      if (prev.includes(s)) return without.length ? without : ['None'];
-      return [...without, s];
-    });
-  };
+  const completedCount = completed;
+  const totalCount = total;
+  const hasMetrics = checkIn != null;
 
-  const toggleOther = () => {
-    setOtherActive((active) => {
-      if (active) {
-        setOtherText('');
-        return false;
-      }
-      setSymptoms((prev) => (prev.includes('None') ? [] : prev));
-      return true;
-    });
-  };
+  const metricHints = [
+    {
+      tag: 'energy' as const,
+      label: 'Recovery habits',
+      timeframe: `${WEEKLY_HABIT_TRACKING_LABEL} · daily check-ins`,
+    },
+    {
+      tag: 'sleep' as const,
+      label: 'Sleep habits',
+      timeframe: `${SLEEP_TRACKING_TIMEFRAME} · ${WEEKLY_HABIT_TRACKING_LABEL.toLowerCase()}`,
+    },
+    {
+      tag: 'stress' as const,
+      label: 'Stress habits',
+      timeframe: `${WEEKLY_HABIT_TRACKING_LABEL} · daily check-ins`,
+    },
+  ];
 
-  const handleOtherTextChange = (text: string) => {
-    setOtherText(text);
-    if (text.trim()) {
-      setSymptoms((prev) => prev.filter((x) => x !== 'None'));
-    }
-  };
-
-  const buildSymptomsForSave = (): string[] => {
-    const presets = symptoms.filter((s) => s !== 'None');
-    const combined = [...presets, ...(otherActive ? customSymptoms : [])];
-    return combined.length > 0 ? combined : ['None'];
-  };
-
-  const handleSave = () => {
-    saveCheckIn({ energy, sleepQuality, stress, symptoms: buildSymptomsForSave() });
-    setSaved(true);
-  };
+  if (!hasMetrics) {
+    return (
+      <Text style={styles.intro}>
+        Mark habits above to update energy, sleep, and stress. Log symptoms in the section above.
+      </Text>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <Text style={styles.intro}>
-        A quick daily check-in helps the app connect how you feel with your wearable data.
+        Energy, sleep, and stress from your routine checks ({completedCount} of {totalCount}{' '}
+        complete). Symptoms are logged separately above.
       </Text>
 
-      <CheckInMetricRow label="Energy" value={energy} onChange={setEnergy} />
-      <CheckInMetricRow
-        label="Sleep quality (last night)"
-        value={sleepQuality}
-        onChange={setSleepQuality}
-      />
-      <CheckInMetricRow label="Stress" value={stress} onChange={setStress} lowerIsBetter />
+      <Text style={styles.summary}>
+        {formatRoutineMetricsSummary({
+          ...checkIn,
+          symptoms: ['None'],
+          date: selectedDate,
+        })}
+      </Text>
 
-      <Text style={styles.symptomLabel}>Symptoms today</Text>
-      <View style={styles.symptomRow}>
-        {PRESET_SYMPTOMS.map((s) => (
-          <Pressable
-            key={s}
-            style={[styles.symptomChip, symptoms.includes(s) && styles.symptomChipActive]}
-            onPress={() => toggleSymptom(s)}>
-            <Text
-              style={[
-                styles.symptomChipText,
-                symptoms.includes(s) && styles.symptomChipTextActive,
-              ]}>
-              {s}
-            </Text>
-          </Pressable>
-        ))}
-        <Pressable
-          style={[styles.symptomChip, otherActive && styles.symptomChipActive]}
-          onPress={toggleOther}
-          accessibilityRole="button"
-          accessibilityState={{ selected: otherActive }}>
-          <Text style={[styles.symptomChipText, otherActive && styles.symptomChipTextActive]}>
-            Other
-          </Text>
-        </Pressable>
+      <CheckInMetricRow label="Energy (today)" value={checkIn.energy} readOnly />
+      <CheckInMetricRow
+        label={`Sleep quality (last night · ${SLEEP_TRACKING_TIMEFRAME})`}
+        value={checkIn.sleepQuality}
+        readOnly
+      />
+      <CheckInMetricRow label="Stress (today)" value={checkIn.stress} lowerIsBetter readOnly />
+
+      <View style={styles.habitMap}>
+        <Text style={styles.habitMapTitle}>Habits that shape energy, sleep & stress</Text>
+        {metricHints.map(({ tag, label, timeframe }) => {
+          const linked = routineHabitsForMetric(habits, customHabits, tag);
+          if (linked.length === 0) return null;
+          return (
+            <View key={tag} style={styles.habitMapRow}>
+              <Text style={styles.habitMapLabel}>{label}</Text>
+              <Text style={styles.habitMapTimeframe}>{timeframe}</Text>
+              <Text style={styles.habitMapValue}>
+                {linked.map((h) => `${h.title}${h.completed ? ' ✓' : ''}`).join(' · ')}
+              </Text>
+            </View>
+          );
+        })}
       </View>
 
-      {otherActive && (
-        <View style={styles.otherEditor}>
-          <TextInput
-            style={styles.otherInput}
-            placeholder="e.g. dizziness, nausea, jaw pain"
-            placeholderTextColor={palette.slateSubtle}
-            value={otherText}
-            onChangeText={handleOtherTextChange}
-            multiline
-            maxLength={200}
-            accessibilityLabel="Other symptoms"
-          />
-          <Text style={styles.otherHint}>Separate multiple symptoms with commas.</Text>
-          {customSymptoms.length > 0 && (
-            <View style={styles.customPreview}>
-              {customSymptoms.map((s) => (
-                <View key={s} style={styles.customChip}>
-                  <Text style={styles.customChipText}>{s}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
-      )}
-
-      <Pressable style={styles.saveBtn} onPress={handleSave}>
-        <Text style={styles.saveBtnText}>{saved ? 'Update check-in' : 'Save check-in'}</Text>
-      </Pressable>
-      {saved && (
-        <Text style={styles.savedNote}>
-          Logged for today. Insights will weigh this alongside your connected devices.
-        </Text>
-      )}
+      <Text style={styles.savedNote}>
+        Today tab priorities use your routine checks and symptoms together.
+      </Text>
     </View>
   );
 }
@@ -169,95 +117,53 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: palette.slateMuted,
-    marginBottom: 16,
-  },
-  symptomLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginTop: 4,
-    marginBottom: 10,
-    color: palette.slate,
-  },
-  symptomRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
     marginBottom: 12,
   },
-  otherEditor: {
-    marginBottom: 20,
-    gap: 8,
-  },
-  otherInput: {
-    backgroundColor: palette.card,
-    borderWidth: 1,
-    borderColor: palette.border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    lineHeight: 22,
+  summary: {
+    fontSize: 14,
+    lineHeight: 20,
     color: palette.slate,
-    minHeight: 72,
-    textAlignVertical: 'top',
+    marginBottom: 8,
   },
-  otherHint: {
-    fontSize: 12,
-    color: palette.slateSubtle,
-  },
-  customPreview: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  customChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: palette.sageLight,
-    borderWidth: 1,
-    borderColor: palette.teal,
-  },
-  customChipText: {
-    fontSize: 13,
-    color: palette.tealDark,
-    fontWeight: '600',
-  },
-  symptomChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: palette.background,
+  habitMap: {
+    backgroundColor: palette.card,
+    borderRadius: 12,
+    padding: 14,
     borderWidth: 1,
     borderColor: palette.border,
+    gap: 10,
+    marginBottom: 8,
   },
-  symptomChipActive: {
-    backgroundColor: palette.sageLight,
-    borderColor: palette.teal,
+  habitMapTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: palette.slate,
   },
-  symptomChipText: {
-    fontSize: 13,
+  habitMapRow: {
+    gap: 4,
+  },
+  habitMapLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: palette.teal,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  habitMapTimeframe: {
+    fontSize: 12,
+    lineHeight: 16,
     color: palette.slateMuted,
+    marginBottom: 2,
   },
-  symptomChipTextActive: {
-    color: palette.tealDark,
-    fontWeight: '600',
-  },
-  saveBtn: {
-    backgroundColor: palette.teal,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  saveBtnText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+  habitMapValue: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: palette.slateMuted,
   },
   savedNote: {
     fontSize: 13,
     textAlign: 'center',
     color: palette.slateSubtle,
-    marginTop: 12,
+    marginTop: 8,
   },
 });

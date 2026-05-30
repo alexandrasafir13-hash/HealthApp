@@ -1,22 +1,64 @@
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import CheckInForm from '@/components/CheckInForm';
+import CheckInSection from '@/components/CheckInSection';
 import CustomHabitsSection from '@/components/CustomHabitsSection';
 import HabitListCard from '@/components/HabitListCard';
 import PageTitle from '@/components/PageTitle';
+import RoutineDateSelector from '@/components/RoutineDateSelector';
+import RoutineUpdateButton from '@/components/RoutineUpdateButton';
+import SymptomsSection from '@/components/SymptomsSection';
 import { Text } from '@/components/Themed';
 import { useHealth } from '@/context/HealthContext';
+import { localDateKey } from '@/lib/localDate';
+import { clampDateKey, formatRoutineHabitsTitle } from '@/lib/routineDates';
 import { pageStyles, usePageLayout } from '@/hooks/usePageLayout';
 import { palette } from '@/constants/theme';
 
 export default function RoutineScreen() {
   const { contentContainerStyle, pageStyle } = usePageLayout();
-  const { habits, customHabits, toggleHabit, addCustomHabit, toggleCustomHabit, removeCustomHabit } =
-    useHealth();
-  const allHabits = [...habits, ...customHabits];
-  const completed = allHabits.filter((h) => h.completed).length;
-  const total = allHabits.length;
+  const {
+    accountStartDate,
+    getHabitsForDate,
+    toggleHabit,
+    addCustomHabit,
+    toggleCustomHabit,
+    removeCustomHabit,
+    refreshHabitCompletions,
+    isReady,
+  } = useHealth();
+
+  const todayKey = localDateKey();
+  const [selectedDate, setSelectedDate] = useState(todayKey);
+
+  useEffect(() => {
+    if (!isReady) return;
+    setSelectedDate((prev) => clampDateKey(prev, accountStartDate, todayKey));
+  }, [isReady, accountStartDate, todayKey]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void refreshHabitCompletions();
+      setSelectedDate((prev) => clampDateKey(prev, accountStartDate, localDateKey()));
+    }, [accountStartDate, refreshHabitCompletions]),
+  );
+
+  const { habits, customHabits, completed, total } = useMemo(
+    () => getHabitsForDate(selectedDate),
+    [getHabitsForDate, selectedDate],
+  );
+
+  const getCompletionForDate = useCallback(
+    (dateKey: string) => {
+      const { completed, total } = getHabitsForDate(dateKey);
+      return total > 0 ? completed / total : null;
+    },
+    [getHabitsForDate],
+  );
+
   const progressPct = total > 0 ? (completed / total) * 100 : 0;
+  const progressTitle = formatRoutineHabitsTitle(selectedDate, todayKey);
 
   return (
     <ScrollView style={pageStyles.scroll} contentContainerStyle={contentContainerStyle}>
@@ -26,8 +68,16 @@ export default function RoutineScreen() {
           subtitle="Predictable timing and small habits—tied to your insights—help prevent problems before they grow."
         />
 
+        <RoutineDateSelector
+          selectedDate={selectedDate}
+          minDate={accountStartDate}
+          maxDate={todayKey}
+          onChange={setSelectedDate}
+          getCompletionForDate={getCompletionForDate}
+        />
+
         <View style={styles.progressCard}>
-          <Text style={styles.progressTitle}>Today&apos;s habits</Text>
+          <Text style={styles.progressTitle}>{progressTitle}</Text>
           <Text style={styles.progressValue}>
             {completed} / {total} complete
           </Text>
@@ -40,24 +90,24 @@ export default function RoutineScreen() {
           <HabitListCard
             key={habit.id}
             title={habit.title}
-            time={habit.time}
             reason={habit.reason}
             completed={habit.completed}
-            onPress={() => toggleHabit(habit.id)}
+            onPress={() => toggleHabit(habit.id, selectedDate)}
           />
         ))}
 
         <CustomHabitsSection
           habits={customHabits}
           onAdd={addCustomHabit}
-          onToggle={toggleCustomHabit}
+          onToggle={(id) => toggleCustomHabit(id, selectedDate)}
           onRemove={removeCustomHabit}
         />
 
-        <View style={styles.checkInSection}>
-          <Text style={styles.checkInTitle}>Daily check-in</Text>
-          <CheckInForm />
-        </View>
+        <SymptomsSection selectedDate={selectedDate} />
+
+        <CheckInSection selectedDate={selectedDate} />
+
+        <RoutineUpdateButton selectedDate={selectedDate} />
       </View>
     </ScrollView>
   );
@@ -94,17 +144,5 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: palette.teal,
     borderRadius: 3,
-  },
-  checkInSection: {
-    marginTop: 24,
-    paddingTop: 24,
-    borderTopWidth: 1,
-    borderTopColor: palette.border,
-  },
-  checkInTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 12,
-    color: palette.slate,
   },
 });

@@ -1,9 +1,9 @@
-import { StyleProp, StyleSheet, Text, TextStyle, View } from 'react-native';
+import { StyleProp, StyleSheet, Text, TextStyle, View, ViewStyle } from 'react-native';
 
-import MetricScaleMarker from '@/components/MetricScaleMarker';
+import { getMetricScaleState, getMetricStateColors } from '@/components/MetricScaleMarker';
 import { capitalizeSentences } from '@/lib/formatText';
 import { categoryColors, palette } from '@/constants/theme';
-import { BodyInsight, SummaryTone } from '@/types/health';
+import { BodyInsight, MetricScaleConfig, SummaryTone } from '@/types/health';
 
 const toneStyles: Record<SummaryTone, TextStyle> = {
   body: {
@@ -43,6 +43,25 @@ interface Props {
   variant?: 'card' | 'detail';
 }
 
+function formatMetricDisplay({ value, unit = '', display }: MetricScaleConfig): string {
+  if (display) return display;
+  if (unit === 'h') return `${Number.isInteger(value) ? value : value.toFixed(1)}h`;
+  if (unit === '%') return `${Number.isInteger(value) ? value : value.toFixed(1)}%`;
+  if (unit === 'bpm') return `${Number.isInteger(value) ? value : value.toFixed(1)} bpm`;
+  return `${value}${unit}`;
+}
+
+function MetricPill({ config }: { config: MetricScaleConfig }) {
+  const state = getMetricScaleState(config);
+  const colors = getMetricStateColors(state);
+
+  return (
+    <View style={[styles.metricPill, { backgroundColor: colors.bg }]}>
+      <Text style={[styles.metricPillText, { color: colors.main }]}>{formatMetricDisplay(config)}</Text>
+    </View>
+  );
+}
+
 export default function RichInsightSummary({
   insight,
   numberOfLines,
@@ -50,7 +69,6 @@ export default function RichInsightSummary({
   variant = 'card',
 }: Props) {
   const baseStyle = variant === 'detail' ? styles.detail : styles.card;
-  const markerSize = variant === 'detail' ? 'regular' : 'compact';
 
   if (!insight.summaryHighlights?.length) {
     return (
@@ -60,44 +78,28 @@ export default function RichInsightSummary({
     );
   }
 
-  const hasMetric = insight.summaryHighlights.some((s) => s.metric);
-
-  if (hasMetric) {
-    return (
-      <View style={[styles.block, variant === 'detail' && styles.blockDetail, style]}>
-        <View style={styles.inlineRow}>
-          {insight.summaryHighlights.map((segment, index) =>
-            segment.metric ? (
-              <View key={index} style={styles.metricRow}>
-                <MetricScaleMarker
-                  {...segment.metric}
-                  size={markerSize}
-                  showStateLabel={variant === 'detail'}
-                />
-              </View>
-            ) : (
-              <Text key={index} style={[baseStyle, styles.inlineText, toneStyles[segment.tone ?? 'body']]}>
-                {capitalizeSentences(segment.text)}
-              </Text>
-            )
-          )}
-        </View>
-      </View>
-    );
-  }
-
   return (
-    <Text style={[baseStyle, style]} numberOfLines={numberOfLines}>
-      {insight.summaryHighlights.map((segment, index) => (
-        <Text key={index} style={toneStyles[segment.tone ?? 'body']}>
-          {capitalizeSentences(segment.text)}
-        </Text>
-      ))}
-    </Text>
+    <View style={[styles.wrap, style as StyleProp<ViewStyle>]}>
+      {insight.summaryHighlights.map((segment, index) =>
+        segment.metric ? (
+          <MetricPill key={index} config={segment.metric} />
+        ) : (
+          <Text key={index} style={[baseStyle, toneStyles[segment.tone ?? 'body']]}>
+            {capitalizeSentences(segment.text)}
+          </Text>
+        ),
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 2,
+  },
   card: {
     fontSize: 14,
     lineHeight: 22,
@@ -106,23 +108,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 26,
   },
-  block: {
-    marginBottom: 12,
+  metricPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginHorizontal: 2,
   },
-  blockDetail: {
-    marginBottom: 20,
-  },
-  inlineRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 2,
-  },
-  inlineText: {
-    marginBottom: 0,
-  },
-  metricRow: {
-    width: '100%',
-    marginVertical: 6,
+  metricPillText: {
+    fontSize: 14,
+    fontWeight: '800',
   },
 });

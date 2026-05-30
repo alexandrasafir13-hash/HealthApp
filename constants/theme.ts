@@ -57,6 +57,8 @@ export const metricScaleColors = {
   goodBg: '#BBF7D0',
   caution: '#EA580C',
   cautionBg: '#FED7AA',
+  /** Soft orange tint for routine check-in banner */
+  cautionBgLight: '#FFF4EB',
   action: '#DC2626',
   actionBg: '#FECACA',
 };

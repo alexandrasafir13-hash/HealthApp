@@ -33,6 +33,60 @@ export function getMetricScaleState(config: MetricScaleConfig): MetricScaleState
   return 'action';
 }
 
+const CHECK_IN_SCALE = {
+  min: 1,
+  max: 5,
+  goodMin: 4,
+  cautionMin: 3,
+  goodMax: 2,
+  cautionMax: 3,
+} as const;
+
+export function getCheckInMetricState(value: number, lowerIsBetter = false): MetricScaleState {
+  return getMetricScaleState({
+    value,
+    ...CHECK_IN_SCALE,
+    lowerIsBetter,
+  });
+}
+
+export function getMetricStateColors(state: MetricScaleState): { main: string; bg: string } {
+  return STATE_COLORS[state];
+}
+
+const STATE_RANK: Record<MetricScaleState, number> = {
+  good: 1,
+  caution: 2,
+  action: 3,
+};
+
+export function getWorstMetricState(states: MetricScaleState[]): MetricScaleState {
+  return states.reduce(
+    (worst, state) => (STATE_RANK[state] > STATE_RANK[worst] ? state : worst),
+    'good',
+  );
+}
+
+export function getCheckInOverviewState(checkIn: {
+  energy: number;
+  sleepQuality: number;
+  stress: number;
+}): MetricScaleState {
+  return getWorstMetricState([
+    getCheckInMetricState(checkIn.energy),
+    getCheckInMetricState(checkIn.sleepQuality),
+    getCheckInMetricState(checkIn.stress, true),
+  ]);
+}
+
+export function getMetricStateBoxStyle(state: MetricScaleState) {
+  const colors = getMetricStateColors(state);
+  return {
+    backgroundColor: colors.bg,
+    borderColor: colors.main + '55',
+  };
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }

@@ -303,6 +303,7 @@ export default function OnboardingScreen() {
                         <Text style={styles.optionTitle}>{habit.title}</Text>
                         <Text style={styles.habitTime}>{habit.time}</Text>
                       </View>
+                      <Text style={styles.optionBody}>{habit.reason}</Text>
                     </View>
                     <View style={[styles.optionCheck, selected && styles.optionCheckSelected]}>
                       {selected && <Text style={styles.optionCheckMark}>✓</Text>}
@@ -454,6 +455,11 @@ const styles = StyleSheet.create({
   },
   optionTitleDisabled: {
     color: palette.slateSubtle,
+  },
+  optionBody: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: palette.slateMuted,
   },
   habitRow: {
     flexDirection: 'row',

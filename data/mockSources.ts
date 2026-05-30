@@ -29,4 +29,18 @@ export const defaultHabits = [
     completed: false,
     reason: 'Tracks symptoms before they escalate',
   },
+  {
+    id: 'sleep-duration',
+    title: 'Sleep (8h-10h)',
+    time: '7:00 AM',
+    completed: false,
+    reason: 'Aim for 8–10 hours to support recovery and energy',
+  },
+  {
+    id: 'healthy-meals',
+    title: 'Healthy meals',
+    time: '12:00 PM',
+    completed: false,
+    reason: 'Nutritious food fuels recovery and immune health',
+  },
 ];
