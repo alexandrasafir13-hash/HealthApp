@@ -24,7 +24,7 @@ import {
   habitCompletionStats,
 } from '@/lib/routineDates';
 import { BodyInsight, CustomHabit, DailyCheckIn, PreventionHabit } from '@/types/health';
-import { BiologicalSex, DataMethodId, UserProfile } from '@/types/onboarding';
+import { BiologicalSex, DataMethodId, MedicalConditionId, UserProfile } from '@/types/onboarding';
 
 interface HealthContextValue {
   insights: BodyInsight[];
@@ -60,6 +60,7 @@ interface HealthContextValue {
     heightCm: number;
     dataMethods: DataMethodId[];
     habitIds: string[];
+    medicalConditionIds: MedicalConditionId[];
   }) => Promise<void>;
 }
 
@@ -259,6 +260,7 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       heightCm: number;
       dataMethods: DataMethodId[];
       habitIds: string[];
+      medicalConditionIds: MedicalConditionId[];
     }) => {
       const nextProfile: UserProfile = {
         name: input.name.trim(),
@@ -268,6 +270,7 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
         heightCm: input.heightCm,
         dataMethods: input.dataMethods,
         habitIds: input.habitIds,
+        medicalConditionIds: input.medicalConditionIds,
         completedAt: new Date().toISOString(),
       };
       await saveUserProfile(nextProfile);

@@ -4,6 +4,16 @@ export type DataMethodId = 'apple-health' | 'google-health' | 'upload';
 
 export type BiologicalSex = 'female' | 'male' | 'other';
 
+export type MedicalConditionId =
+  | 'diabetes'
+  | 'kidney-disease'
+  | 'recent-surgery'
+  | 'heart-condition'
+  | 'high-blood-pressure'
+  | 'requires-monitoring'
+  | 'autoimmune-chronic'
+  | 'none';
+
 export interface UserProfile {
   name: string;
   age: number;
@@ -12,6 +22,7 @@ export interface UserProfile {
   heightCm: number;
   dataMethods: DataMethodId[];
   habitIds: string[];
+  medicalConditionIds: MedicalConditionId[];
   completedAt: string;
 }
 
@@ -33,4 +44,10 @@ export interface HabitOption {
   title: string;
   time: string;
   reason: string;
+}
+
+export interface MedicalConditionOption {
+  id: MedicalConditionId;
+  title: string;
+  description: string;
 }

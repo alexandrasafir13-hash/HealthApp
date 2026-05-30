@@ -4,11 +4,18 @@ import { UserProfile } from '@/types/onboarding';
 
 const PROFILE_KEY = 'healthy:user-profile';
 
+function normalizeProfile(raw: UserProfile): UserProfile {
+  return {
+    ...raw,
+    medicalConditionIds: raw.medicalConditionIds ?? [],
+  };
+}
+
 export async function loadUserProfile(): Promise<UserProfile | null> {
   const raw = await AsyncStorage.getItem(PROFILE_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as UserProfile;
+    return normalizeProfile(JSON.parse(raw) as UserProfile);
   } catch {
     return null;
   }

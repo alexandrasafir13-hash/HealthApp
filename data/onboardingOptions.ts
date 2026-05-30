@@ -1,6 +1,6 @@
 import { Activity, Apple, FileUp } from 'lucide-react-native';
 
-import { DataMethodOption, HabitOption, SexOption } from '@/types/onboarding';
+import { DataMethodOption, HabitOption, MedicalConditionId, MedicalConditionOption, SexOption } from '@/types/onboarding';
 
 export const sexOptions: SexOption[] = [
   { id: 'female', label: 'Female' },
@@ -28,6 +28,49 @@ export const dataMethodOptions: DataMethodOption[] = [
     title: 'Upload documents',
     description: 'Add lab results, doctor notes, or PDF reports.',
     icon: FileUp,
+  },
+];
+
+export const medicalConditionCatalog: MedicalConditionOption[] = [
+  {
+    id: 'diabetes',
+    title: 'Diabetes',
+    description: 'Type 1, type 2, or prediabetes',
+  },
+  {
+    id: 'kidney-disease',
+    title: 'Kidney disease or dysfunction',
+    description: 'Reduced kidney function or related conditions',
+  },
+  {
+    id: 'recent-surgery',
+    title: 'Recent surgery',
+    description: 'Within the past 12 months',
+  },
+  {
+    id: 'heart-condition',
+    title: 'Heart condition',
+    description: 'Heart disease, arrhythmia, or related issues',
+  },
+  {
+    id: 'high-blood-pressure',
+    title: 'High blood pressure',
+    description: 'Hypertension or related cardiovascular risk',
+  },
+  {
+    id: 'requires-monitoring',
+    title: 'Needs regular monitoring',
+    description: 'A condition that requires ongoing checks or follow-up',
+  },
+  {
+    id: 'autoimmune-chronic',
+    title: 'Autoimmune or chronic illness',
+    description: 'Long-term conditions such as thyroid, arthritis, or IBD',
+  },
+  {
+    id: 'none',
+    title: 'None of the above',
+    description: 'No underlying conditions to report',
   },
 ];
 
