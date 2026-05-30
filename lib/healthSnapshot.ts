@@ -10,6 +10,8 @@ export interface HealthSnapshot {
   healthyWeightMaxKg: number;
   dailyWaterLiters: number;
   restingCalories: number;
+  sleepMinHours: number;
+  sleepMaxHours: number;
 }
 
 export function computeBmi(weightKg: number, heightCm: number): number {
@@ -62,6 +64,13 @@ export function restingCalories(
   return Math.round(base - 78);
 }
 
+/** Age-based nightly sleep range (CDC / NSF guidelines). */
+export function recommendedSleepHours(age: number): { minHours: number; maxHours: number } {
+  if (age < 18) return { minHours: 8, maxHours: 10 };
+  if (age < 65) return { minHours: 7, maxHours: 9 };
+  return { minHours: 7, maxHours: 8 };
+}
+
 export function buildHealthSnapshot(
   weightKg: number,
   heightCm: number,
@@ -71,6 +80,7 @@ export function buildHealthSnapshot(
   const bmi = computeBmi(weightKg, heightCm);
   const category = getBmiCategory(bmi);
   const range = healthyWeightRangeKg(heightCm);
+  const sleep = recommendedSleepHours(age);
 
   return {
     bmi: Math.round(bmi * 10) / 10,
@@ -80,5 +90,7 @@ export function buildHealthSnapshot(
     healthyWeightMaxKg: range.max,
     dailyWaterLiters: dailyWaterLiters(weightKg),
     restingCalories: restingCalories(weightKg, heightCm, age, sex),
+    sleepMinHours: sleep.minHours,
+    sleepMaxHours: sleep.maxHours,
   };
 }

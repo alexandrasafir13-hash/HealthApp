@@ -59,6 +59,11 @@ export default function HealthSnapshotCard({ snapshot, name }: Props) {
           value={`~${snapshot.restingCalories.toLocaleString()} kcal`}
           detail="Energy at rest each day"
         />
+        <Stat
+          label="Sleep"
+          value={`${snapshot.sleepMinHours}–${snapshot.sleepMaxHours} h`}
+          detail="Recommended per night for your age"
+        />
       </View>
 
       <Text style={styles.footer}>
