@@ -33,12 +33,12 @@ const STEP_HEADINGS: Record<Step, string> = {
   sex: 'What is your sex?',
   weight: 'What is your weight?',
   height: 'What is your height?',
-  data: 'Upload medical documents?',
+  data: 'Upload medical documents',
   habits: 'What do you want to improve?',
 };
 
 const DATA_STEP_EXPLAINER =
-  'Add lab results, doctor notes, or PDF reports. You can skip this for now and upload later.';
+  'Helps us in generating better insights for you. You can skip this for now and upload later, or manually enter the data you want to track.';
 
 function parsePositiveInt(value: string): number | null {
   const n = Number.parseInt(value.trim(), 10);
