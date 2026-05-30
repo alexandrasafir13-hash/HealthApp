@@ -18,12 +18,15 @@ import { dataMethodOptions, habitCatalog, sexOptions } from '@/data/onboardingOp
 import { palette } from '@/constants/theme';
 import { BiologicalSex, DataMethodId } from '@/types/onboarding';
 
-const STEPS = ['name', 'body', 'data', 'habits'] as const;
+const STEPS = ['name', 'age', 'sex', 'weight', 'height', 'data', 'habits'] as const;
 type Step = (typeof STEPS)[number];
 
 const STEP_HEADINGS: Record<Step, string> = {
   name: "What's your name?",
-  body: 'Tell us about you',
+  age: 'How old are you?',
+  sex: 'What is your sex?',
+  weight: 'What is your weight?',
+  height: 'What is your height?',
   data: 'How do you want to add data?',
   habits: 'Which habits do you want to track?',
 };
@@ -38,22 +41,19 @@ function parsePositiveDecimal(value: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function isBodyStepValid(age: string, sex: BiologicalSex | null, weight: string, height: string) {
+function isAgeValid(age: string) {
   const ageNum = parsePositiveInt(age);
+  return ageNum != null && ageNum >= 13 && ageNum <= 120;
+}
+
+function isWeightValid(weight: string) {
   const weightKg = parsePositiveDecimal(weight);
+  return weightKg != null && weightKg >= 30 && weightKg <= 300;
+}
+
+function isHeightValid(height: string) {
   const heightCm = parsePositiveDecimal(height);
-  return (
-    sex != null &&
-    ageNum != null &&
-    ageNum >= 13 &&
-    ageNum <= 120 &&
-    weightKg != null &&
-    weightKg >= 30 &&
-    weightKg <= 300 &&
-    heightCm != null &&
-    heightCm >= 100 &&
-    heightCm <= 250
-  );
+  return heightCm != null && heightCm >= 100 && heightCm <= 250;
 }
 
 export default function OnboardingScreen() {
@@ -92,11 +92,17 @@ export default function OnboardingScreen() {
   const canContinue =
     step === 'name'
       ? name.trim().length >= 2
-      : step === 'body'
-        ? isBodyStepValid(age, sex, weight, height)
-        : step === 'data'
-          ? dataMethod != null
-          : habitIds.length > 0;
+      : step === 'age'
+        ? isAgeValid(age)
+        : step === 'sex'
+          ? sex != null
+          : step === 'weight'
+            ? isWeightValid(weight)
+            : step === 'height'
+              ? isHeightValid(height)
+              : step === 'data'
+                ? dataMethod != null
+                : habitIds.length > 0;
 
   const goBack = () => {
     if (stepIndex > 0) {
@@ -175,7 +181,7 @@ export default function OnboardingScreen() {
             </View>
           )}
 
-          {step === 'body' && (
+          {step === 'age' && (
             <View style={styles.stepBlock}>
               <TextInput
                 style={styles.fieldInput}
@@ -185,7 +191,14 @@ export default function OnboardingScreen() {
                 onChangeText={setAge}
                 keyboardType="number-pad"
                 maxLength={3}
+                returnKeyType="next"
+                onSubmitEditing={canContinue ? goNext : undefined}
               />
+            </View>
+          )}
+
+          {step === 'sex' && (
+            <View style={styles.stepBlock}>
               <View style={styles.sexOptions}>
                 {sexOptions.map((option) => {
                   const selected = sex === option.id;
@@ -203,24 +216,36 @@ export default function OnboardingScreen() {
                   );
                 })}
               </View>
-              <View style={styles.measureRow}>
-                <TextInput
-                  style={[styles.fieldInput, styles.measureInput]}
-                  placeholder="Weight (kg)"
-                  placeholderTextColor={palette.slateSubtle}
-                  value={weight}
-                  onChangeText={setWeight}
-                  keyboardType="decimal-pad"
-                />
-                <TextInput
-                  style={[styles.fieldInput, styles.measureInput]}
-                  placeholder="Height (cm)"
-                  placeholderTextColor={palette.slateSubtle}
-                  value={height}
-                  onChangeText={setHeight}
-                  keyboardType="number-pad"
-                />
-              </View>
+            </View>
+          )}
+
+          {step === 'weight' && (
+            <View style={styles.stepBlock}>
+              <TextInput
+                style={styles.fieldInput}
+                placeholder="Weight (kg)"
+                placeholderTextColor={palette.slateSubtle}
+                value={weight}
+                onChangeText={setWeight}
+                keyboardType="decimal-pad"
+                returnKeyType="next"
+                onSubmitEditing={canContinue ? goNext : undefined}
+              />
+            </View>
+          )}
+
+          {step === 'height' && (
+            <View style={styles.stepBlock}>
+              <TextInput
+                style={styles.fieldInput}
+                placeholder="Height (cm)"
+                placeholderTextColor={palette.slateSubtle}
+                value={height}
+                onChangeText={setHeight}
+                keyboardType="number-pad"
+                returnKeyType="next"
+                onSubmitEditing={canContinue ? goNext : undefined}
+              />
             </View>
           )}
 
@@ -389,13 +414,6 @@ const styles = StyleSheet.create({
   },
   sexOptionTextSelected: {
     color: palette.tealDark,
-  },
-  measureRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  measureInput: {
-    flex: 1,
   },
   optionCard: {
     flexDirection: 'row',
