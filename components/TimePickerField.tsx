@@ -3,6 +3,7 @@ import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import { palette } from '@/constants/theme';
+import { PAGE_MAX_WIDTH } from '@/hooks/useBreakpoint';
 import { PlanCheckInAnswer } from '@/lib/planCheckInStorage';
 import {
   formatTimeAnswer,
@@ -10,6 +11,8 @@ import {
   parseTimeAnswer,
   to12HourParts,
 } from '@/lib/timeAnswer';
+
+const SHEET_MAX_WIDTH = Math.min(360, PAGE_MAX_WIDTH);
 
 type Props = {
   value: PlanCheckInAnswer | undefined;
@@ -67,7 +70,7 @@ function TimePickerModal({
   }, [visible, initialDate]);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.modalRoot}>
         <Pressable style={styles.modalBackdrop} onPress={onClose} accessibilityRole="button" />
         <View style={styles.sheet}>
@@ -80,8 +83,9 @@ function TimePickerModal({
               onDecrement={() => setHour((current) => (current <= 1 ? 12 : current - 1))}
               onIncrement={() => setHour((current) => (current >= 12 ? 1 : current + 1))}
             />
+            <Text style={styles.timeSep}>:</Text>
             <Stepper
-              label="Minute"
+              label="Min"
               value={String(minute).padStart(2, '0')}
               onDecrement={() => setMinute((current) => (current <= 0 ? 59 : current - 1))}
               onIncrement={() => setMinute((current) => (current >= 59 ? 0 : current + 1))}
@@ -150,12 +154,14 @@ export default function TimePickerField({ value, onChange }: Props) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { width: '100%' },
+  wrap: {
+    alignSelf: 'flex-start',
+  },
   button: {
     borderWidth: 1,
     borderColor: palette.border,
     borderRadius: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 12,
     backgroundColor: palette.background,
     minHeight: 44,
@@ -173,19 +179,24 @@ const styles = StyleSheet.create({
   },
   modalRoot: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0, 0, 0, 0.35)',
   },
   sheet: {
+    width: '100%',
+    maxWidth: SHEET_MAX_WIDTH,
     backgroundColor: palette.card,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: palette.border,
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 24,
+    paddingBottom: 16,
     gap: 16,
   },
   sheetTitle: {
@@ -196,10 +207,17 @@ const styles = StyleSheet.create({
   },
   pickerRow: {
     flexDirection: 'row',
-    gap: 12,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  timeSep: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: palette.slateMuted,
+    marginBottom: 14,
   },
   stepper: {
-    flex: 1,
     gap: 8,
     alignItems: 'center',
   },
@@ -212,11 +230,11 @@ const styles = StyleSheet.create({
   stepperRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
   },
   stepperButton: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: palette.border,
@@ -225,14 +243,14 @@ const styles = StyleSheet.create({
     backgroundColor: palette.background,
   },
   stepperButtonText: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '600',
     color: palette.slate,
-    lineHeight: 24,
+    lineHeight: 22,
   },
   stepperValue: {
-    minWidth: 48,
-    fontSize: 28,
+    minWidth: 40,
+    fontSize: 24,
     fontWeight: '700',
     color: palette.slate,
     textAlign: 'center',
@@ -243,12 +261,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   periodChip: {
-    minWidth: 88,
+    minWidth: 72,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: palette.border,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     alignItems: 'center',
     backgroundColor: palette.background,
   },
@@ -257,7 +275,7 @@ const styles = StyleSheet.create({
     backgroundColor: palette.sageLight,
   },
   periodText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: palette.slate,
   },
@@ -267,7 +285,7 @@ const styles = StyleSheet.create({
   saveButton: {
     backgroundColor: palette.teal,
     borderRadius: 12,
-    paddingVertical: 14,
+    paddingVertical: 12,
     alignItems: 'center',
   },
   saveButtonText: {
