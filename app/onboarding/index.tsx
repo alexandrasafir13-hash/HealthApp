@@ -22,12 +22,6 @@ import { DataMethodId } from '@/types/onboarding';
 const STEPS = ['name', 'data', 'habits'] as const;
 type Step = (typeof STEPS)[number];
 
-const STEP_LABELS: Record<Step, string> = {
-  name: 'Your name',
-  data: 'Add your data',
-  habits: 'Daily habits',
-};
-
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const { pageStyle, isTabletUp } = usePageLayout();
@@ -99,28 +93,17 @@ export default function OnboardingScreen() {
             isTabletUp ? styles.containerTablet : styles.containerPhone,
             { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 },
           ]}>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+        </View>
+
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
-          <View style={styles.header}>
-              <Text style={styles.kicker}>Welcome to Healthy</Text>
-              <Text style={styles.title}>{STEP_LABELS[step]}</Text>
-              <Text style={styles.stepCount}>
-                Step {stepIndex + 1} of {STEPS.length}
-              </Text>
-              <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-              </View>
-            </View>
-
-            {step === 'name' && (
+          {step === 'name' && (
             <View style={styles.stepBlock}>
-              <Text style={styles.lead}>
-                We&apos;ll personalize your daily plan and greetings.
-              </Text>
-              <Text style={styles.inputLabel}>What should we call you?</Text>
               <TextInput
                 style={styles.nameInput}
                 placeholder="Your first name"
@@ -137,9 +120,6 @@ export default function OnboardingScreen() {
 
           {step === 'data' && (
             <View style={styles.stepBlock}>
-              <Text style={styles.lead}>
-                Pick one or more ways to bring health data into Healthy. You can change this later.
-              </Text>
               {dataMethodOptions.map((option) => {
                 const selected = dataMethods.includes(option.id);
                 return (
@@ -156,7 +136,6 @@ export default function OnboardingScreen() {
                     </View>
                     <View style={styles.optionContent}>
                       <Text style={styles.optionTitle}>{option.title}</Text>
-                      <Text style={styles.optionBody}>{option.description}</Text>
                     </View>
                     <View style={[styles.optionCheck, selected && styles.optionCheckSelected]}>
                       {selected && <Text style={styles.optionCheckMark}>✓</Text>}
@@ -169,9 +148,6 @@ export default function OnboardingScreen() {
 
           {step === 'habits' && (
             <View style={styles.stepBlock}>
-              <Text style={styles.lead}>
-                Choose habits you want to track each day. These show up on your Routine tab.
-              </Text>
               {habitCatalog.map((habit) => {
                 const selected = habitIds.includes(habit.id);
                 return (
@@ -184,7 +160,6 @@ export default function OnboardingScreen() {
                         <Text style={styles.optionTitle}>{habit.title}</Text>
                         <Text style={styles.habitTime}>{habit.time}</Text>
                       </View>
-                      <Text style={styles.optionBody}>{habit.reason}</Text>
                     </View>
                     <View style={[styles.optionCheck, selected && styles.optionCheckSelected]}>
                       {selected && <Text style={styles.optionCheckMark}>✓</Text>}
@@ -240,32 +215,13 @@ const styles = StyleSheet.create({
   containerTablet: {
     paddingHorizontal: 32,
   },
-  header: {
-    marginBottom: 16,
-  },
-  kicker: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: palette.teal,
-    marginBottom: 6,
-    letterSpacing: 0.2,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: palette.slate,
-    marginBottom: 4,
-  },
-  stepCount: {
-    fontSize: 14,
-    color: palette.slateMuted,
-    marginBottom: 12,
-  },
   progressTrack: {
     height: 6,
     backgroundColor: palette.border,
     borderRadius: 3,
     overflow: 'hidden',
+    marginBottom: 16,
+    width: '100%',
   },
   progressFill: {
     height: '100%',
@@ -283,18 +239,6 @@ const styles = StyleSheet.create({
   stepBlock: {
     gap: 12,
     width: '100%',
-  },
-  lead: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: palette.slateMuted,
-    marginBottom: 8,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: palette.slate,
-    marginBottom: 8,
   },
   nameInput: {
     backgroundColor: palette.card,
@@ -339,18 +283,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: palette.slate,
-    marginBottom: 3,
-  },
-  optionBody: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: palette.slateMuted,
   },
   habitRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 3,
   },
   habitTime: {
     fontSize: 13,
