@@ -203,6 +203,7 @@ export default function RoutineProposalPicker({ options, onSelect, error }: Prop
                     scrollEnabled={isActive}
                     keyboardShouldPersistTaps="handled">
                     <Text style={styles.optionLabel}>Option {index + 1} of {options.length}</Text>
+                    <Text style={styles.routineTitle}>{item.title}</Text>
                     <Text style={styles.focusLabel}>Focus: {item.primaryGoalTitle}</Text>
                     <Text style={styles.body}>{item.whyThisGoal}</Text>
                     <Text style={styles.intro}>{item.intro}</Text>
@@ -239,7 +240,7 @@ export default function RoutineProposalPicker({ options, onSelect, error }: Prop
                     style={styles.chooseButton}
                     onPress={() => onSelect(item.id)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Choose routine option ${index + 1} for ${item.primaryGoalTitle}`}>
+                    accessibilityLabel={`Choose ${item.title} for ${item.primaryGoalTitle}`}>
                     <Text style={styles.chooseButtonText}>Choose this one</Text>
                   </Pressable>
                 </View>
@@ -340,9 +341,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
   focusLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: palette.teal,
+  },
+  routineTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: palette.slate,
+    lineHeight: 28,
   },
   body: {
     fontSize: 14,

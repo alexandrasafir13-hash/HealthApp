@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import RoutineChecklistItem from '@/components/RoutineChecklistItem';
 import { Text } from '@/components/Themed';
 import { useHealth } from '@/context/HealthContext';
-import { actionDoneWhen } from '@/types/routine';
+import { actionDoneWhen, routineDisplayTitle } from '@/types/routine';
 import { palette } from '@/constants/theme';
 
 export default function TodayRoutineChecklist() {
@@ -17,6 +17,7 @@ export default function TodayRoutineChecklist() {
   return (
     <View style={styles.wrap}>
       <View style={styles.header}>
+        <Text style={styles.routineTitle}>{routineDisplayTitle(personalRoutine)}</Text>
         <Text style={styles.focusLabel}>Focus: {personalRoutine.primaryGoalTitle}</Text>
         <Text style={styles.intro}>{personalRoutine.intro}</Text>
         <Text style={styles.progress}>
@@ -53,6 +54,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: palette.teal,
+  },
+  routineTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: palette.slate,
+    lineHeight: 30,
   },
   intro: {
     fontSize: 16,

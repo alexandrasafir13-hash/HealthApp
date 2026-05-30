@@ -10,7 +10,7 @@ import {
 import { RoutineDaySummary, todayRoutineSummaryForLlm } from '@/lib/routineCompletionHistory';
 import { DailyCheckIn, TestResultUpload } from '@/types/health';
 import { UserProfile } from '@/types/onboarding';
-import { PersonalRoutine, dailyActionsFromRoutine, overviewTipsFromRoutine, actionDoneWhen } from '@/types/routine';
+import { PersonalRoutine, dailyActionsFromRoutine, overviewTipsFromRoutine, actionDoneWhen, routineDisplayTitle } from '@/types/routine';
 
 export interface ImprovementGoal {
   area: string;
@@ -35,6 +35,7 @@ export interface HealthInsightsContext {
     dataMethodsTheySelected: string[];
     uploadedDocuments: { name: string; kind: string; uploadedAt: string }[];
     personalRoutine: {
+      title: string;
       focus: string;
       intro: string;
       overviewTips: string[];
@@ -143,6 +144,7 @@ export function buildHealthInsightsContext(input: {
 
   const routineForLlm = personalRoutine
     ? {
+        title: routineDisplayTitle(personalRoutine),
         focus: personalRoutine.primaryGoalTitle,
         intro: personalRoutine.intro,
         overviewTips: overviewTipsFromRoutine(personalRoutine),

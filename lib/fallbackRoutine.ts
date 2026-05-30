@@ -154,6 +154,7 @@ const FALLBACK_ACTIONS: Record<string, RoutineDailyAction[]> = {
 const SINGLE_GOAL_VARIANTS = [
   {
     suffix: 'gentle',
+    routineTitle: 'Gentle daily start',
     why: (title: string) =>
       `A low-pressure start for ${title.toLowerCase()} — good if you want the smallest possible first step.`,
     intro: (title: string) => `Three easy habits to ease into ${title.toLowerCase()}.`,
@@ -161,6 +162,7 @@ const SINGLE_GOAL_VARIANTS = [
   },
   {
     suffix: 'balanced',
+    routineTitle: 'Steady everyday routine',
     why: (title: string) =>
       `A balanced daily plan for ${title.toLowerCase()} based on what you shared in onboarding.`,
     intro: (title: string) => `A steady routine to build ${title.toLowerCase()} into your day.`,
@@ -168,6 +170,7 @@ const SINGLE_GOAL_VARIANTS = [
   },
   {
     suffix: 'focused',
+    routineTitle: 'Structured habit plan',
     why: (title: string) =>
       `A more structured approach to ${title.toLowerCase()} if you are ready to commit a bit more.`,
     intro: (title: string) => `A fuller routine to make ${title.toLowerCase()} stick.`,
@@ -215,6 +218,7 @@ export function rankGoalIds(habitIds: string[], goalDetails: GoalDetails = {}): 
 function buildOptionForGoal(
   goalId: string,
   optionId: string,
+  routineTitle: string,
   whyThisGoal: string,
   intro: string,
   actionCount: number,
@@ -225,6 +229,7 @@ function buildOptionForGoal(
 
   return {
     id: optionId,
+    title: routineTitle,
     primaryGoalId: goalId,
     primaryGoalTitle: habit?.title ?? goalId,
     whyThisGoal,
@@ -248,14 +253,15 @@ export function buildFallbackRoutineProposals(
   if (ranked.length === 1) {
     const goalId = ranked[0];
     const habit = habitCatalog.find((h) => h.id === goalId);
-    const title = habit?.title ?? goalId;
+    const goalTitle = habit?.title ?? goalId;
     for (const variant of SINGLE_GOAL_VARIANTS) {
       options.push(
         buildOptionForGoal(
           goalId,
           `${goalId}-${variant.suffix}`,
-          variant.why(title),
-          variant.intro(title),
+          variant.routineTitle,
+          variant.why(goalTitle),
+          variant.intro(goalTitle),
           variant.actionCount,
         ),
       );
@@ -268,18 +274,19 @@ export function buildFallbackRoutineProposals(
 
     goalIdsForOptions.forEach((goalId, index) => {
       const habit = habitCatalog.find((h) => h.id === goalId);
-      const title = habit?.title ?? goalId;
+      const goalTitle = habit?.title ?? goalId;
       const duplicate = goalIdsForOptions.indexOf(goalId) !== index;
       options.push(
         buildOptionForGoal(
           goalId,
           duplicate ? `${goalId}-alt-${index}` : `${goalId}-option-${index + 1}`,
+          duplicate ? `${goalTitle} alternate` : `${goalTitle} starter`,
           duplicate
-            ? `Another angle on ${title.toLowerCase()} with a slightly different daily mix.`
-            : `Based on your answers, ${title.toLowerCase()} could give you a strong day-to-day payoff.`,
+            ? `Another angle on ${goalTitle.toLowerCase()} with a slightly different daily mix.`
+            : `Based on your answers, ${goalTitle.toLowerCase()} could give you a strong day-to-day payoff.`,
           duplicate
-            ? `An alternate ${title.toLowerCase()} routine with a different emphasis.`
-            : `A starter routine focused on ${title.toLowerCase()}.`,
+            ? `An alternate ${goalTitle.toLowerCase()} routine with a different emphasis.`
+            : `A starter routine focused on ${goalTitle.toLowerCase()}.`,
           duplicate ? 3 : 4,
         ),
       );

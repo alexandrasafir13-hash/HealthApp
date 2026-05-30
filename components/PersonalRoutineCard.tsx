@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import RoutineChecklistItem from '@/components/RoutineChecklistItem';
 import { palette } from '@/constants/theme';
-import { actionDoneWhen, dailyActionsFromRoutine, overviewTipsFromRoutine, PersonalRoutine } from '@/types/routine';
+import { actionDoneWhen, dailyActionsFromRoutine, overviewTipsFromRoutine, routineDisplayTitle, PersonalRoutine } from '@/types/routine';
 
 type Props = {
   routine: PersonalRoutine;
@@ -15,7 +15,7 @@ export default function PersonalRoutineCard({ routine, error }: Props) {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.sectionTitle}>Your starter routine</Text>
+      <Text style={styles.sectionTitle}>{routineDisplayTitle(routine)}</Text>
       <Text style={styles.focusLabel}>Focus: {routine.primaryGoalTitle}</Text>
       <Text style={styles.body}>{routine.whyThisGoal}</Text>
       <Text style={styles.intro}>{routine.intro}</Text>

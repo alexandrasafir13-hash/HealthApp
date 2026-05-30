@@ -15,6 +15,8 @@ export type RoutineStep = RoutineDailyAction & {
 
 export interface RoutineOption {
   id: string;
+  /** Short friendly routine name from the LLM (max ~5 words) */
+  title: string;
   primaryGoalId: string;
   primaryGoalTitle: string;
   /** Why this focus area helps — overview only, not tickable */
@@ -69,4 +71,10 @@ export function overviewTipsFromRoutine(
 ): string[] {
   if (routine.overviewTips?.length) return routine.overviewTips;
   return [];
+}
+
+export function routineDisplayTitle(
+  routine: Pick<RoutineOption, 'title' | 'primaryGoalTitle'>,
+): string {
+  return routine.title?.trim() || routine.primaryGoalTitle;
 }

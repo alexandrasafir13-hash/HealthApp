@@ -23,7 +23,7 @@ import {
 } from '@/lib/routineStorage';
 import { BodyInsight } from '@/types/health';
 import { BiologicalSex, DataMethodId, GoalDetails, MedicalConditionId, UserProfile } from '@/types/onboarding';
-import { PersonalRoutine, RoutineProposalSet, RoutineDailyAction, dailyActionsFromRoutine } from '@/types/routine';
+import { PersonalRoutine, RoutineProposalSet, RoutineDailyAction, dailyActionsFromRoutine, routineDisplayTitle } from '@/types/routine';
 
 export type TodayRoutineStep = RoutineDailyAction & {
   id: string;
@@ -139,6 +139,7 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       if (savedRoutine) {
         const normalized = normalizePersonalRoutine({
           ...savedRoutine,
+          title: savedRoutine.title?.trim() || routineDisplayTitle(savedRoutine),
           dailyActions: dailyActionsFromRoutine(savedRoutine as PersonalRoutine & { steps?: RoutineDailyAction[] }),
           overviewTips: savedRoutine.overviewTips ?? [],
         });

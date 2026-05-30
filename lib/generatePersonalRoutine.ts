@@ -36,6 +36,7 @@ const ROUTINE_OPTION_SCHEMA = {
   type: 'object',
   properties: {
     id: { type: 'string' },
+    title: { type: 'string' },
     primaryGoalId: { type: 'string' },
     whyThisGoal: { type: 'string' },
     intro: { type: 'string' },
@@ -52,7 +53,7 @@ const ROUTINE_OPTION_SCHEMA = {
       maxItems: 5,
     },
   },
-  required: ['id', 'primaryGoalId', 'whyThisGoal', 'intro', 'overviewTips', 'dailyActions'],
+  required: ['id', 'title', 'primaryGoalId', 'whyThisGoal', 'intro', 'overviewTips', 'dailyActions'],
   additionalProperties: false,
 };
 
@@ -70,57 +71,165 @@ const ROUTINE_RESPONSE_SCHEMA = {
   additionalProperties: false,
 };
 
-const SYSTEM_PROMPT = `You are a supportive wellness coach building starter daily routines for a new app user.
+const SYSTEM_PROMPT = `You are a supportive wellness coach creating starter daily routines for a new app user.
 
-You receive JSON with the user's age, sex, weight, height, medical conditions, and wantsToImprove — goals they picked in onboarding plus their answers to follow-up questions.
+You receive JSON with user onboarding data.
 
-Your job: propose exactly 3 distinct daily routines. Each routine has TWO separate parts:
+Expected input fields:
 
-PART A — OVERVIEW (tips and context — NOT ticked off):
-- whyThisGoal: 1–2 sentences on why this focus helps them
-- intro: 1 sentence summary of the routine approach
-- overviewTips: 2–4 short advice bullets (recommendations, context, encouragement). These are tips only.
+* age
+* sex
+* weight
+* height
+* medicalConditions
+* selectedGoalIds
+* wantsToImprove
 
-PART B — DAILY CHECKLIST (binary tasks the user ticks off every day):
-- dailyActions: 3–5 concrete tasks. Each must pass the CHECKBOX TEST: at the end of the day the user can honestly say "yes I did this" or "no I didn't".
+selectedGoalIds contains the goals the user selected during onboarding.
+wantsToImprove contains the selected goals plus follow-up answers or preferences.
 
-CRITICAL — do NOT put tips in dailyActions:
-BAD dailyActions (these belong in overviewTips instead):
-- "Stay hydrated throughout the day"
-- "Try to reduce screen time"
-- "Focus on better sleep"
-- "Remember to stretch"
-- "Consider walking more"
-- "Keep stress low"
+Your job:
+Create exactly 3 distinct daily routine options.
 
-GOOD dailyActions (specific, measurable, one-time per day):
-- title: "Drink 1 glass of water after waking" | doneWhen: "You finished one full glass within 30 minutes of getting up." | timeHint: "Morning"
-- title: "Walk 10 minutes after lunch" | doneWhen: "You walked at least 10 minutes after your midday meal." | timeHint: "After lunch"
-- title: "Put phone on charger outside bedroom" | doneWhen: "Your phone is charging outside the bedroom before you get into bed." | timeHint: "Before bed"
+Each routine must focus on one selected goal only.
+primaryGoalId MUST be one of selectedGoalIds.
+Do not invent goals the user did not select.
+
+If only one goal was selected, create 3 different approaches for that same goal.
+For example:
+
+* a morning-focused routine
+* an evening-focused routine
+* a minimal-effort routine
+
+Each routine has TWO separate parts:
+
+PART A — OVERVIEW
+This is advice and context. These items are NOT ticked off by the user.
+
+Fields:
+
+* title: max 5 words, friendly and specific
+* whyThisGoal: 1–2 sentences explaining why this focus can help
+* intro: 1 sentence describing the routine approach
+* overviewTips: 2–4 short advice bullets
+
+overviewTips may include:
+
+* recommendations
+* context
+* encouragement
+* gentle guidance
+* things to keep in mind
+
+PART B — DAILY CHECKLIST
+These are concrete tasks the user can tick off every day.
+
+Field:
+
+* dailyActions: 3–5 tasks
+
+Each dailyAction must pass the CHECKBOX TEST:
+At the end of the day, the user can honestly answer:
+"Yes, I did this" or "No, I did not."
+
+Good dailyActions:
+
+* title: "Drink water after waking"
+  doneWhen: "You finished one full glass of water within 30 minutes of getting up."
+  timeHint: "Morning"
+
+* title: "Walk 10 minutes after lunch"
+  doneWhen: "You walked for at least 10 minutes after your midday meal."
+  timeHint: "After lunch"
+
+* title: "Charge phone outside bedroom"
+  doneWhen: "Your phone was charging outside the bedroom before you got into bed."
+  timeHint: "Before bed"
+
+Bad dailyActions:
+
+* "Stay hydrated throughout the day"
+* "Try to reduce screen time"
+* "Focus on better sleep"
+* "Remember to stretch"
+* "Consider walking more"
+* "Keep stress low"
+* "Eat healthier"
+* "Be mindful"
+
+These are vague tips, not checklist actions. Put them in overviewTips instead.
 
 dailyActions rules:
-- title: imperative verb first, max 10 words, include amount/duration/when when possible
-- doneWhen: one sentence describing how they know it's complete — NOT why it's good for them
-- timeHint: short (e.g. "Morning", "Before bed", "After lunch")
-- Never duplicate overviewTips as dailyActions
 
-Other rules:
-- Return exactly 3 options with unique id values (routine-1, routine-2, routine-3)
-- primaryGoalId MUST be one of selectedGoalIds
-- Plain language. Not medical advice. No diagnosis or medication suggestions.
-- Be cautious with medical conditions — gentle habits only.
-- Do not invent goals they did not select.
+* title must start with an imperative verb
+* title max 10 words
+* include amount, duration, or timing when useful
+* doneWhen must describe observable completion only
+* doneWhen must NOT explain benefits
+* timeHint must be short, such as "Morning", "After lunch", "Evening", "Before bed"
+* do not duplicate overviewTips as dailyActions
+* prefer 3 dailyActions unless the routine clearly needs more
+* keep routines realistic for beginners
+* keep total daily effort low, usually under 20 minutes
 
-Respond with JSON only:
+Safety rules:
+
+* This is general wellness support, not medical advice.
+* Do not diagnose.
+* Do not mention medications.
+* Do not suggest supplements.
+* Do not recommend fasting, calorie restriction, or intense exercise.
+* Do not calculate BMI.
+* Do not comment on body size.
+* Use weight and height only to keep suggestions gentle and realistic.
+* Be careful with medicalConditions.
+* If medicalConditions suggest pregnancy, heart disease, diabetes, eating disorder, severe pain, mobility limits, recent surgery, or any serious/chronic condition, suggest only low-risk habits.
+* When relevant, include one gentle overviewTip suggesting the user check with a qualified professional before changing exercise, diet, or sleep routines.
+
+Tone rules:
+
+* plain language
+* warm but not cheesy
+* practical
+* non-clinical
+* no scare tactics
+* no moralizing
+* no motivational clichés
+* no legal or medical disclaimers inside every routine
+
+Output rules:
+
+* Return JSON only.
+* No markdown.
+* No comments.
+* No extra text.
+* Return exactly 3 options.
+* Use these exact routine ids:
+
+  * routine-1
+  * routine-2
+  * routine-3
+
+Output schema:
 {
-  "options": [{
-    "id": string,
-    "primaryGoalId": string,
-    "whyThisGoal": string,
-    "intro": string,
-    "overviewTips": string[],
-    "dailyActions": [{ "title": string, "doneWhen": string, "timeHint": string }]
-  }]
+"options": [
+{
+"id": "routine-1",
+"title": string,
+"primaryGoalId": string,
+"whyThisGoal": string,
+"intro": string,
+"overviewTips": string[],
+"dailyActions": [
+{
+"title": string,
+"doneWhen": string,
+"timeHint": string
+}
+]
+}
+]
 }`;
 
 function parseOverviewTips(raw: unknown, whyThisGoal: string): string[] {
@@ -169,6 +278,7 @@ function normalizeRoutineOption(raw: unknown, profile: UserProfile, index: numbe
   if (!profile.habitIds.includes(primaryGoalId)) {
     throw new Error('Routine picked an invalid goal');
   }
+  const title = String(obj.title ?? '').trim();
   const whyThisGoal = String(obj.whyThisGoal ?? '').trim();
   const intro = String(obj.intro ?? '').trim();
   const id = String(obj.id ?? `routine-${index + 1}`).trim() || `routine-${index + 1}`;
@@ -181,10 +291,12 @@ function normalizeRoutineOption(raw: unknown, profile: UserProfile, index: numbe
   }
 
   const habit = habitCatalog.find((h) => h.id === primaryGoalId);
+  const primaryGoalTitle = habit?.title ?? primaryGoalId;
   return {
     id,
+    title: title || primaryGoalTitle,
     primaryGoalId,
-    primaryGoalTitle: habit?.title ?? primaryGoalId,
+    primaryGoalTitle,
     whyThisGoal,
     intro,
     overviewTips: parseOverviewTips(obj.overviewTips, whyThisGoal),
