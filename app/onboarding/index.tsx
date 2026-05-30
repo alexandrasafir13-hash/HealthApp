@@ -46,6 +46,8 @@ export default function OnboardingScreen() {
   const progress = (stepIndex + 1) / STEPS.length;
 
   const toggleDataMethod = (id: DataMethodId) => {
+    const option = dataMethodOptions.find((m) => m.id === id);
+    if (option?.enabled === false) return;
     setDataMethods((prev) =>
       prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]
     );
@@ -135,21 +137,32 @@ export default function OnboardingScreen() {
           {step === 'data' && (
             <View style={styles.stepBlock}>
               {dataMethodOptions.map((option) => {
-                const selected = dataMethods.includes(option.id);
+                const enabled = option.enabled !== false;
+                const selected = enabled && dataMethods.includes(option.id);
                 return (
                   <Pressable
                     key={option.id}
-                    style={[styles.optionCard, selected && styles.optionCardSelected]}
-                    onPress={() => toggleDataMethod(option.id)}>
+                    style={[
+                      styles.optionCard,
+                      selected && styles.optionCardSelected,
+                      !enabled && styles.optionCardDisabled,
+                    ]}
+                    onPress={() => toggleDataMethod(option.id)}
+                    disabled={!enabled}
+                    accessibilityState={{ disabled: !enabled }}>
                     <View style={[styles.optionIcon, selected && styles.optionIconSelected]}>
                       <SymbolView
                         name={option.icon as 'heart.fill'}
-                        tintColor={selected ? palette.teal : palette.slateMuted}
+                        tintColor={
+                          !enabled ? palette.slateSubtle : selected ? palette.teal : palette.slateMuted
+                        }
                         size={22}
                       />
                     </View>
                     <View style={styles.optionContent}>
-                      <Text style={styles.optionTitle}>{option.title}</Text>
+                      <Text style={[styles.optionTitle, !enabled && styles.optionTitleDisabled]}>
+                        {option.title}
+                      </Text>
                     </View>
                     <View style={[styles.optionCheck, selected && styles.optionCheckSelected]}>
                       {selected && <Text style={styles.optionCheckMark}>✓</Text>}
@@ -274,6 +287,9 @@ const styles = StyleSheet.create({
     borderColor: palette.teal,
     backgroundColor: palette.sageLight,
   },
+  optionCardDisabled: {
+    opacity: 0.45,
+  },
   optionIcon: {
     width: 44,
     height: 44,
@@ -292,6 +308,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: palette.slate,
+  },
+  optionTitleDisabled: {
+    color: palette.slateSubtle,
   },
   habitRow: {
     flexDirection: 'row',

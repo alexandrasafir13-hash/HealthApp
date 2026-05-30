@@ -6,12 +6,14 @@ export const dataMethodOptions: DataMethodOption[] = [
     title: 'Apple Health',
     description: 'Sleep, heart rate, steps, and workouts from your iPhone and Watch.',
     icon: 'heart.fill',
+    enabled: false,
   },
   {
     id: 'google-health',
     title: 'Google Health',
     description: 'Sync activity and vitals through Health Connect on Android.',
     icon: 'heart.circle.fill',
+    enabled: false,
   },
   {
     id: 'upload',

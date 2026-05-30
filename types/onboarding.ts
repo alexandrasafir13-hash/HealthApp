@@ -12,6 +12,7 @@ export interface DataMethodOption {
   title: string;
   description: string;
   icon: string;
+  enabled?: boolean;
 }
 
 export interface HabitOption {
