@@ -28,7 +28,7 @@ const STEP_HEADINGS: Record<Step, string> = {
   weight: 'What is your weight?',
   height: 'What is your height?',
   data: 'How do you want to add data?',
-  habits: 'Which habits do you want to track?',
+  habits: 'What do you want to improve?',
 };
 
 function parsePositiveInt(value: string): number | null {
@@ -69,9 +69,7 @@ export default function OnboardingScreen() {
   const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
   const [dataMethod, setDataMethod] = useState<DataMethodId>('upload');
-  const [habitIds, setHabitIds] = useState<string[]>(
-    habitCatalog.slice(0, 3).map((h) => h.id)
-  );
+  const [habitIds, setHabitIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   const step = STEPS[stepIndex];
@@ -299,10 +297,7 @@ export default function OnboardingScreen() {
                     style={[styles.optionCard, selected && styles.optionCardSelected]}
                     onPress={() => toggleHabit(habit.id)}>
                     <View style={styles.optionContent}>
-                      <View style={styles.habitRow}>
-                        <Text style={styles.optionTitle}>{habit.title}</Text>
-                        <Text style={styles.habitTime}>{habit.time}</Text>
-                      </View>
+                      <Text style={styles.optionTitle}>{habit.title}</Text>
                       <Text style={styles.optionBody}>{habit.reason}</Text>
                     </View>
                     <View style={[styles.optionCheck, selected && styles.optionCheckSelected]}>

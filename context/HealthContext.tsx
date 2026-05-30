@@ -65,13 +65,8 @@ interface HealthContextValue {
 
 const HealthContext = createContext<HealthContextValue | null>(null);
 
-const ALWAYS_INCLUDED_HABIT_IDS = ['sleep-duration', 'healthy-meals'];
-
 function habitsFromIds(ids: string[]): PreventionHabit[] {
   const mergedIds = [...ids];
-  for (const id of ALWAYS_INCLUDED_HABIT_IDS) {
-    if (!mergedIds.includes(id)) mergedIds.push(id);
-  }
   const selected = habitCatalog.filter((h) => mergedIds.includes(h.id));
   if (selected.length === 0) return defaultHabits;
   const byId = new Map(selected.map((h) => [h.id, h]));

@@ -28,6 +28,15 @@ interface HabitWeekStat {
 }
 
 const HABIT_SUGGESTIONS: Record<string, string> = {
+  'sleep-schedule':
+    'Pick a bedtime you can repeat tonight — a steady sleep schedule helps you wake up feeling rested.',
+  'exercise-routine':
+    'Even a short walk or stretch counts — small movement today keeps your routine going.',
+  'eating-habits':
+    'One nourishing meal today gives your body steady fuel and makes healthier eating easier to repeat.',
+  hydration: 'Keep water within reach today — small sips through the day support recovery.',
+  'screen-time':
+    'Try 15 minutes without screens before bed — less screen time can help you feel less tired tomorrow.',
   'wind-down':
     'Tonight, try 15 minutes without screens before bed — your wind-down habit protects sleep more than you might think.',
   h3: 'Tonight, try 15 minutes without screens before bed — your wind-down habit protects sleep more than you might think.',
@@ -36,7 +45,6 @@ const HABIT_SUGGESTIONS: Record<string, string> = {
   'morning-sun':
     'Step outside for a few minutes of morning light — it gently anchors your sleep-wake rhythm.',
   h1: 'Step outside for a few minutes of morning light — it gently anchors your sleep-wake rhythm.',
-  hydration: 'Keep water within reach today — small sips through the day support recovery.',
   h2: 'Keep water within reach today — small sips through the day support recovery.',
   movement:
     'A short walk or stretch break helps energy and stress alike — even five minutes is a win.',

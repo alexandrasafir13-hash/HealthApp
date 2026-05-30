@@ -33,51 +33,33 @@ export const dataMethodOptions: DataMethodOption[] = [
 
 export const habitCatalog: HabitOption[] = [
   {
-    id: 'morning-sun',
-    title: 'Morning sunlight',
-    time: '7:30 AM',
-    reason: 'Helps steady your sleep-wake rhythm',
+    id: 'sleep-schedule',
+    title: 'Sleep schedule',
+    time: '10:30 PM',
+    reason: 'Get better rest',
+  },
+  {
+    id: 'exercise-routine',
+    title: 'Exercise routine',
+    time: '7:00 AM',
+    reason: 'Be more in shape',
+  },
+  {
+    id: 'eating-habits',
+    title: 'Eating habits',
+    time: '12:00 PM',
+    reason: 'Eat healthier',
   },
   {
     id: 'hydration',
-    title: 'Hydration check',
+    title: 'Hydration',
     time: '10:00 AM',
-    reason: 'Supports recovery and immune function',
+    reason: 'Get the required amount of water',
   },
   {
-    id: 'movement',
-    title: 'Short movement break',
-    time: '2:00 PM',
-    reason: 'Counters long sitting and stress buildup',
-  },
-  {
-    id: 'wind-down',
-    title: 'Wind-down (no screens)',
-    time: '9:45 PM',
-    reason: 'Protects tonight’s sleep target',
-  },
-  {
-    id: 'evening-checkin',
-    title: 'Evening check-in',
+    id: 'screen-time',
+    title: 'Less screen time',
     time: '9:00 PM',
-    reason: 'Tracks symptoms before they escalate',
-  },
-  {
-    id: 'breathing',
-    title: 'Breathing reset',
-    time: '3:30 PM',
-    reason: 'Lowers stress during afternoon dips',
-  },
-  {
-    id: 'sleep-duration',
-    title: 'Sleep (8h-10h)',
-    time: '7:00 AM',
-    reason: 'Aim for 8–10 hours to support recovery and energy',
-  },
-  {
-    id: 'healthy-meals',
-    title: 'Healthy meals',
-    time: '12:00 PM',
-    reason: 'Nutritious food fuels recovery and immune health',
+    reason: 'Reduce tiredness',
   },
 ];

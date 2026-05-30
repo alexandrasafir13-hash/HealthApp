@@ -4,9 +4,13 @@ type HabitLike = { id: string; title: string; completed: boolean };
 export type MetricTag = 'sleep' | 'energy' | 'stress' | 'immunity';
 
 const HABIT_TAGS: Record<string, MetricTag[]> = {
+  'sleep-schedule': ['sleep', 'energy'],
+  'exercise-routine': ['energy', 'stress'],
+  'eating-habits': ['energy', 'immunity'],
+  hydration: ['energy', 'immunity'],
+  'screen-time': ['sleep', 'energy'],
   'morning-sun': ['sleep', 'energy'],
   h1: ['sleep', 'energy'],
-  hydration: ['energy', 'immunity'],
   h2: ['energy', 'immunity'],
   movement: ['energy', 'stress'],
   'wind-down': ['sleep'],
