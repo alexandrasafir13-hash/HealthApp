@@ -14,6 +14,12 @@ function bmiAccent(category: HealthSnapshot['bmiCategory']) {
   return metricScaleColors.caution;
 }
 
+function weightBandAccent(status: HealthSnapshot['weightBandStatus']) {
+  if (status === 'within') return metricScaleColors.good;
+  if (status === 'above') return metricScaleColors.caution;
+  return metricScaleColors.caution;
+}
+
 function Stat({ label, value, detail, accent }: { label: string; value: string; detail?: string; accent?: string }) {
   return (
     <View style={styles.stat}>
@@ -45,19 +51,25 @@ export default function HealthSnapshotCard({ snapshot, name }: Props) {
           accent={accent}
         />
         <Stat
+          label="Your weight"
+          value={`${snapshot.weightKg} kg`}
+          detail={snapshot.weightBandDetail}
+          accent={weightBandAccent(snapshot.weightBandStatus)}
+        />
+        <Stat
           label="Healthy weight"
           value={`${snapshot.healthyWeightMinKg}–${snapshot.healthyWeightMaxKg} kg`}
-          detail="For your height"
+          detail="Target range for your height"
+        />
+        <Stat
+          label="Daily calories"
+          value={`~${snapshot.activeCalorieMin.toLocaleString()}–${snapshot.activeCalorieMax.toLocaleString()}`}
+          detail={`With light activity (~${snapshot.restingCalories.toLocaleString()} at rest)`}
         />
         <Stat
           label="Water goal"
           value={`~${snapshot.dailyWaterLiters} L`}
           detail="Suggested daily intake"
-        />
-        <Stat
-          label="Resting calories"
-          value={`~${snapshot.restingCalories.toLocaleString()} kcal`}
-          detail="Energy at rest each day"
         />
         <Stat
           label="Sleep"

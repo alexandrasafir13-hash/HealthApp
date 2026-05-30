@@ -1,15 +1,21 @@
 import { BiologicalSex } from '@/types/onboarding';
 
 export type BmiCategory = 'underweight' | 'healthy' | 'overweight' | 'obese';
+export type WeightBandStatus = 'within' | 'below' | 'above';
 
 export interface HealthSnapshot {
   bmi: number;
   bmiLabel: string;
   bmiCategory: BmiCategory;
+  weightKg: number;
+  weightBandStatus: WeightBandStatus;
+  weightBandDetail: string;
   healthyWeightMinKg: number;
   healthyWeightMaxKg: number;
   dailyWaterLiters: number;
   restingCalories: number;
+  activeCalorieMin: number;
+  activeCalorieMax: number;
   sleepMinHours: number;
   sleepMaxHours: number;
 }
@@ -71,6 +77,30 @@ export function recommendedSleepHours(age: number): { minHours: number; maxHours
   return { minHours: 7, maxHours: 8 };
 }
 
+export function weightVsHealthyBand(
+  weightKg: number,
+  minKg: number,
+  maxKg: number,
+): { status: WeightBandStatus; detail: string } {
+  if (weightKg >= minKg && weightKg <= maxKg) {
+    return { status: 'within', detail: 'Within healthy range for your height' };
+  }
+  if (weightKg < minKg) {
+    const offset = Math.round(minKg - weightKg);
+    return { status: 'below', detail: `${offset} kg below healthy range for your height` };
+  }
+  const offset = Math.round(weightKg - maxKg);
+  return { status: 'above', detail: `${offset} kg above healthy range for your height` };
+}
+
+/** Light to moderate daily calories from resting (Mifflin-St Jeor) baseline. */
+export function dailyCalorieRange(restingCaloriesKcal: number): { min: number; max: number } {
+  return {
+    min: Math.round(restingCaloriesKcal * 1.375),
+    max: Math.round(restingCaloriesKcal * 1.55),
+  };
+}
+
 export function buildHealthSnapshot(
   weightKg: number,
   heightCm: number,
@@ -81,15 +111,23 @@ export function buildHealthSnapshot(
   const category = getBmiCategory(bmi);
   const range = healthyWeightRangeKg(heightCm);
   const sleep = recommendedSleepHours(age);
+  const resting = restingCalories(weightKg, heightCm, age, sex);
+  const calories = dailyCalorieRange(resting);
+  const weightBand = weightVsHealthyBand(weightKg, range.min, range.max);
 
   return {
     bmi: Math.round(bmi * 10) / 10,
     bmiLabel: getBmiLabel(category),
     bmiCategory: category,
+    weightKg: Math.round(weightKg),
+    weightBandStatus: weightBand.status,
+    weightBandDetail: weightBand.detail,
     healthyWeightMinKg: range.min,
     healthyWeightMaxKg: range.max,
     dailyWaterLiters: dailyWaterLiters(weightKg),
-    restingCalories: restingCalories(weightKg, heightCm, age, sex),
+    restingCalories: resting,
+    activeCalorieMin: calories.min,
+    activeCalorieMax: calories.max,
     sleepMinHours: sleep.minHours,
     sleepMaxHours: sleep.maxHours,
   };
