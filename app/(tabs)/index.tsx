@@ -3,13 +3,11 @@ import { LayoutChangeEvent, ScrollView, StyleSheet, View, useWindowDimensions } 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import PlanSection from '@/components/PlanSection';
-import HealthInsightsCard from '@/components/HealthInsightsCard';
 import TodayPlanCheckIn from '@/components/TodayPlanCheckIn';
 import TodayPlanSubmitButton from '@/components/TodayPlanSubmitButton';
 import { Text } from '@/components/Themed';
 import { useHealth } from '@/context/HealthContext';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
-import { useHealthInsights } from '@/hooks/useHealthInsights';
 import { todayGreetingLine } from '@/lib/todayGreeting';
 import { pageStyles, usePageLayout } from '@/hooks/usePageLayout';
 import { palette } from '@/constants/theme';
@@ -28,8 +26,7 @@ export default function TodayScreen() {
     planLoading,
     planError,
     acceptPlan,
-    todayShowInsights,
-    editTodayCheckIn,
+    todayCheckInSaved,
   } = useHealth();
 
   const [contentTop, setContentTop] = useState<number | null>(null);
@@ -41,30 +38,18 @@ export default function TodayScreen() {
 
   const greeting = todayGreetingLine(profile?.name);
 
-  const {
-    configured: insightsConfigured,
-    insight: llmInsight,
-    isLoading: insightsLoading,
-    error: insightsError,
-    refresh: refreshInsights,
-  } = useHealthInsights({
-    profile,
-    personalPlan,
-    enabled: todayShowInsights && !reviewingPlan,
-  });
-
   const onAnchorLayout = useCallback(
     (event: LayoutChangeEvent) => {
-      if (contentTop != null || todayShowInsights || reviewingPlan) return;
+      if (contentTop != null || todayCheckInSaved || reviewingPlan) return;
       const anchorHeight = event.nativeEvent.layout.height;
       const visibleHeight = windowHeight - insets.top - insets.bottom - TAB_BAR_HEIGHT;
       const top = Math.max(insets.top + 16, (visibleHeight - anchorHeight) / 2);
       setContentTop(top);
     },
-    [contentTop, todayShowInsights, reviewingPlan, insets.bottom, insets.top, windowHeight],
+    [contentTop, todayCheckInSaved, reviewingPlan, insets.bottom, insets.top, windowHeight],
   );
 
-  const scrollPaddingTop = todayShowInsights ? insets.top + 16 : (contentTop ?? insets.top + 48);
+  const scrollPaddingTop = todayCheckInSaved ? insets.top + 16 : (contentTop ?? insets.top + 48);
 
   if (reviewingPlan) {
     return (
@@ -108,31 +93,11 @@ export default function TodayScreen() {
       ]}
       keyboardShouldPersistTaps="handled">
       <View style={[pageStyle, styles.page]}>
-        {!todayShowInsights ? (
-          <>
-            <View onLayout={onAnchorLayout}>
-              <Text style={styles.greeting}>{greeting}</Text>
-            </View>
-            <TodayPlanCheckIn />
-            <TodayPlanSubmitButton />
-          </>
-        ) : (
-          profile && (
-            <View style={styles.insightsView}>
-              <Text style={styles.greeting}>{greeting}</Text>
-              <Text style={styles.insightsIntro}>Based on your check-in today</Text>
-              <HealthInsightsCard
-                configured={insightsConfigured}
-                insight={llmInsight}
-                isLoading={insightsLoading}
-                error={insightsError}
-                onRefresh={refreshInsights}
-                onEditCheckIn={editTodayCheckIn}
-                editLabel="Edit today's check-in"
-              />
-            </View>
-          )
-        )}
+        <View onLayout={onAnchorLayout}>
+          <Text style={styles.greeting}>{greeting}</Text>
+        </View>
+        <TodayPlanCheckIn />
+        <TodayPlanSubmitButton />
       </View>
     </ScrollView>
   );
@@ -155,21 +120,11 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 16,
   },
-  insightsView: {
-    width: '100%',
-    gap: 12,
-  },
   greeting: {
     fontSize: 34,
     fontWeight: '700',
     lineHeight: 42,
     color: palette.slate,
-    textAlign: 'left',
-  },
-  insightsIntro: {
-    fontSize: 16,
-    lineHeight: 22,
-    color: palette.slateMuted,
     textAlign: 'left',
   },
 });

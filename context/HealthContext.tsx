@@ -45,7 +45,6 @@ interface HealthContextValue {
   todayCheckInQuestions: DailyCheckInQuestion[];
   todayCheckInCanSubmit: boolean;
   todayCheckInSaved: boolean;
-  todayShowInsights: boolean;
   profile: UserProfile | null;
   onboardingComplete: boolean;
   isReady: boolean;
@@ -53,7 +52,6 @@ interface HealthContextValue {
   completeAction: (insightId: string, actionId: string) => void;
   updateCheckInAnswer: (questionId: string, value: PlanCheckInAnswer) => void;
   submitPlanCheckIn: () => Promise<boolean>;
-  editTodayCheckIn: () => void;
   acceptPlan: () => Promise<void>;
   completeOnboarding: (input: {
     name: string;
@@ -78,6 +76,13 @@ function isAnswerFilled(value: PlanCheckInAnswer | undefined): boolean {
   return false;
 }
 
+function checkInAnswersMatch(
+  saved: Record<string, PlanCheckInAnswer>,
+  draft: Record<string, PlanCheckInAnswer>,
+): boolean {
+  return JSON.stringify(saved) === JSON.stringify(draft);
+}
+
 export function HealthProvider({ children }: { children: React.ReactNode }) {
   const [completedActions, setCompletedActions] = useState<Set<string>>(new Set());
   const [checkInLog, setCheckInLog] = useState<CheckInLog>({});
@@ -88,7 +93,6 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
   const [planLoading, setPlanLoading] = useState(false);
   const [planError, setPlanError] = useState<string | null>(null);
   const [todayCheckInDraft, setTodayCheckInDraft] = useState<Record<string, PlanCheckInAnswer>>({});
-  const [todayShowInsights, setTodayShowInsights] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
   const accountStartDate = useMemo(
@@ -161,7 +165,6 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       const savedToday = savedPlanCheckIns[today];
       if (savedToday) {
         setTodayCheckInDraft(savedToday.answers);
-        setTodayShowInsights(true);
       }
 
       setIsReady(true);
@@ -193,11 +196,14 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
 
   const todayKey = localDateKey();
 
-  const todayCheckInSaved = planCheckInLog[todayKey]?.submittedAt != null && todayShowInsights;
+  const todayCheckInSaved = useMemo(() => {
+    const entry = planCheckInLog[todayKey];
+    if (!entry?.submittedAt) return false;
+    return checkInAnswersMatch(entry.answers, todayCheckInDraft);
+  }, [planCheckInLog, todayKey, todayCheckInDraft]);
 
   const updateCheckInAnswer = useCallback((questionId: string, value: PlanCheckInAnswer) => {
     setTodayCheckInDraft((prev) => ({ ...prev, [questionId]: value }));
-    setTodayShowInsights(false);
   }, []);
 
   const submitPlanCheckIn = useCallback(async (): Promise<boolean> => {
@@ -211,16 +217,8 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     };
     setPlanCheckInLog((prev) => ({ ...prev, [today]: entry }));
     await savePlanCheckInEntry(entry);
-    setTodayShowInsights(true);
     return true;
   }, [personalPlan, activeWeek, todayCheckInCanSubmit, todayCheckInDraft]);
-
-  const editTodayCheckIn = useCallback(() => {
-    const today = localDateKey();
-    const saved = planCheckInLog[today];
-    if (saved) setTodayCheckInDraft(saved.answers);
-    setTodayShowInsights(false);
-  }, [planCheckInLog]);
 
   const completeOnboarding = useCallback(
     async (input: {
@@ -278,10 +276,8 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       todayCheckInQuestions,
       todayCheckInCanSubmit,
       todayCheckInSaved,
-      todayShowInsights,
       updateCheckInAnswer,
       submitPlanCheckIn,
-      editTodayCheckIn,
       acceptPlan,
       profile,
       onboardingComplete: profile !== null,
@@ -306,10 +302,8 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       todayCheckInQuestions,
       todayCheckInCanSubmit,
       todayCheckInSaved,
-      todayShowInsights,
       updateCheckInAnswer,
       submitPlanCheckIn,
-      editTodayCheckIn,
       acceptPlan,
       profile,
       isReady,
