@@ -6,7 +6,7 @@ import { useBreakpoint } from '@/hooks/useBreakpoint';
 
 export function usePageLayout() {
   const insets = useSafeAreaInsets();
-  const { isTabletUp, isDesktop, pageMaxWidth } = useBreakpoint();
+  const { isTabletUp, isDesktop } = useBreakpoint();
 
   return {
     isTabletUp,
@@ -16,10 +16,7 @@ export function usePageLayout() {
       isTabletUp && pageStyles.contentTablet,
       { paddingTop: insets.top + (isTabletUp ? 24 : 8) },
     ],
-    pageStyle: [
-      pageStyles.page,
-      pageMaxWidth != null && { maxWidth: pageMaxWidth, width: '100%' as const },
-    ],
+    pageStyle: pageStyles.page,
   };
 }
 

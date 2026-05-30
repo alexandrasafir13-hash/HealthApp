@@ -30,7 +30,7 @@ const STEP_HEADINGS: Record<Step, string> = {
 
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
-  const { pageStyle, isTabletUp } = usePageLayout();
+  const { isTabletUp } = usePageLayout();
   const router = useRouter();
   const { completeOnboarding } = useHealth();
 
@@ -99,11 +99,9 @@ export default function OnboardingScreen() {
     <KeyboardAvoidingView
       style={pageStyles.scroll}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={[styles.shell, isTabletUp && styles.shellTablet]}>
         <View
           style={[
             styles.container,
-            pageStyle,
             isTabletUp ? styles.containerTablet : styles.containerPhone,
             { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 },
           ]}>
@@ -205,19 +203,11 @@ export default function OnboardingScreen() {
           </Pressable>
         </View>
         </View>
-      </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  shell: {
-    flex: 1,
-    width: '100%',
-  },
-  shellTablet: {
-    alignItems: 'center',
-  },
   container: {
     flex: 1,
   },

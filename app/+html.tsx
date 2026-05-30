@@ -28,12 +28,29 @@ export default function Root({ children }: { children: ReactNode }) {
   );
 }
 
+/** Keep in sync with PAGE_MAX_WIDTH in hooks/useBreakpoint.ts */
+const PAGE_MAX_WIDTH_PX = 720;
+
 const responsiveBackground = `
+html,
+body,
+#root {
+  height: 100%;
+}
 body {
-  background-color: #fff;
+  margin: 0;
+  background-color: #F7FAF9;
+}
+#root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: ${PAGE_MAX_WIDTH_PX}px;
+  margin-left: auto;
+  margin-right: auto;
 }
 @media (prefers-color-scheme: dark) {
   body {
-    background-color: #000;
+    background-color: #111827;
   }
 }`;

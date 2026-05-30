@@ -4,6 +4,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
+import AppShell from '@/components/AppShell';
 import { useColorScheme } from '@/components/useColorScheme';
 import { HealthProvider } from '@/context/HealthContext';
 import { palette } from '@/constants/theme';
@@ -56,7 +57,7 @@ export default function RootLayout() {
   }, [loaded]);
 
   if (!loaded) {
-    return null;
+    return <AppShell />;
   }
 
   return <RootLayoutNav />;
@@ -66,17 +67,19 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   return (
-    <HealthProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? HealthyDarkTheme : HealthyLightTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="welcome" />
-          <Stack.Screen name="onboarding" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="insight/[id]" options={{ headerShown: true, title: 'Body insight' }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'About Healthy' }} />
-        </Stack>
-      </ThemeProvider>
-    </HealthProvider>
+    <AppShell>
+      <HealthProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? HealthyDarkTheme : HealthyLightTheme}>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="welcome" />
+            <Stack.Screen name="onboarding" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="insight/[id]" options={{ headerShown: true, title: 'Body insight' }} />
+            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'About Healthy' }} />
+          </Stack>
+        </ThemeProvider>
+      </HealthProvider>
+    </AppShell>
   );
 }
