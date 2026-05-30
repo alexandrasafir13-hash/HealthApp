@@ -10,7 +10,6 @@ import { Text } from '@/components/Themed';
 import {
   deviceCategories,
   getAllDataSources,
-  healthApps,
   manualCheckInSource,
   otherDeviceSource,
 } from '@/data/dataSources';
@@ -18,7 +17,7 @@ import { useHealth } from '@/context/HealthContext';
 import { dataMethodOptions } from '@/data/onboardingOptions';
 import { pageStyles, usePageLayout } from '@/hooks/usePageLayout';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
-import { categoryColors, palette } from '@/constants/theme';
+import { palette } from '@/constants/theme';
 import { DataSource } from '@/types/health';
 
 const DATA_INTRO =
@@ -32,8 +31,9 @@ export default function DataScreen() {
   const { isTabletUp } = useBreakpoint();
   const { profile } = useHealth();
   const [sources, setSources] = useState<DataSource[]>(getAllDataSources);
-  const [expanded, setExpanded] = useState({ apps: false, devices: false });
-  const [infoVisible, setInfoVisible] = useState(false);  const setupMethods = dataMethodOptions.filter((m) => profile?.dataMethods?.includes(m.id));
+  const [expanded, setExpanded] = useState({ devices: false });
+  const [infoVisible, setInfoVisible] = useState(false);
+  const setupMethods = dataMethodOptions.filter((m) => profile?.dataMethods?.includes(m.id));
 
   const sourceMap = useMemo(() => {
     const map = new Map<string, DataSource>();
@@ -121,7 +121,8 @@ export default function DataScreen() {
           </Pressable>
         </Modal>
 
-        {setupMethods.length > 0 && (          <View style={styles.setupBox}>
+        {setupMethods.length > 0 && (
+          <View style={styles.setupBox}>
             <Text style={styles.setupTitle}>Your setup</Text>
             <Text style={styles.setupBody}>
               {setupMethods.map((m) => m.title).join(' · ')}
@@ -136,20 +137,6 @@ export default function DataScreen() {
         </View>
 
         <Text style={styles.sourcesHeading}>Your sources</Text>
-
-        <CollapsibleInsightSection
-          title="Apps"
-          color={categoryColors.sleep}
-          count={healthApps.length}
-          expanded={expanded.apps}
-          onToggle={() => setExpanded((prev) => ({ ...prev, apps: !prev.apps }))}>
-          <Text style={styles.sectionSubtitle}>
-            Connect health and fitness apps to import sleep, activity, heart rate, and more.
-          </Text>
-          {healthApps.map((app) => (
-            <DataSourceCard key={app.id} source={resolve(app)} onToggle={toggleSource} />
-          ))}
-        </CollapsibleInsightSection>
 
         <CollapsibleInsightSection
           title="Devices"

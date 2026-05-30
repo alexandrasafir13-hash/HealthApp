@@ -171,10 +171,7 @@ export default function OnboardingScreen() {
                     style={[styles.optionCard, selected && styles.optionCardSelected]}
                     onPress={() => toggleHabit(habit.id)}>
                     <View style={styles.optionContent}>
-                      <View style={styles.habitRow}>
-                        <Text style={styles.optionTitle}>{habit.title}</Text>
-                        <Text style={styles.habitTime}>{habit.time}</Text>
-                      </View>
+                      <Text style={styles.optionTitle}>{habit.title}</Text>
                       <Text style={styles.optionBody}>{habit.reason}</Text>
                     </View>
                     <View style={[styles.optionCheck, selected && styles.optionCheckSelected]}>
@@ -324,17 +321,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     color: palette.slateMuted,
-  },
-  habitRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 3,
-  },
-  habitTime: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: palette.teal,
   },
   optionCheck: {
     width: 24,

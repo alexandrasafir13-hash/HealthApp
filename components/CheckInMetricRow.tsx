@@ -7,12 +7,13 @@ import { palette } from '@/constants/theme';
 interface Props {
   label: string;
   value: number;
-  onChange: (value: number) => void;
+  onChange?: (value: number) => void;
   /** Stress: lower is better. Energy & sleep: higher is better (default) */
   lowerIsBetter?: boolean;
+  readOnly?: boolean;
 }
 
-export default function CheckInMetricRow({ label, value, onChange, lowerIsBetter }: Props) {
+export default function CheckInMetricRow({ label, value, onChange, lowerIsBetter, readOnly }: Props) {
   return (
     <View style={styles.block}>
       <Text style={styles.label}>{label}</Text>
@@ -28,7 +29,7 @@ export default function CheckInMetricRow({ label, value, onChange, lowerIsBetter
         cautionMax={3}
         variant="minimal"
         showStateLabel
-        onValueChange={onChange}
+        onValueChange={readOnly ? undefined : onChange}
       />
     </View>
   );
@@ -37,11 +38,6 @@ export default function CheckInMetricRow({ label, value, onChange, lowerIsBetter
 const styles = StyleSheet.create({
   block: {
     marginBottom: 20,
-    backgroundColor: palette.card,
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: palette.border,
   },
   label: {
     fontSize: 15,

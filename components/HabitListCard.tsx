@@ -5,7 +5,6 @@ import { palette } from '@/constants/theme';
 
 interface Props {
   title: string;
-  time: string;
   reason: string;
   completed: boolean;
   onPress: () => void;
@@ -14,7 +13,6 @@ interface Props {
 
 export default function HabitListCard({
   title,
-  time,
   reason,
   completed,
   onPress,
@@ -32,10 +30,7 @@ export default function HabitListCard({
         {completed && <Text style={styles.checkmark}>✓</Text>}
       </View>
       <View style={styles.habitContent}>
-        <View style={styles.habitHeader}>
-          <Text style={[styles.habitTitle, completed && styles.habitTitleDone]}>{title}</Text>
-          <Text style={styles.habitTime}>{time}</Text>
-        </View>
+        <Text style={[styles.habitTitle, completed && styles.habitTitleDone]}>{title}</Text>
         <Text style={styles.habitReason}>{reason}</Text>
       </View>
     </Pressable>
@@ -78,26 +73,15 @@ const styles = StyleSheet.create({
   habitContent: {
     flex: 1,
   },
-  habitHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
   habitTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: palette.slate,
-    flex: 1,
-    marginRight: 8,
+    marginBottom: 4,
   },
   habitTitleDone: {
     textDecorationLine: 'line-through',
     color: palette.slateSubtle,
-  },
-  habitTime: {
-    fontSize: 13,
-    color: palette.teal,
-    fontWeight: '600',
   },
   habitReason: {
     fontSize: 13,

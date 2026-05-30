@@ -247,7 +247,7 @@ export const manualCheckInSource: DataSource = {
 
 export function getAllDataSources(): DataSource[] {
   const devices = [...deviceCategories.flatMap((c) => c.devices), otherDeviceSource];
-  return [...healthApps, ...devices, manualCheckInSource];
+  return [...devices, manualCheckInSource];
 }
 
 /** @deprecated Use getAllDataSources */

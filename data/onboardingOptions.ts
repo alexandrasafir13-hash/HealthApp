@@ -64,4 +64,16 @@ export const habitCatalog: HabitOption[] = [
     time: '3:30 PM',
     reason: 'Lowers stress during afternoon dips',
   },
+  {
+    id: 'sleep-duration',
+    title: 'Sleep (8h-10h)',
+    time: '7:00 AM',
+    reason: 'Aim for 8–10 hours to support recovery and energy',
+  },
+  {
+    id: 'healthy-meals',
+    title: 'Healthy meals',
+    time: '12:00 PM',
+    reason: 'Nutritious food fuels recovery and immune health',
+  },
 ];

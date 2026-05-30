@@ -19,14 +19,12 @@ interface Props {
 export default function CustomHabitsSection({ habits, onAdd, onToggle, onRemove }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [title, setTitle] = useState('');
-  const [time, setTime] = useState('');
 
   const handleAdd = () => {
     const trimmed = title.trim();
     if (!trimmed) return;
-    onAdd(trimmed, time.trim() || 'Anytime');
+    onAdd(trimmed, '');
     setTitle('');
-    setTime('');
   };
 
   return (
@@ -50,18 +48,9 @@ export default function CustomHabitsSection({ habits, onAdd, onToggle, onRemove 
             placeholderTextColor={palette.slateSubtle}
             value={title}
             onChangeText={setTitle}
-            returnKeyType="next"
-            maxLength={80}
-          />
-          <TextInput
-            style={[styles.input, styles.inputTime]}
-            placeholder="Time (optional)"
-            placeholderTextColor={palette.slateSubtle}
-            value={time}
-            onChangeText={setTime}
             returnKeyType="done"
             onSubmitEditing={handleAdd}
-            maxLength={24}
+            maxLength={80}
           />
           <Pressable
             style={({ pressed }) => [
@@ -85,7 +74,6 @@ export default function CustomHabitsSection({ habits, onAdd, onToggle, onRemove 
               <HabitListCard
                 key={habit.id}
                 title={habit.title}
-                time={habit.time}
                 reason={CUSTOM_HABIT_REASON}
                 completed={habit.completed}
                 onPress={() => onToggle(habit.id)}
@@ -121,9 +109,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 15,
     color: palette.slate,
-  },
-  inputTime: {
-    fontSize: 14,
   },
   addButton: {
     backgroundColor: palette.teal,
