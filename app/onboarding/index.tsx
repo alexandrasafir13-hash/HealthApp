@@ -99,23 +99,23 @@ export default function OnboardingScreen() {
             isTabletUp ? styles.containerTablet : styles.containerPhone,
             { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 },
           ]}>
-        <View style={styles.header}>
-          <Text style={styles.kicker}>Welcome to Healthy</Text>
-          <Text style={styles.title}>{STEP_LABELS[step]}</Text>
-          <Text style={styles.stepCount}>
-            Step {stepIndex + 1} of {STEPS.length}
-          </Text>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-          </View>
-        </View>
-
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
-          {step === 'name' && (
+          <View style={styles.header}>
+              <Text style={styles.kicker}>Welcome to Healthy</Text>
+              <Text style={styles.title}>{STEP_LABELS[step]}</Text>
+              <Text style={styles.stepCount}>
+                Step {stepIndex + 1} of {STEPS.length}
+              </Text>
+              <View style={styles.progressTrack}>
+                <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+              </View>
+            </View>
+
+            {step === 'name' && (
             <View style={styles.stepBlock}>
               <Text style={styles.lead}>
                 We&apos;ll personalize your daily plan and greetings.
@@ -234,6 +234,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  body: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
   containerPhone: {
     paddingHorizontal: 20,
   },
@@ -276,10 +280,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 16,
+    flexGrow: 1,
+    justifyContent: 'flex-end',
+    paddingBottom: 8,
   },
   stepBlock: {
     gap: 12,
+    width: '100%',
   },
   lead: {
     fontSize: 15,
@@ -377,6 +384,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     paddingTop: 12,
+    width: '100%',
   },
   backButton: {
     paddingVertical: 14,
