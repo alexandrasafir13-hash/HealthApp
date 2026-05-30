@@ -19,10 +19,12 @@ export interface PlanGenerationContext {
     onboardingAnswers: { question: string; answer: string }[];
   };
   onboardingAnswers: { question: string; answer: string }[];
+  context_anchors: string[];
   baselineMetrics: { label: string; value: string | number; unit: string | null }[];
   desiredOutcome: string;
   constraints: string[];
   medicalConditions: string[];
+  medical_flags: string[];
 }
 
 function labelsForConditions(ids: UserProfile['medicalConditionIds']): string[] {
@@ -75,6 +77,7 @@ export function buildRoutineGenerationContext(profile: UserProfile): PlanGenerat
   const goalId = rankGoalIds(profile.habitIds, profile.goalDetails)[0] ?? profile.habitIds[0] ?? 'sleep-schedule';
   const habit = habitCatalog.find((h) => h.id === goalId);
   const onboardingAnswers = onboardingAnswersForGoal(profile, goalId);
+  const medicalFlags = labelsForConditions(profile.medicalConditionIds);
 
   return {
     userProfile: {
@@ -91,10 +94,12 @@ export function buildRoutineGenerationContext(profile: UserProfile): PlanGenerat
       onboardingAnswers,
     },
     onboardingAnswers,
+    context_anchors: onboardingAnswers.map((row) => `${row.question}: ${row.answer}`),
     baselineMetrics: baselineMetricsFromProfile(profile, goalId),
     desiredOutcome: habit?.reason ?? `Improve ${habit?.title?.toLowerCase() ?? 'this area'}`,
     constraints: constraintsFromProfile(profile),
-    medicalConditions: labelsForConditions(profile.medicalConditionIds),
+    medicalConditions: medicalFlags,
+    medical_flags: medicalFlags,
   };
 }
 

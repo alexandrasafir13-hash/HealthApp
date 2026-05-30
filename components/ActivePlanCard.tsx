@@ -41,7 +41,18 @@ export default function ActivePlanCard({
               </Text>
               <Text style={styles.focus}>{week.focus}</Text>
               <Text style={styles.weeklyTarget}>{week.weeklyTarget}</Text>
-              <Text style={styles.planForWeek}>{week.planForTheWeek}</Text>
+              {week.whyThisWeek ? <Text style={styles.whyThisWeek}>{week.whyThisWeek}</Text> : null}
+              {week.planSteps.length > 0 ? (
+                <View style={styles.stepsList}>
+                  {week.planSteps.map((step) => (
+                    <Text key={step} style={styles.planStep}>
+                      • {step}
+                    </Text>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.planForWeek}>{week.planForTheWeek}</Text>
+              )}
             </View>
           );
         })}
@@ -114,6 +125,19 @@ const styles = StyleSheet.create({
   },
   weeklyTarget: {
     fontSize: 16,
+    lineHeight: 22,
+    color: palette.slate,
+  },
+  whyThisWeek: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: palette.slateMuted,
+  },
+  stepsList: {
+    gap: 6,
+  },
+  planStep: {
+    fontSize: 15,
     lineHeight: 22,
     color: palette.slate,
   },
