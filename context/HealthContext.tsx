@@ -4,49 +4,56 @@ import { mockInsights } from '@/data/mockInsights';
 import { loadCheckInLog, type CheckInLog } from '@/lib/checkInStorage';
 import { accountStartDateKey } from '@/lib/dateKeys';
 import { applyWeeklyDataToInsights } from '@/lib/deriveWeeklyInsights';
+import { generateAdaptivePlan } from '@/lib/generatePersonalRoutine';
 import { localDateKey } from '@/lib/localDate';
 import { loadUserProfile, saveUserProfile } from '@/lib/onboardingStorage';
-import { generateRoutineProposals } from '@/lib/generatePersonalRoutine';
 import {
-  DailyRoutineProgress,
-  loadRoutineCompletionLog,
-  RoutineCompletionLog,
-  saveRoutineCompletionLog,
-} from '@/lib/routineCompletionStorage';
-import { normalizePersonalRoutine, withActionIds } from '@/lib/routineSteps';
+  loadPlanCheckInLog,
+  PlanCheckInAnswer,
+  PlanCheckInLog,
+  savePlanCheckInEntry,
+} from '@/lib/planCheckInStorage';
 import {
-  clearRoutineProposals,
-  loadPersonalRoutine,
-  loadRoutineProposals,
-  savePersonalRoutine,
-  saveRoutineProposals,
-} from '@/lib/routineStorage';
+  clearPendingPlan,
+  loadPendingPlan,
+  loadPersonalPlan,
+  savePendingPlan,
+  savePersonalPlan,
+} from '@/lib/planStorage';
 import { BodyInsight } from '@/types/health';
 import { BiologicalSex, DataMethodId, GoalDetails, MedicalConditionId, UserProfile } from '@/types/onboarding';
-import { PersonalRoutine, RoutineProposalSet, RoutineDailyAction, dailyActionsFromRoutine, routineDisplayTitle } from '@/types/routine';
-
-export type TodayRoutineStep = RoutineDailyAction & {
-  id: string;
-  completed: boolean;
-};
+import {
+  DailyCheckInQuestion,
+  getActivePlanWeek,
+  PersonalPlan,
+  PlanGenerationResult,
+  PlanWeek,
+} from '@/types/plan';
 
 interface HealthContextValue {
   insights: BodyInsight[];
   completedActions: Set<string>;
   checkInLog: CheckInLog;
-  routineCompletionLog: RoutineCompletionLog;
-  todayRoutineSteps: TodayRoutineStep[];
-  todayRoutineFinished: boolean;
-  todayRoutineCanFinish: boolean;
+  planCheckInLog: PlanCheckInLog;
+  personalPlan: PersonalPlan | null;
+  pendingPlan: PlanGenerationResult | null;
+  planLoading: boolean;
+  planError: string | null;
+  activeWeek: PlanWeek | null;
+  todayCheckInDraft: Record<string, PlanCheckInAnswer>;
+  todayCheckInQuestions: DailyCheckInQuestion[];
+  todayCheckInCanSubmit: boolean;
+  todayCheckInSaved: boolean;
+  todayShowInsights: boolean;
   profile: UserProfile | null;
   onboardingComplete: boolean;
   isReady: boolean;
   accountStartDate: string;
   completeAction: (insightId: string, actionId: string) => void;
-  toggleRoutineStep: (stepId: string) => void;
-  finishTodayRoutine: () => Promise<boolean>;
-  todayShowInsights: boolean;
-  editTodayRoutine: () => void;
+  updateCheckInAnswer: (questionId: string, value: PlanCheckInAnswer) => void;
+  submitPlanCheckIn: () => Promise<boolean>;
+  editTodayCheckIn: () => void;
+  acceptPlan: () => Promise<void>;
   completeOnboarding: (input: {
     name: string;
     age: number;
@@ -58,32 +65,29 @@ interface HealthContextValue {
     goalDetails?: GoalDetails;
     medicalConditionIds: MedicalConditionId[];
   }) => Promise<void>;
-  personalRoutine: PersonalRoutine | null;
-  routineProposals: RoutineProposalSet | null;
-  routineLoading: boolean;
-  routineError: string | null;
-  selectPersonalRoutine: (optionId: string) => Promise<void>;
 }
 
 const HealthContext = createContext<HealthContextValue | null>(null);
 
-function emptyProgress(): DailyRoutineProgress {
-  return { steps: {} };
-}
-
-function todayProgress(log: RoutineCompletionLog, dateKey = localDateKey()): DailyRoutineProgress {
-  return log[dateKey] ?? emptyProgress();
+function isAnswerFilled(value: PlanCheckInAnswer | undefined): boolean {
+  if (value == null) return false;
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (typeof value === 'number') return Number.isFinite(value);
+  if (Array.isArray(value)) return value.length > 0;
+  return false;
 }
 
 export function HealthProvider({ children }: { children: React.ReactNode }) {
   const [completedActions, setCompletedActions] = useState<Set<string>>(new Set());
   const [checkInLog, setCheckInLog] = useState<CheckInLog>({});
-  const [routineCompletionLog, setRoutineCompletionLog] = useState<RoutineCompletionLog>({});
+  const [planCheckInLog, setPlanCheckInLog] = useState<PlanCheckInLog>({});
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [personalRoutine, setPersonalRoutine] = useState<PersonalRoutine | null>(null);
-  const [routineProposals, setRoutineProposals] = useState<RoutineProposalSet | null>(null);
-  const [routineLoading, setRoutineLoading] = useState(false);
-  const [routineError, setRoutineError] = useState<string | null>(null);
+  const [personalPlan, setPersonalPlan] = useState<PersonalPlan | null>(null);
+  const [pendingPlan, setPendingPlan] = useState<PlanGenerationResult | null>(null);
+  const [planLoading, setPlanLoading] = useState(false);
+  const [planError, setPlanError] = useState<string | null>(null);
+  const [todayCheckInDraft, setTodayCheckInDraft] = useState<Record<string, PlanCheckInAnswer>>({});
+  const [todayShowInsights, setTodayShowInsights] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
   const accountStartDate = useMemo(
@@ -91,63 +95,58 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     [profile?.completedAt],
   );
 
-  const buildRoutineProposalsForProfile = useCallback(async (nextProfile: UserProfile) => {
-    setRoutineLoading(true);
-    setRoutineError(null);
+  const buildPlanForProfile = useCallback(async (nextProfile: UserProfile) => {
+    setPlanLoading(true);
+    setPlanError(null);
     try {
-      const proposals = await generateRoutineProposals(nextProfile);
-      await saveRoutineProposals(proposals);
-      setRoutineProposals(proposals);
+      const result = await generateAdaptivePlan(nextProfile);
+      await savePendingPlan(result);
+      setPendingPlan(result);
     } catch (e) {
-      setRoutineError(e instanceof Error ? e.message : 'Could not build your routines');
+      setPlanError(e instanceof Error ? e.message : 'Could not build your plan');
     } finally {
-      setRoutineLoading(false);
+      setPlanLoading(false);
     }
   }, []);
 
-  const selectPersonalRoutine = useCallback(
-    async (optionId: string) => {
-      const option = routineProposals?.options.find((item) => item.id === optionId);
-      if (!option || !routineProposals) return;
-
-      const routine: PersonalRoutine = {
-        ...withActionIds(option),
-        generatedAt: routineProposals.generatedAt,
-        source: routineProposals.source,
-      };
-
-      await savePersonalRoutine(routine);
-      await clearRoutineProposals();
-      setPersonalRoutine(routine);
-      setRoutineProposals(null);
-      setRoutineError(null);
-    },
-    [routineProposals],
-  );
+  const acceptPlan = useCallback(async () => {
+    if (!pendingPlan) return;
+    const plan: PersonalPlan = {
+      ...pendingPlan.plan,
+      generatedAt: pendingPlan.generatedAt,
+      source: pendingPlan.source,
+      activeWeekNumber: 1,
+    };
+    await savePersonalPlan(plan);
+    await clearPendingPlan();
+    setPersonalPlan(plan);
+    setPendingPlan(null);
+    setPlanError(null);
+  }, [pendingPlan]);
 
   useEffect(() => {
     let mounted = true;
     Promise.all([
       loadUserProfile(),
       loadCheckInLog(),
-      loadPersonalRoutine(),
-      loadRoutineProposals(),
-      loadRoutineCompletionLog(),
-    ]).then(([saved, savedLog, savedRoutine, savedProposals, savedRoutineLog]) => {
+      loadPersonalPlan(),
+      loadPendingPlan(),
+      loadPlanCheckInLog(),
+    ]).then(([saved, savedLog, savedPlan, savedPending, savedPlanCheckIns]) => {
       if (!mounted) return;
       if (saved) setProfile(saved);
-      if (savedRoutine) {
-        const normalized = normalizePersonalRoutine({
-          ...savedRoutine,
-          title: savedRoutine.title?.trim() || routineDisplayTitle(savedRoutine),
-          dailyActions: dailyActionsFromRoutine(savedRoutine as PersonalRoutine & { steps?: RoutineDailyAction[] }),
-          overviewTips: savedRoutine.overviewTips ?? [],
-        });
-        setPersonalRoutine(normalized);
-      }
-      if (savedProposals) setRoutineProposals(savedProposals);
+      if (savedPlan) setPersonalPlan(savedPlan);
+      if (savedPending) setPendingPlan(savedPending);
       setCheckInLog(savedLog);
-      setRoutineCompletionLog(savedRoutineLog);
+      setPlanCheckInLog(savedPlanCheckIns);
+
+      const today = localDateKey();
+      const savedToday = savedPlanCheckIns[today];
+      if (savedToday) {
+        setTodayCheckInDraft(savedToday.answers);
+        setTodayShowInsights(true);
+      }
+
       setIsReady(true);
     });
     return () => {
@@ -156,84 +155,55 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!isReady || !profile || personalRoutine || routineProposals || routineLoading) return;
+    if (!isReady || !profile || personalPlan || pendingPlan || planLoading) return;
     if (profile.habitIds.length === 0) return;
-    void buildRoutineProposalsForProfile(profile);
-  }, [
-    isReady,
-    profile,
-    personalRoutine,
-    routineProposals,
-    routineLoading,
-    buildRoutineProposalsForProfile,
-  ]);
+    void buildPlanForProfile(profile);
+  }, [isReady, profile, personalPlan, pendingPlan, planLoading, buildPlanForProfile]);
+
+  const activeWeek = useMemo(
+    () => (personalPlan ? getActivePlanWeek(personalPlan) : null),
+    [personalPlan],
+  );
+
+  const todayCheckInQuestions = activeWeek?.dailyCheckInQuestions ?? [];
+
+  const todayCheckInCanSubmit = useMemo(() => {
+    if (todayCheckInQuestions.length === 0) return false;
+    return todayCheckInQuestions
+      .filter((question) => question.required)
+      .every((question) => isAnswerFilled(todayCheckInDraft[question.id]));
+  }, [todayCheckInQuestions, todayCheckInDraft]);
 
   const todayKey = localDateKey();
-  const todayRoutineProgress = useMemo(
-    () => todayProgress(routineCompletionLog, todayKey),
-    [routineCompletionLog, todayKey],
-  );
 
-  const todayRoutineSteps = useMemo((): TodayRoutineStep[] => {
-    if (!personalRoutine) return [];
-    const routine = normalizePersonalRoutine({
-      ...personalRoutine,
-      dailyActions: dailyActionsFromRoutine(personalRoutine),
-    });
-    return routine.dailyActions.map((action, index) => {
-      const id = action.id?.trim() || `${routine.id}-action-${index}`;
-      return {
-        ...action,
-        id,
-        completed: todayRoutineProgress.steps[id] === true,
-      };
-    });
-  }, [personalRoutine, todayRoutineProgress]);
+  const todayCheckInSaved = planCheckInLog[todayKey]?.submittedAt != null && todayShowInsights;
 
-  const todayRoutineFinished = todayRoutineProgress.finishedAt != null;
-  const todayRoutineCanFinish = todayRoutineSteps.some((step) => step.completed);
-  const todayShowInsights = todayRoutineFinished;
+  const updateCheckInAnswer = useCallback((questionId: string, value: PlanCheckInAnswer) => {
+    setTodayCheckInDraft((prev) => ({ ...prev, [questionId]: value }));
+    setTodayShowInsights(false);
+  }, []);
 
-  const persistTodayProgress = useCallback(
-    async (progress: DailyRoutineProgress) => {
-      const nextLog = { ...routineCompletionLog, [todayKey]: progress };
-      setRoutineCompletionLog(nextLog);
-      await saveRoutineCompletionLog(nextLog);
-    },
-    [routineCompletionLog, todayKey],
-  );
-
-  const toggleRoutineStep = useCallback(
-    (stepId: string) => {
-      const current = todayProgress(routineCompletionLog, todayKey);
-      const nextCompleted = !current.steps[stepId];
-      const nextSteps = { ...current.steps, [stepId]: nextCompleted };
-      if (!nextCompleted) delete nextSteps[stepId];
-      void persistTodayProgress({
-        steps: nextSteps,
-        ...(current.finishedAt ? { finishedAt: undefined } : {}),
-      });
-    },
-    [routineCompletionLog, todayKey, persistTodayProgress],
-  );
-
-  const finishTodayRoutine = useCallback(async (): Promise<boolean> => {
-    if (!todayRoutineCanFinish) return false;
-    const current = todayProgress(routineCompletionLog, todayKey);
-    await persistTodayProgress({
-      ...current,
-      finishedAt: new Date().toISOString(),
-    });
+  const submitPlanCheckIn = useCallback(async (): Promise<boolean> => {
+    if (!personalPlan || !activeWeek || !todayCheckInCanSubmit) return false;
+    const today = localDateKey();
+    const entry = {
+      date: today,
+      weekNumber: activeWeek.weekNumber,
+      answers: todayCheckInDraft,
+      submittedAt: new Date().toISOString(),
+    };
+    setPlanCheckInLog((prev) => ({ ...prev, [today]: entry }));
+    await savePlanCheckInEntry(entry);
+    setTodayShowInsights(true);
     return true;
-  }, [todayRoutineCanFinish, routineCompletionLog, todayKey, persistTodayProgress]);
+  }, [personalPlan, activeWeek, todayCheckInCanSubmit, todayCheckInDraft]);
 
-  const editTodayRoutine = useCallback(() => {
-    const current = todayProgress(routineCompletionLog, todayKey);
-    if (!current.finishedAt) return;
-    void persistTodayProgress({
-      steps: current.steps,
-    });
-  }, [routineCompletionLog, todayKey, persistTodayProgress]);
+  const editTodayCheckIn = useCallback(() => {
+    const today = localDateKey();
+    const saved = planCheckInLog[today];
+    if (saved) setTodayCheckInDraft(saved.answers);
+    setTodayShowInsights(false);
+  }, [planCheckInLog]);
 
   const completeOnboarding = useCallback(
     async (input: {
@@ -261,21 +231,19 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       };
       await saveUserProfile(nextProfile);
       setProfile(nextProfile);
-      await buildRoutineProposalsForProfile(nextProfile);
+      await buildPlanForProfile(nextProfile);
     },
-    [buildRoutineProposalsForProfile],
+    [buildPlanForProfile],
   );
 
   const insights = useMemo(
     () =>
       applyWeeklyDataToInsights(mockInsights, {
         checkInLog,
-        routineCompletionLog,
-        personalRoutine,
         accountStartDate,
         goalIds: profile?.habitIds ?? [],
       }),
-    [checkInLog, routineCompletionLog, personalRoutine, accountStartDate, profile?.habitIds],
+    [checkInLog, accountStartDate, profile?.habitIds],
   );
 
   const value = useMemo<HealthContextValue>(
@@ -283,14 +251,21 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       insights,
       completedActions,
       checkInLog,
-      routineCompletionLog,
-      todayRoutineSteps,
-      todayRoutineFinished,
-      todayRoutineCanFinish,
-      toggleRoutineStep,
-      finishTodayRoutine,
+      planCheckInLog,
+      personalPlan,
+      pendingPlan,
+      planLoading,
+      planError,
+      activeWeek,
+      todayCheckInDraft,
+      todayCheckInQuestions,
+      todayCheckInCanSubmit,
+      todayCheckInSaved,
       todayShowInsights,
-      editTodayRoutine,
+      updateCheckInAnswer,
+      submitPlanCheckIn,
+      editTodayCheckIn,
+      acceptPlan,
       profile,
       onboardingComplete: profile !== null,
       isReady,
@@ -299,33 +274,30 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
         setCompletedActions((prev) => new Set(prev).add(`${insightId}:${actionId}`));
       },
       completeOnboarding,
-      personalRoutine,
-      routineProposals,
-      routineLoading,
-      routineError,
-      selectPersonalRoutine,
     }),
     [
       insights,
       completedActions,
       checkInLog,
-      routineCompletionLog,
-      todayRoutineSteps,
-      todayRoutineFinished,
-      todayRoutineCanFinish,
-      toggleRoutineStep,
-      finishTodayRoutine,
+      planCheckInLog,
+      personalPlan,
+      pendingPlan,
+      planLoading,
+      planError,
+      activeWeek,
+      todayCheckInDraft,
+      todayCheckInQuestions,
+      todayCheckInCanSubmit,
+      todayCheckInSaved,
       todayShowInsights,
-      editTodayRoutine,
+      updateCheckInAnswer,
+      submitPlanCheckIn,
+      editTodayCheckIn,
+      acceptPlan,
       profile,
       isReady,
       accountStartDate,
       completeOnboarding,
-      personalRoutine,
-      routineProposals,
-      routineLoading,
-      routineError,
-      selectPersonalRoutine,
     ],
   );
 

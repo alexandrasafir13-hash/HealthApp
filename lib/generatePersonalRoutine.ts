@@ -1,6 +1,6 @@
 import { habitCatalog } from '@/data/onboardingOptions';
 import { buildRoutineGenerationContext, RoutineGenerationContext } from '@/lib/buildRoutineContext';
-import { buildFallbackRoutineProposals } from '@/lib/fallbackRoutine';
+import { buildFallbackAdaptivePlan } from '@/lib/fallbackPlan';
 import {
   getHealthInsightsProxyUrl,
   getOpenAiApiKey,
@@ -10,72 +10,182 @@ import {
   isHealthInsightsConfigured,
 } from '@/lib/healthInsightsConfig';
 import { parseModelJson } from '@/lib/parseModelJson';
-import { assertDailyActions, looksLikeRoutineTip } from '@/lib/validateRoutineActions';
 import { UserProfile } from '@/types/onboarding';
 import {
-  ROUTINE_OPTION_COUNT,
-  RoutineDailyAction,
-  RoutineOption,
-  RoutineProposalSet,
-} from '@/types/routine';
+  AdaptationRule,
+  AdaptivePlan,
+  CheckInAnswerType,
+  DailyCheckInQuestion,
+  PLAN_WEEK_COUNT,
+  PlanGenerationResult,
+  PlanMetric,
+  PlanStartingPoint,
+  PlanWeek,
+  SuggestedExperiment,
+  WeekStatus,
+} from '@/types/plan';
 
-const ROUTINE_MAX_OUTPUT_TOKENS = Math.max(HEALTH_INSIGHTS_MAX_OUTPUT_TOKENS, 2048);
+const PLAN_MAX_OUTPUT_TOKENS = Math.max(HEALTH_INSIGHTS_MAX_OUTPUT_TOKENS, 4096);
 
-const DAILY_ACTION_SCHEMA = {
-  type: 'object',
-  properties: {
-    title: { type: 'string' },
-    doneWhen: { type: 'string' },
-    timeHint: { type: 'string' },
-  },
-  required: ['title', 'doneWhen', 'timeHint'],
-  additionalProperties: false,
+const ANSWER_TYPES: CheckInAnswerType[] = [
+  'number',
+  'scale_1_5',
+  'single_choice',
+  'multi_choice',
+  'short_text',
+];
+
+const WEEK_STATUSES: WeekStatus[] = ['active', 'provisional'];
+
+const METRIC_VALUE_SCHEMA = {
+  anyOf: [{ type: 'number' }, { type: 'string' }, { type: 'null' }],
 };
 
-const ROUTINE_OPTION_SCHEMA = {
+const DAILY_CHECKIN_QUESTION_SCHEMA = {
   type: 'object',
   properties: {
     id: { type: 'string' },
-    title: { type: 'string' },
-    primaryGoalId: { type: 'string' },
-    whyThisGoal: { type: 'string' },
-    intro: { type: 'string' },
-    overviewTips: {
-      type: 'array',
-      items: { type: 'string' },
-      minItems: 2,
-      maxItems: 4,
+    question: { type: 'string' },
+    answerType: { type: 'string', enum: ANSWER_TYPES },
+    required: { type: 'boolean' },
+    options: {
+      anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'null' }],
     },
-    dailyActions: {
-      type: 'array',
-      items: DAILY_ACTION_SCHEMA,
-      minItems: 3,
-      maxItems: 5,
-    },
+    whyItMatters: { type: 'string' },
   },
-  required: ['id', 'title', 'primaryGoalId', 'whyThisGoal', 'intro', 'overviewTips', 'dailyActions'],
+  required: ['id', 'question', 'answerType', 'required', 'options', 'whyItMatters'],
   additionalProperties: false,
 };
 
-const ROUTINE_RESPONSE_SCHEMA = {
+const SUGGESTED_EXPERIMENT_SCHEMA = {
   type: 'object',
   properties: {
-    options: {
-      type: 'array',
-      items: ROUTINE_OPTION_SCHEMA,
-      minItems: ROUTINE_OPTION_COUNT,
-      maxItems: ROUTINE_OPTION_COUNT,
-    },
+    title: { type: 'string' },
+    description: { type: 'string' },
+    whenToUse: { type: 'string' },
   },
-  required: ['options'],
+  required: ['title', 'description', 'whenToUse'],
   additionalProperties: false,
 };
 
-const SYSTEM_PROMPT = `You are a supportive wellness coach creating starter daily routines for a new app user.
+const PLAN_WEEK_SCHEMA = {
+  type: 'object',
+  properties: {
+    weekNumber: { type: 'number' },
+    status: { type: 'string', enum: WEEK_STATUSES },
+    focus: { type: 'string' },
+    target: { type: 'string' },
+    whyThisWeek: { type: 'string' },
+    weeklyStrategy: { type: 'string' },
+    suggestedExperiments: {
+      type: 'array',
+      items: SUGGESTED_EXPERIMENT_SCHEMA,
+    },
+    dailyCheckInQuestions: {
+      type: 'array',
+      items: DAILY_CHECKIN_QUESTION_SCHEMA,
+      minItems: 2,
+    },
+    endOfWeekReviewSignals: {
+      type: 'array',
+      items: { type: 'string' },
+      minItems: 1,
+    },
+  },
+  required: [
+    'weekNumber',
+    'status',
+    'focus',
+    'target',
+    'whyThisWeek',
+    'weeklyStrategy',
+    'suggestedExperiments',
+    'dailyCheckInQuestions',
+    'endOfWeekReviewSignals',
+  ],
+  additionalProperties: false,
+};
 
-You receive JSON with user onboarding data.
+const ADAPTATION_RULE_SCHEMA = {
+  type: 'object',
+  properties: {
+    condition: { type: 'string' },
+    adjustment: { type: 'string' },
+  },
+  required: ['condition', 'adjustment'],
+  additionalProperties: false,
+};
 
-Expected input fields:
+const PLAN_RESPONSE_SCHEMA = {
+  type: 'object',
+  properties: {
+    plan: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        goalId: { type: 'string' },
+        goalName: { type: 'string' },
+        goalSummary: { type: 'string' },
+        startingPoint: {
+          type: 'object',
+          properties: {
+            summary: { type: 'string' },
+            knownMetrics: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  label: { type: 'string' },
+                  value: METRIC_VALUE_SCHEMA,
+                  unit: { type: ['string', 'null'] },
+                },
+                required: ['label', 'value', 'unit'],
+                additionalProperties: false,
+              },
+            },
+            assumptions: { type: 'array', items: { type: 'string' } },
+          },
+          required: ['summary', 'knownMetrics', 'assumptions'],
+          additionalProperties: false,
+        },
+        desiredOutcome: { type: 'string' },
+        planPrinciple: { type: 'string' },
+        weeks: {
+          type: 'array',
+          items: PLAN_WEEK_SCHEMA,
+          minItems: PLAN_WEEK_COUNT,
+          maxItems: PLAN_WEEK_COUNT,
+        },
+        adaptationRules: {
+          type: 'array',
+          items: ADAPTATION_RULE_SCHEMA,
+          minItems: 1,
+        },
+      },
+      required: [
+        'id',
+        'goalId',
+        'goalName',
+        'goalSummary',
+        'startingPoint',
+        'desiredOutcome',
+        'planPrinciple',
+        'weeks',
+        'adaptationRules',
+      ],
+      additionalProperties: false,
+    },
+  },
+  required: ['plan'],
+  additionalProperties: false,
+};
+
+const SYSTEM_PROMPT = `You are a behavior-change coach creating adaptive 4-week plans for a wellness app.
+
+The app does NOT use daily habit checkboxes.
+The app uses daily check-ins to understand how the plan is going, then updates the next week based on the user's real inputs.
+
+You receive JSON with:
 
 * age
 * sex
@@ -84,273 +194,398 @@ Expected input fields:
 * medicalConditions
 * selectedGoalIds
 * wantsToImprove
-
-selectedGoalIds contains the goals the user selected during onboarding.
-wantsToImprove contains the selected goals plus follow-up answers or preferences.
+* baselineMetrics
+* userPreferences
+* constraints
 
 Your job:
-Create exactly 3 distinct daily routine options.
+Create one 4-week adaptive plan for the user's selected goal.
 
-Each routine must focus on one selected goal only.
-primaryGoalId MUST be one of selectedGoalIds.
-Do not invent goals the user did not select.
+The plan must:
 
-If only one goal was selected, create 3 different approaches for that same goal.
-For example:
+* be practical
+* be beginner-friendly
+* progress week by week
+* use small weekly increments
+* include daily check-in questions
+* collect enough information to update the plan at the end of each week
+* avoid generic wellness advice
+* avoid daily tickbox tasks
 
-* a morning-focused routine
-* an evening-focused routine
-* a minimal-effort routine
+Important:
+This is NOT a todo list.
+This is NOT a checklist routine.
+This is NOT a list of wellness tips.
+This is a structured 4-week plan with daily reflection/check-in data.
 
-Each routine has TWO separate parts:
+The plan should answer:
 
-PART A — OVERVIEW
-This is advice and context. These items are NOT ticked off by the user.
+* What is the user trying to change?
+* What is the starting point?
+* What is the target for Week 1?
+* What should the user try this week?
+* What should they report daily?
+* How will the plan adapt at the end of the week?
+* What is the provisional 4-week progression?
 
-Fields:
+Plan structure:
 
-* title: max 5 words, friendly and specific
-* whyThisGoal: 1–2 sentences explaining why this focus can help
-* intro: 1 sentence describing the routine approach
-* overviewTips: 2–4 short advice bullets
+* Week 1 should be specific and actionable.
+* Weeks 2, 3, and 4 should be provisional because they may change after weekly reviews.
+* Do not over-prescribe Weeks 2–4.
+* Each week should build on the previous week.
+* Weekly targets should be realistic, not aggressive.
+* The plan should focus on consistency and learning first, then improvement.
 
-overviewTips may include:
+Daily check-ins:
+Daily check-ins are for collecting data, not ticking off tasks.
 
-* recommendations
-* context
-* encouragement
-* gentle guidance
-* things to keep in mind
+Each daily check-in question must collect useful information for adapting the plan.
 
-PART B — DAILY CHECKLIST
-These are concrete tasks the user can tick off every day.
+Good daily check-in questions:
 
-Field:
+* "What was your screen time today?"
+* "What got in the way today?"
+* "What worked better than expected?"
+* "How hard did the plan feel today?"
+* "Which part of the plan felt unrealistic?"
+* "Do you want tomorrow to be easier, the same, or slightly harder?"
 
-* dailyActions: 3–5 tasks
+Bad daily check-in questions:
 
-Each dailyAction must pass the CHECKBOX TEST:
-At the end of the day, the user can honestly answer:
-"Yes, I did this" or "No, I did not."
+* "Did you drink water?"
+* "Did you stretch?"
+* "Did you avoid screens?"
+* "Did you complete your routine?"
+* "Did you stay motivated?"
+* "Did you have a good day?"
 
-Good dailyActions:
+Avoid binary checkbox-style questions unless they are useful for plan adaptation.
 
-* title: "Drink water after waking"
-  doneWhen: "You finished one full glass of water within 30 minutes of getting up."
-  timeHint: "Morning"
+For each week, include:
 
-* title: "Walk 10 minutes after lunch"
-  doneWhen: "You walked for at least 10 minutes after your midday meal."
-  timeHint: "After lunch"
+* weekNumber
+* status: "active" for Week 1, "provisional" for Weeks 2–4
+* focus
+* target
+* whyThisWeek
+* weeklyStrategy
+* suggestedExperiments
+* dailyCheckInQuestions
+* endOfWeekReviewSignals
 
-* title: "Charge phone outside bedroom"
-  doneWhen: "Your phone was charging outside the bedroom before you got into bed."
-  timeHint: "Before bed"
+suggestedExperiments:
+These are possible things the user can try during the week.
+They are NOT mandatory daily tasks.
+They should be framed as experiments, not orders.
 
-Bad dailyActions:
+endOfWeekReviewSignals:
+List what the app should look at when updating the next week, such as:
 
-* "Stay hydrated throughout the day"
-* "Try to reduce screen time"
-* "Focus on better sleep"
-* "Remember to stretch"
-* "Consider walking more"
-* "Keep stress low"
-* "Eat healthier"
-* "Be mindful"
-
-These are vague tips, not checklist actions. Put them in overviewTips instead.
-
-dailyActions rules:
-
-* title must start with an imperative verb
-* title max 10 words
-* include amount, duration, or timing when useful
-* doneWhen must describe observable completion only
-* doneWhen must NOT explain benefits
-* timeHint must be short, such as "Morning", "After lunch", "Evening", "Before bed"
-* do not duplicate overviewTips as dailyActions
-* prefer 3 dailyActions unless the routine clearly needs more
-* keep routines realistic for beginners
-* keep total daily effort low, usually under 20 minutes
+* average metric change
+* difficulty trend
+* repeated blockers
+* what worked
+* what felt unrealistic
+* user confidence
+* skipped days
+* user preference for easier/same/harder
 
 Safety rules:
 
-* This is general wellness support, not medical advice.
+* This is general wellness support.
 * Do not diagnose.
-* Do not mention medications.
+* Do not mention medication.
 * Do not suggest supplements.
-* Do not recommend fasting, calorie restriction, or intense exercise.
+* Do not suggest fasting or calorie restriction.
+* Do not suggest intense exercise.
 * Do not calculate BMI.
 * Do not comment on body size.
-* Use weight and height only to keep suggestions gentle and realistic.
 * Be careful with medicalConditions.
-* If medicalConditions suggest pregnancy, heart disease, diabetes, eating disorder, severe pain, mobility limits, recent surgery, or any serious/chronic condition, suggest only low-risk habits.
-* When relevant, include one gentle overviewTip suggesting the user check with a qualified professional before changing exercise, diet, or sleep routines.
+* If medicalConditions suggest pregnancy, heart disease, diabetes, eating disorder, severe pain, mobility limits, recent surgery, or any serious/chronic condition, keep the plan gentle and suggest professional guidance where relevant.
 
-Tone rules:
+Tone:
 
 * plain language
-* warm but not cheesy
 * practical
-* non-clinical
-* no scare tactics
-* no moralizing
+* supportive without being cheesy
 * no motivational clichés
-* no legal or medical disclaimers inside every routine
+* no shame
+* no scare tactics
+* no clinical language unless needed
 
-Output rules:
-
-* Return JSON only.
-* No markdown.
-* No comments.
-* No extra text.
-* Return exactly 3 options.
-* Use these exact routine ids:
-
-  * routine-1
-  * routine-2
-  * routine-3
+Return JSON only.
+No markdown.
+No comments.
+No extra text.
 
 Output schema:
 {
-"options": [
+"plan": {
+"id": "plan-1",
+"goalId": string,
+"goalName": string,
+"goalSummary": string,
+"startingPoint": {
+"summary": string,
+"knownMetrics": [
 {
-"id": "routine-1",
-"title": string,
-"primaryGoalId": string,
-"whyThisGoal": string,
-"intro": string,
-"overviewTips": string[],
-"dailyActions": [
+"label": string,
+"value": number | string | null,
+"unit": string | null
+}
+],
+"assumptions": string[]
+},
+"desiredOutcome": string,
+"planPrinciple": string,
+"weeks": [
+{
+"weekNumber": number,
+"status": "active" | "provisional",
+"focus": string,
+"target": string,
+"whyThisWeek": string,
+"weeklyStrategy": string,
+"suggestedExperiments": [
 {
 "title": string,
-"doneWhen": string,
-"timeHint": string
+"description": string,
+"whenToUse": string
+}
+],
+"dailyCheckInQuestions": [
+{
+"id": string,
+"question": string,
+"answerType": "number" | "scale_1_5" | "single_choice" | "multi_choice" | "short_text",
+"required": boolean,
+"options": string[] | null,
+"whyItMatters": string
+}
+],
+"endOfWeekReviewSignals": string[]
+}
+],
+"adaptationRules": [
+{
+"condition": string,
+"adjustment": string
 }
 ]
 }
-]
 }`;
 
-function parseOverviewTips(raw: unknown, whyThisGoal: string): string[] {
-  if (Array.isArray(raw)) {
-    const tips = raw
-      .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-      .map((item) => item.trim())
-      .slice(0, 4);
-    if (tips.length >= 2) return tips;
-  }
-  const fallback = whyThisGoal.trim();
-  if (fallback.length > 0) {
-    return [fallback, 'Tick off each checklist item when you complete it today.'];
-  }
-  throw new Error('Routine response missing overviewTips');
-}
-
-function parseDailyActions(raw: unknown, obj?: Record<string, unknown>): RoutineDailyAction[] {
-  const list = Array.isArray(raw)
-    ? raw
-    : obj && Array.isArray(obj.steps)
-      ? obj.steps
-      : null;
-  if (!list) throw new Error('Routine response missing dailyActions');
-
-  const actions = list
-    .filter(
-      (item): item is Record<string, unknown> =>
-        item != null && typeof item === 'object',
-    )
-    .map((item) => {
-      const title = String(item.title ?? '').trim();
-      const doneWhen = String(item.doneWhen ?? item.description ?? '').trim();
-      const timeHint = String(item.timeHint ?? '').trim();
-      return { title, doneWhen, timeHint };
-    })
-    .filter((item) => item.title && item.doneWhen && item.timeHint);
-
-  return assertDailyActions(actions);
-}
-
-function normalizeRoutineOption(raw: unknown, profile: UserProfile, index: number): RoutineOption {
-  if (!raw || typeof raw !== 'object') throw new Error('Invalid routine option');
+function parseMetric(raw: unknown): PlanMetric | null {
+  if (!raw || typeof raw !== 'object') return null;
   const obj = raw as Record<string, unknown>;
-  const primaryGoalId = String(obj.primaryGoalId ?? '').trim();
-  if (!profile.habitIds.includes(primaryGoalId)) {
-    throw new Error('Routine picked an invalid goal');
-  }
+  const label = String(obj.label ?? '').trim();
+  if (!label) return null;
+  const valueRaw = obj.value;
+  const value =
+    valueRaw == null
+      ? null
+      : typeof valueRaw === 'number' || typeof valueRaw === 'string'
+        ? valueRaw
+        : null;
+  const unitRaw = obj.unit;
+  const unit = unitRaw == null ? null : String(unitRaw).trim() || null;
+  return { label, value, unit };
+}
+
+function parseStartingPoint(raw: unknown): PlanStartingPoint {
+  if (!raw || typeof raw !== 'object') throw new Error('Plan missing startingPoint');
+  const obj = raw as Record<string, unknown>;
+  const summary = String(obj.summary ?? '').trim();
+  if (!summary) throw new Error('Plan missing startingPoint.summary');
+  const knownMetrics = Array.isArray(obj.knownMetrics)
+    ? obj.knownMetrics.map(parseMetric).filter((item): item is PlanMetric => item != null)
+    : [];
+  const assumptions = Array.isArray(obj.assumptions)
+    ? obj.assumptions
+        .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+        .map((item) => item.trim())
+    : [];
+  return { summary, knownMetrics, assumptions };
+}
+
+function parseExperiment(raw: unknown): SuggestedExperiment | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const obj = raw as Record<string, unknown>;
   const title = String(obj.title ?? '').trim();
-  const whyThisGoal = String(obj.whyThisGoal ?? '').trim();
-  const intro = String(obj.intro ?? '').trim();
-  const id = String(obj.id ?? `routine-${index + 1}`).trim() || `routine-${index + 1}`;
-  if (!whyThisGoal || !intro) throw new Error('Routine response missing copy');
+  const description = String(obj.description ?? '').trim();
+  const whenToUse = String(obj.whenToUse ?? '').trim();
+  if (!title || !description || !whenToUse) return null;
+  return { title, description, whenToUse };
+}
 
-  const dailyActions = parseDailyActions(obj.dailyActions, obj);
-  const tipLike = dailyActions.filter((a) => looksLikeRoutineTip(a.title));
-  if (tipLike.length > 0) {
-    throw new Error(`Routine dailyActions still contain tips: ${tipLike.map((a) => a.title).join('; ')}`);
-  }
-
-  const habit = habitCatalog.find((h) => h.id === primaryGoalId);
-  const primaryGoalTitle = habit?.title ?? primaryGoalId;
+function parseCheckInQuestion(raw: unknown): DailyCheckInQuestion | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const obj = raw as Record<string, unknown>;
+  const id = String(obj.id ?? '').trim();
+  const question = String(obj.question ?? '').trim();
+  const answerType = String(obj.answerType ?? '').trim() as CheckInAnswerType;
+  const whyItMatters = String(obj.whyItMatters ?? '').trim();
+  if (!id || !question || !whyItMatters || !ANSWER_TYPES.includes(answerType)) return null;
+  const options = Array.isArray(obj.options)
+    ? obj.options.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    : null;
   return {
     id,
-    title: title || primaryGoalTitle,
-    primaryGoalId,
-    primaryGoalTitle,
-    whyThisGoal,
-    intro,
-    overviewTips: parseOverviewTips(obj.overviewTips, whyThisGoal),
-    dailyActions,
+    question,
+    answerType,
+    required: obj.required === true,
+    options: options && options.length > 0 ? options : null,
+    whyItMatters,
   };
 }
 
-function normalizeRoutineProposals(raw: unknown, profile: UserProfile): RoutineOption[] {
-  if (!raw || typeof raw !== 'object') throw new Error('Invalid routine response');
+function parseWeek(raw: unknown): PlanWeek | null {
+  if (!raw || typeof raw !== 'object') return null;
   const obj = raw as Record<string, unknown>;
-  const optionsRaw = (obj.options ?? obj.routines) as unknown;
-  if (!Array.isArray(optionsRaw)) throw new Error('Routine response missing options');
-
-  const options = optionsRaw
-    .slice(0, ROUTINE_OPTION_COUNT)
-    .map((item, index) => normalizeRoutineOption(item, profile, index));
-
-  if (options.length < ROUTINE_OPTION_COUNT) {
-    throw new Error('Routine response had too few options');
+  const weekNumber = Number(obj.weekNumber);
+  const status = String(obj.status ?? '').trim() as WeekStatus;
+  const focus = String(obj.focus ?? '').trim();
+  const target = String(obj.target ?? '').trim();
+  const whyThisWeek = String(obj.whyThisWeek ?? '').trim();
+  const weeklyStrategy = String(obj.weeklyStrategy ?? '').trim();
+  if (
+    !Number.isFinite(weekNumber) ||
+    !WEEK_STATUSES.includes(status) ||
+    !focus ||
+    !target ||
+    !whyThisWeek ||
+    !weeklyStrategy
+  ) {
+    return null;
   }
 
-  return options;
+  const suggestedExperiments = Array.isArray(obj.suggestedExperiments)
+    ? obj.suggestedExperiments
+        .map(parseExperiment)
+        .filter((item): item is SuggestedExperiment => item != null)
+    : [];
+  const dailyCheckInQuestions = Array.isArray(obj.dailyCheckInQuestions)
+    ? obj.dailyCheckInQuestions
+        .map(parseCheckInQuestion)
+        .filter((item): item is DailyCheckInQuestion => item != null)
+    : [];
+  const endOfWeekReviewSignals = Array.isArray(obj.endOfWeekReviewSignals)
+    ? obj.endOfWeekReviewSignals
+        .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+        .map((item) => item.trim())
+    : [];
+
+  if (dailyCheckInQuestions.length < 2 || endOfWeekReviewSignals.length < 1) return null;
+
+  return {
+    weekNumber,
+    status,
+    focus,
+    target,
+    whyThisWeek,
+    weeklyStrategy,
+    suggestedExperiments,
+    dailyCheckInQuestions,
+    endOfWeekReviewSignals,
+  };
+}
+
+function parseAdaptationRule(raw: unknown): AdaptationRule | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const obj = raw as Record<string, unknown>;
+  const condition = String(obj.condition ?? '').trim();
+  const adjustment = String(obj.adjustment ?? '').trim();
+  if (!condition || !adjustment) return null;
+  return { condition, adjustment };
+}
+
+function normalizeAdaptivePlan(raw: unknown, profile: UserProfile): AdaptivePlan {
+  if (!raw || typeof raw !== 'object') throw new Error('Invalid plan response');
+  const obj = raw as Record<string, unknown>;
+  const planRaw = (obj.plan ?? obj) as Record<string, unknown>;
+
+  const goalId = String(planRaw.goalId ?? '').trim();
+  if (!profile.habitIds.includes(goalId)) {
+    throw new Error('Plan picked an invalid goal');
+  }
+
+  const goalName = String(planRaw.goalName ?? '').trim();
+  const goalSummary = String(planRaw.goalSummary ?? '').trim();
+  const desiredOutcome = String(planRaw.desiredOutcome ?? '').trim();
+  const planPrinciple = String(planRaw.planPrinciple ?? '').trim();
+  const id = String(planRaw.id ?? 'plan-1').trim() || 'plan-1';
+
+  if (!goalName || !goalSummary || !desiredOutcome || !planPrinciple) {
+    throw new Error('Plan missing summary fields');
+  }
+
+  const weeks = Array.isArray(planRaw.weeks)
+    ? planRaw.weeks
+        .map(parseWeek)
+        .filter((item): item is PlanWeek => item != null)
+        .sort((a, b) => a.weekNumber - b.weekNumber)
+    : [];
+
+  if (weeks.length !== PLAN_WEEK_COUNT) {
+    throw new Error('Plan must include exactly 4 weeks');
+  }
+
+  const week1 = weeks.find((week) => week.weekNumber === 1);
+  if (!week1 || week1.status !== 'active') {
+    throw new Error('Week 1 must be active');
+  }
+
+  const adaptationRules = Array.isArray(planRaw.adaptationRules)
+    ? planRaw.adaptationRules
+        .map(parseAdaptationRule)
+        .filter((item): item is AdaptationRule => item != null)
+    : [];
+
+  if (adaptationRules.length < 1) throw new Error('Plan missing adaptation rules');
+
+  const habit = habitCatalog.find((h) => h.id === goalId);
+  return {
+    id,
+    goalId,
+    goalName: goalName || habit?.title || goalId,
+    goalSummary,
+    startingPoint: parseStartingPoint(planRaw.startingPoint),
+    desiredOutcome,
+    planPrinciple,
+    weeks,
+    adaptationRules,
+  };
 }
 
 async function fetchViaProxy(
   context: RoutineGenerationContext,
   profile: UserProfile,
-): Promise<RoutineOption[]> {
+): Promise<AdaptivePlan> {
   const url = getHealthInsightsProxyUrl();
   if (!url) throw new Error('Proxy URL not configured');
 
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ context, kind: 'routine' }),
+    body: JSON.stringify({ context, kind: 'plan' }),
   });
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(text || `Routine request failed (${res.status})`);
+    throw new Error(text || `Plan request failed (${res.status})`);
   }
 
   const data: unknown = await res.json();
-  if (!data || typeof data !== 'object') throw new Error('Invalid routine response');
-  const payload = (data as Record<string, unknown>).options
-    ? data
-    : (data as Record<string, unknown>).routine ?? data;
-  return normalizeRoutineProposals(payload, profile);
+  if (!data || typeof data !== 'object') throw new Error('Invalid plan response');
+  const payload = (data as Record<string, unknown>).plan != null ? data : data;
+  return normalizeAdaptivePlan(payload, profile);
 }
 
 async function fetchViaOpenAi(
   context: RoutineGenerationContext,
   profile: UserProfile,
-): Promise<RoutineOption[]> {
+): Promise<AdaptivePlan> {
   const apiKey = getOpenAiApiKey();
   if (!apiKey) throw new Error('OpenAI API key not configured');
 
@@ -370,13 +605,13 @@ async function fetchViaOpenAi(
         },
       ],
       temperature: HEALTH_INSIGHTS_TEMPERATURE,
-      max_completion_tokens: ROUTINE_MAX_OUTPUT_TOKENS,
+      max_completion_tokens: PLAN_MAX_OUTPUT_TOKENS,
       response_format: {
         type: 'json_schema',
         json_schema: {
-          name: 'routine_proposals',
+          name: 'adaptive_plan',
           strict: true,
-          schema: ROUTINE_RESPONSE_SCHEMA,
+          schema: PLAN_RESPONSE_SCHEMA,
         },
       },
     }),
@@ -396,37 +631,35 @@ async function fetchViaOpenAi(
   const text = data.choices?.[0]?.message?.content?.trim();
   if (!text) throw new Error('Empty model response');
   if (data.choices?.[0]?.finish_reason === 'length') {
-    throw new Error('Routine response was cut off');
+    throw new Error('Plan response was cut off');
   }
 
-  return normalizeRoutineProposals(parseModelJson(text), profile);
+  return normalizeAdaptivePlan(parseModelJson(text), profile);
 }
 
-export async function generateRoutineProposals(profile: UserProfile): Promise<RoutineProposalSet> {
+export async function generateAdaptivePlan(profile: UserProfile): Promise<PlanGenerationResult> {
   const context = buildRoutineGenerationContext(profile);
 
   if (isHealthInsightsConfigured()) {
     try {
       if (getOpenAiApiKey()) {
-        const options = await fetchViaOpenAi(context, profile);
-        return {
-          options,
-          generatedAt: new Date().toISOString(),
-          source: 'llm',
-        };
+        const plan = await fetchViaOpenAi(context, profile);
+        return { plan, generatedAt: new Date().toISOString(), source: 'llm' };
       }
       if (getHealthInsightsProxyUrl()) {
-        const options = await fetchViaProxy(context, profile);
-        return {
-          options,
-          generatedAt: new Date().toISOString(),
-          source: 'llm',
-        };
+        const plan = await fetchViaProxy(context, profile);
+        return { plan, generatedAt: new Date().toISOString(), source: 'llm' };
       }
     } catch {
-      // fall through to local templates
+      // fall through to local template
     }
   }
 
-  return buildFallbackRoutineProposals(profile.habitIds, profile.goalDetails ?? {});
+  return buildFallbackAdaptivePlan(profile.habitIds, profile.goalDetails ?? {});
+}
+
+/** @deprecated Use generateAdaptivePlan */
+export async function generateRoutineProposals(profile: UserProfile) {
+  const result = await generateAdaptivePlan(profile);
+  return result;
 }

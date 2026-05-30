@@ -2,10 +2,10 @@ import { useCallback, useMemo, useState } from 'react';
 import { LayoutChangeEvent, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import PersonalRoutineSection from '@/components/PersonalRoutineSection';
+import PlanSection from '@/components/PlanSection';
 import HealthInsightsCard from '@/components/HealthInsightsCard';
-import TodayRoutineChecklist from '@/components/TodayRoutineChecklist';
-import TodayRoutineDoneButton from '@/components/TodayRoutineDoneButton';
+import TodayPlanCheckIn from '@/components/TodayPlanCheckIn';
+import TodayPlanSubmitButton from '@/components/TodayPlanSubmitButton';
 import { Text } from '@/components/Themed';
 import { useHealth } from '@/context/HealthContext';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
@@ -23,24 +23,21 @@ export default function TodayScreen() {
   const { isTabletUp } = useBreakpoint();
   const {
     profile,
-    personalRoutine,
-    routineProposals,
-    routineLoading,
-    routineError,
-    selectPersonalRoutine,
+    personalPlan,
+    pendingPlan,
+    planLoading,
+    planError,
+    acceptPlan,
     todayShowInsights,
-    editTodayRoutine,
-    routineCompletionLog,
-    todayRoutineSteps,
+    editTodayCheckIn,
+    planCheckInLog,
   } = useHealth();
 
   const [contentTop, setContentTop] = useState<number | null>(null);
 
-  const choosingRoutine = useMemo(
-    () =>
-      !personalRoutine &&
-      (routineLoading || (routineProposals?.options.length ?? 0) > 0),
-    [personalRoutine, routineLoading, routineProposals],
+  const reviewingPlan = useMemo(
+    () => !personalPlan && (planLoading || pendingPlan != null),
+    [personalPlan, planLoading, pendingPlan],
   );
 
   const greeting = todayGreetingLine(profile?.name);
@@ -53,26 +50,25 @@ export default function TodayScreen() {
     refresh: refreshInsights,
   } = useHealthInsights({
     profile,
-    personalRoutine,
-    todayRoutineSteps,
-    routineCompletionLog,
-    enabled: todayShowInsights && !choosingRoutine,
+    personalPlan,
+    planCheckInLog,
+    enabled: todayShowInsights && !reviewingPlan,
   });
 
   const onAnchorLayout = useCallback(
     (event: LayoutChangeEvent) => {
-      if (contentTop != null || todayShowInsights || choosingRoutine) return;
+      if (contentTop != null || todayShowInsights || reviewingPlan) return;
       const anchorHeight = event.nativeEvent.layout.height;
       const visibleHeight = windowHeight - insets.top - insets.bottom - TAB_BAR_HEIGHT;
       const top = Math.max(insets.top + 16, (visibleHeight - anchorHeight) / 2);
       setContentTop(top);
     },
-    [contentTop, todayShowInsights, choosingRoutine, insets.bottom, insets.top, windowHeight],
+    [contentTop, todayShowInsights, reviewingPlan, insets.bottom, insets.top, windowHeight],
   );
 
   const scrollPaddingTop = todayShowInsights ? insets.top + 16 : (contentTop ?? insets.top + 48);
 
-  if (choosingRoutine) {
+  if (reviewingPlan) {
     return (
       <View style={[pageStyles.scroll, styles.chooserScreen]}>
         <View
@@ -86,12 +82,12 @@ export default function TodayScreen() {
             },
           ]}>
           <View style={[pageStyle, styles.chooserPage]}>
-            <PersonalRoutineSection
-              personalRoutine={personalRoutine}
-              routineProposals={routineProposals}
-              isLoading={routineLoading}
-              error={routineError}
-              onSelectRoutine={selectPersonalRoutine}
+            <PlanSection
+              personalPlan={personalPlan}
+              pendingPlan={pendingPlan}
+              isLoading={planLoading}
+              error={planError}
+              onAcceptPlan={acceptPlan}
               choosingMode
             />
           </View>
@@ -118,24 +114,24 @@ export default function TodayScreen() {
           <>
             <View onLayout={onAnchorLayout}>
               <Text style={styles.greeting}>{greeting}</Text>
-              <Text style={styles.prompt}>Your routine for today</Text>
+              <Text style={styles.prompt}>Your check-in for today</Text>
             </View>
-            <TodayRoutineChecklist />
-            <TodayRoutineDoneButton />
+            <TodayPlanCheckIn />
+            <TodayPlanSubmitButton />
           </>
         ) : (
           profile && (
             <View style={styles.insightsView}>
               <Text style={styles.greeting}>{greeting}</Text>
-              <Text style={styles.insightsIntro}>Based on your routine today</Text>
+              <Text style={styles.insightsIntro}>Based on your check-in today</Text>
               <HealthInsightsCard
                 configured={insightsConfigured}
                 insight={llmInsight}
                 isLoading={insightsLoading}
                 error={insightsError}
                 onRefresh={refreshInsights}
-                onEditCheckIn={editTodayRoutine}
-                editLabel="Edit today's routine"
+                onEditCheckIn={editTodayCheckIn}
+                editLabel="Edit today's check-in"
               />
             </View>
           )

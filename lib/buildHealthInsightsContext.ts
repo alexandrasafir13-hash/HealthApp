@@ -7,22 +7,16 @@ import {
   healthyWeightRangeKg,
   weightVsHealthyBand,
 } from '@/lib/healthSnapshot';
-import { RoutineDaySummary, todayRoutineSummaryForLlm } from '@/lib/routineCompletionHistory';
+import { PlanCheckInEntry } from '@/lib/planCheckInStorage';
 import { DailyCheckIn, TestResultUpload } from '@/types/health';
 import { UserProfile } from '@/types/onboarding';
-import { PersonalRoutine, dailyActionsFromRoutine, overviewTipsFromRoutine, actionDoneWhen, routineDisplayTitle } from '@/types/routine';
+import { getActivePlanWeek, PersonalPlan, planDisplayTitle } from '@/types/plan';
 
 export interface ImprovementGoal {
   area: string;
   goal: string;
   onboardingAnswers?: { question: string; answer: string }[];
 }
-
-export type LlmRoutineItem = {
-  title: string;
-  doneWhen: string;
-  timeHint: string;
-};
 
 /** Only data the user actually entered or chose — sent to the LLM for tips. */
 export interface HealthInsightsContext {
@@ -34,23 +28,19 @@ export interface HealthInsightsContext {
     medicalConditions: string[];
     dataMethodsTheySelected: string[];
     uploadedDocuments: { name: string; kind: string; uploadedAt: string }[];
-    personalRoutine: {
+    personalPlan: {
       title: string;
-      focus: string;
-      intro: string;
-      overviewTips: string[];
-      dailyActions: LlmRoutineItem[];
+      goalSummary: string;
+      activeWeekFocus: string | null;
+      activeWeekTarget: string | null;
     } | null;
-    todaysRoutineProgress: {
-      completedCount: number;
-      totalCount: number;
-      completedItems: string[];
-      missedItems: string[];
+    todaysPlanCheckIn: {
+      weekNumber: number;
+      answers: Record<string, string | number | string[]>;
+      submittedAt: string;
     } | null;
-    recentRoutineDays: RoutineDaySummary[];
   };
   wantsToImprove: ImprovementGoal[];
-  /** BMI from entered weight/height only — not a user goal. Omit if not useful. */
   optionalDerivedFromEnteredMeasurements?: {
     note: string;
     bmi: number;
@@ -96,13 +86,6 @@ export function improvementGoalsFromHabitIds(
   });
 }
 
-export function improvementAreaLabels(
-  habitIds: string[],
-  goalDetails?: UserProfile['goalDetails'],
-): string[] {
-  return improvementGoalsFromHabitIds(habitIds, goalDetails).map((g) => g.area);
-}
-
 function optionalBmiContext(
   weightKg: number,
   heightCm: number,
@@ -134,30 +117,29 @@ function uploadedDocumentSummaries(uploads: TestResultUpload[]) {
 
 export function buildHealthInsightsContext(input: {
   profile: UserProfile;
-  personalRoutine: PersonalRoutine | null;
-  todayRoutineSteps: { id: string; title: string; doneWhen: string; timeHint: string; completed: boolean }[];
+  personalPlan: PersonalPlan | null;
+  todayPlanCheckIn: PlanCheckInEntry | null;
   uploadedDocuments: TestResultUpload[];
-  recentRoutineDays: RoutineDaySummary[];
 }): HealthInsightsContext {
-  const { profile, personalRoutine, todayRoutineSteps, uploadedDocuments, recentRoutineDays } =
-    input;
+  const { profile, personalPlan, todayPlanCheckIn, uploadedDocuments } = input;
+  const activeWeek = personalPlan ? getActivePlanWeek(personalPlan) : null;
 
-  const routineForLlm = personalRoutine
+  const planForLlm = personalPlan
     ? {
-        title: routineDisplayTitle(personalRoutine),
-        focus: personalRoutine.primaryGoalTitle,
-        intro: personalRoutine.intro,
-        overviewTips: overviewTipsFromRoutine(personalRoutine),
-        dailyActions: dailyActionsFromRoutine(personalRoutine).map((action) => ({
-          title: action.title,
-          doneWhen: actionDoneWhen(action),
-          timeHint: action.timeHint,
-        })),
+        title: planDisplayTitle(personalPlan),
+        goalSummary: personalPlan.goalSummary,
+        activeWeekFocus: activeWeek?.focus ?? null,
+        activeWeekTarget: activeWeek?.target ?? null,
       }
     : null;
 
-  const todaysRoutineProgress =
-    todayRoutineSteps.length > 0 ? todayRoutineSummaryForLlm(todayRoutineSteps) : null;
+  const todaysPlanCheckIn = todayPlanCheckIn
+    ? {
+        weekNumber: todayPlanCheckIn.weekNumber,
+        answers: todayPlanCheckIn.answers,
+        submittedAt: todayPlanCheckIn.submittedAt,
+      }
+    : null;
 
   return {
     whatYouEntered: {
@@ -168,9 +150,8 @@ export function buildHealthInsightsContext(input: {
       medicalConditions: labelsForConditions(profile.medicalConditionIds),
       dataMethodsTheySelected: labelsForDataMethods(profile.dataMethods),
       uploadedDocuments: uploadedDocumentSummaries(uploadedDocuments),
-      personalRoutine: routineForLlm,
-      todaysRoutineProgress,
-      recentRoutineDays,
+      personalPlan: planForLlm,
+      todaysPlanCheckIn,
     },
     wantsToImprove: improvementGoalsFromHabitIds(profile.habitIds, profile.goalDetails),
     optionalDerivedFromEnteredMeasurements: optionalBmiContext(
@@ -184,7 +165,7 @@ export function fingerprintHealthInsightsContext(context: HealthInsightsContext)
   return JSON.stringify(context);
 }
 
-/** @deprecated Legacy check-in payload — kept for any remaining imports */
+/** @deprecated Legacy check-in payload */
 export function checkInPayloadForLlm(_entry: DailyCheckIn) {
   return { symptoms: [] as string[] };
 }
