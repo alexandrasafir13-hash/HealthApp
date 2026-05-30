@@ -16,11 +16,11 @@ function weekQuestions(goalId: string, weekNumber: number): DailyCheckInQuestion
     return [
       {
         id: `w${weekNumber}-screen-time`,
-        question: 'What was your screen time today?',
-        answerType: 'short_text',
+        question: 'How many hours of screen time today?',
+        answerType: 'number',
         required: true,
         options: null,
-        unit: null,
+        unit: 'hours',
       },
       {
         id: `w${weekNumber}-blocker`,

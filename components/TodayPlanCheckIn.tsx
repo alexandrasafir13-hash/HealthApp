@@ -1,11 +1,113 @@
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import ActivePlanCard from '@/components/ActivePlanCard';
 import { Text } from '@/components/Themed';
 import { useHealth } from '@/context/HealthContext';
-import { DailyCheckInQuestion } from '@/types/plan';
+import { DailyCheckInQuestion, questionUnitLabel } from '@/types/plan';
 import { palette } from '@/constants/theme';
 import { PlanCheckInAnswer } from '@/lib/planCheckInStorage';
+
+function parseTimeValue(value: PlanCheckInAnswer | undefined): { hours: string; minutes: string } {
+  if (typeof value !== 'string') return { hours: '', minutes: '' };
+  const match = value.trim().match(/^(\d{1,2}):(\d{1,2})$/);
+  if (!match) return { hours: '', minutes: '' };
+  return { hours: match[1], minutes: match[2] };
+}
+
+function NumberField({
+  value,
+  unit,
+  onChange,
+}: {
+  value: PlanCheckInAnswer | undefined;
+  unit: string | null;
+  onChange: (value: PlanCheckInAnswer) => void;
+}) {
+  const textValue =
+    typeof value === 'number'
+      ? String(value)
+      : typeof value === 'string' && value.trim().length > 0
+        ? value
+        : '';
+
+  return (
+    <View style={styles.numberRow}>
+      <TextInput
+        style={styles.numberInput}
+        value={textValue}
+        onChangeText={(text) => {
+          const cleaned = text.replace(',', '.');
+          if (!cleaned.trim()) {
+            onChange('');
+            return;
+          }
+          const parsed = Number.parseFloat(cleaned);
+          onChange(Number.isFinite(parsed) ? parsed : cleaned);
+        }}
+        keyboardType="decimal-pad"
+        inputMode="decimal"
+        placeholder="0"
+        placeholderTextColor={palette.slateSubtle}
+      />
+      {unit ? <Text style={styles.unit}>{unit}</Text> : null}
+    </View>
+  );
+}
+
+function TimeField({
+  value,
+  onChange,
+}: {
+  value: PlanCheckInAnswer | undefined;
+  onChange: (value: PlanCheckInAnswer) => void;
+}) {
+  const parsed = parseTimeValue(value);
+  const [hours, setHours] = useState(parsed.hours);
+  const [minutes, setMinutes] = useState(parsed.minutes);
+
+  useEffect(() => {
+    const next = parseTimeValue(value);
+    setHours(next.hours);
+    setMinutes(next.minutes);
+  }, [value]);
+
+  const commit = (nextHours: string, nextMinutes: string) => {
+    setHours(nextHours);
+    setMinutes(nextMinutes);
+    if (nextHours.trim() && nextMinutes.trim()) {
+      onChange(`${nextHours}:${nextMinutes.padStart(2, '0')}`);
+      return;
+    }
+    onChange('');
+  };
+
+  return (
+    <View style={styles.timeRow}>
+      <TextInput
+        style={styles.timePart}
+        value={hours}
+        onChangeText={(text) => commit(text.replace(/\D/g, '').slice(0, 2), minutes)}
+        keyboardType="number-pad"
+        inputMode="numeric"
+        maxLength={2}
+        placeholder="HH"
+        placeholderTextColor={palette.slateSubtle}
+      />
+      <Text style={styles.timeSep}>:</Text>
+      <TextInput
+        style={styles.timePart}
+        value={minutes}
+        onChangeText={(text) => commit(hours, text.replace(/\D/g, '').slice(0, 2))}
+        keyboardType="number-pad"
+        inputMode="numeric"
+        maxLength={2}
+        placeholder="MM"
+        placeholderTextColor={palette.slateSubtle}
+      />
+    </View>
+  );
+}
 
 function QuestionField({
   question,
@@ -16,6 +118,8 @@ function QuestionField({
   value: PlanCheckInAnswer | undefined;
   onChange: (value: PlanCheckInAnswer) => void;
 }) {
+  const unit = questionUnitLabel(question);
+
   if (question.answerType === 'scale_1_5') {
     const selected = typeof value === 'number' ? value : null;
     return (
@@ -72,22 +176,21 @@ function QuestionField({
     );
   }
 
+  if (question.answerType === 'number') {
+    return <NumberField value={value} unit={unit} onChange={onChange} />;
+  }
+
+  if (question.answerType === 'time') {
+    return <TimeField value={value} onChange={onChange} />;
+  }
+
   const textValue = value == null ? '' : String(value);
-  const keyboardType = question.answerType === 'number' ? 'numeric' : 'default';
 
   return (
     <TextInput
       style={styles.input}
       value={textValue}
-      onChangeText={(text) => {
-        if (question.answerType === 'number') {
-          const parsed = Number.parseFloat(text);
-          onChange(Number.isFinite(parsed) ? parsed : text);
-        } else {
-          onChange(text);
-        }
-      }}
-      keyboardType={keyboardType}
+      onChangeText={onChange}
       placeholder="Your answer"
       placeholderTextColor={palette.slateSubtle}
       multiline={question.answerType === 'short_text'}
@@ -142,6 +245,52 @@ const styles = StyleSheet.create({
     color: palette.slate,
     backgroundColor: palette.background,
     minHeight: 44,
+  },
+  numberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  numberInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: palette.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: palette.slate,
+    backgroundColor: palette.background,
+    minHeight: 44,
+  },
+  unit: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: palette.slateMuted,
+    minWidth: 48,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  timePart: {
+    width: 72,
+    borderWidth: 1,
+    borderColor: palette.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: palette.slate,
+    backgroundColor: palette.background,
+    minHeight: 44,
+    textAlign: 'center',
+  },
+  timeSep: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: palette.slateMuted,
   },
   scaleRow: { flexDirection: 'row', gap: 8 },
   scaleOption: {

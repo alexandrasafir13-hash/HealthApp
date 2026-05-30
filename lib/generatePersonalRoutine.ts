@@ -9,6 +9,7 @@ import {
   HEALTH_INSIGHTS_TEMPERATURE,
   isHealthInsightsConfigured,
 } from '@/lib/healthInsightsConfig';
+import { normalizeDailyCheckInQuestion } from '@/lib/checkInQuestion';
 import { parseModelJson } from '@/lib/parseModelJson';
 import { UserProfile } from '@/types/onboarding';
 import {
@@ -167,9 +168,11 @@ const PLAN_RESPONSE_SCHEMA = {
   additionalProperties: false,
 };
 
-const SYSTEM_PROMPT = `You create compact 4-week behavior-change plans for a wellness app.
+const SYSTEM_PROMPT = `You create compact adaptive 4-week plans for a wellness app.
 
-The user wants a plan, not an essay.
+The user wants to see the full 4-week plan upfront.
+Week 1 must be detailed because it starts now.
+Weeks 2-4 must be shorter previews because they will adapt after each weekly review.
 
 Input JSON includes:
 
@@ -180,35 +183,52 @@ Input JSON includes:
 * medicalConditions
 * onboardingAnswers
 
-Create ONE 4-week adaptive plan.
+Create ONE 4-week plan.
 
 Rules:
 
 * Return JSON only.
-* Be concise.
-* No paragraphs.
-* No motivational text.
+* No essays.
 * No generic wellness advice.
-* No daily todos.
-* No habit checkboxes.
-* Daily check-ins collect data for the weekly review.
-* Week 1 is active.
-* Weeks 2-4 are provisional.
-* Each week must fit on a small app screen.
+* No daily habit checkboxes.
+* No daily todo lists.
+* The plan must show Week 1, Week 2, Week 3, and Week 4.
+* Week 1 is active and detailed.
+* Weeks 2-4 are provisional and compact.
+* Daily check-ins are only generated for Week 1.
+* Weeks 2-4 should explain what will likely happen, not pretend the future is fixed.
+* Each week should feel like one step in a progression.
+
+Week 1 must include:
+
+* focus
+* weeklyTarget
+* whyThisWeek
+* planSteps
+* dailyCheckInQuestions
+* reviewSignals
+
+Weeks 2-4 must include:
+
+* focus
+* likelyTarget
+* preview
+* dependsOn
 
 Hard limits:
 
-* goalSummary: max 140 characters
-* each week focus: max 60 characters
-* each weeklyTarget: max 90 characters
-* each planStep: max 70 characters
-* each check-in question: max 70 characters
-* max 3 planSteps per week
-* exactly 4 daily check-in questions per week
-* max 3 reviewSignals per week
+* goalSummary: max 120 characters
+* week focus: max 60 characters
+* Week 1 weeklyTarget: max 90 characters
+* Week 1 whyThisWeek: max 120 characters
+* Week 1 planSteps: exactly 3, max 70 characters each
+* Week 1 check-in questions: exactly 4, max 70 characters each
+* Week 1 reviewSignals: max 3
+* Weeks 2-4 preview: max 120 characters each
+* Weeks 2-4 dependsOn: max 100 characters each
 
 Safety:
-Keep plans gentle. Do not diagnose, mention medication, suggest supplements, fasting, calorie restriction, intense exercise, BMI, or body-size comments.
+Keep plans gentle. Do not diagnose, mention medication, suggest supplements, fasting, calorie restriction, intense exercise, BMI, or body-size comments. Adapt around medicalConditions and constraints.
 
 Output schema:
 {
@@ -233,8 +253,9 @@ Output schema:
 "status": "active",
 "focus": string,
 "weeklyTarget": string,
+"whyThisWeek": string,
 "planSteps": string[],
-"checkInQuestions": [
+"dailyCheckInQuestions": [
 {
 "id": string,
 "label": string,
@@ -244,6 +265,30 @@ Output schema:
 }
 ],
 "reviewSignals": string[]
+},
+{
+"week": 2,
+"status": "provisional",
+"focus": string,
+"likelyTarget": string,
+"preview": string,
+"dependsOn": string
+},
+{
+"week": 3,
+"status": "provisional",
+"focus": string,
+"likelyTarget": string,
+"preview": string,
+"dependsOn": string
+},
+{
+"week": 4,
+"status": "provisional",
+"focus": string,
+"likelyTarget": string,
+"preview": string,
+"dependsOn": string
 }
 ],
 "adaptationRules": [
@@ -254,6 +299,7 @@ Output schema:
 ]
 }
 }`;
+
 
 
 function parsePrimaryMetric(raw: unknown): PrimaryMetric {
@@ -284,25 +330,7 @@ function parseExperiment(raw: unknown): PlanExperiment | null {
 }
 
 function parseCheckInQuestion(raw: unknown): DailyCheckInQuestion | null {
-  if (!raw || typeof raw !== 'object') return null;
-  const obj = raw as Record<string, unknown>;
-  const id = String(obj.id ?? '').trim();
-  const question = String(obj.question ?? '').trim();
-  const answerType = String(obj.answerType ?? '').trim() as CheckInAnswerType;
-  if (!id || !question || !ANSWER_TYPES.includes(answerType)) return null;
-  const options = Array.isArray(obj.options)
-    ? obj.options.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-    : null;
-  const unitRaw = obj.unit;
-  const unit = unitRaw == null ? null : String(unitRaw).trim() || null;
-  return {
-    id,
-    question,
-    answerType,
-    required: obj.required === true,
-    options: options && options.length > 0 ? options : null,
-    unit,
-  };
+  return normalizeDailyCheckInQuestion(raw);
 }
 
 function parseWeek(raw: unknown): PlanWeek | null {

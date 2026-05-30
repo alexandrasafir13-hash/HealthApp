@@ -1,3 +1,5 @@
+import { normalizeDailyCheckInQuestion } from '@/lib/checkInQuestion';
+
 export type CheckInAnswerType =
   | 'number'
   | 'scale_1_5'
@@ -126,17 +128,9 @@ export function normalizeStoredPlan(plan: AdaptivePlan | (AdaptivePlan & Record<
           whatItTests: e.whatItTests || e.whenToUse || '',
         };
       }),
-      dailyCheckInQuestions: (w.dailyCheckInQuestions ?? []).map((q) => {
-        const question = q as DailyCheckInQuestion & { whyItMatters?: string };
-        return {
-          id: question.id,
-          question: question.question,
-          answerType: question.answerType,
-          required: question.required,
-          options: question.options,
-          unit: question.unit ?? null,
-        };
-      }),
+      dailyCheckInQuestions: (w.dailyCheckInQuestions ?? [])
+        .map((q) => normalizeDailyCheckInQuestion(q))
+        .filter((item): item is DailyCheckInQuestion => item != null),
       weeklyReviewSignals: w.weeklyReviewSignals ?? w.endOfWeekReviewSignals ?? [],
     };
   });
