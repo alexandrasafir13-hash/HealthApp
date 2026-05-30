@@ -22,6 +22,12 @@ import { DataMethodId } from '@/types/onboarding';
 const STEPS = ['name', 'data', 'habits'] as const;
 type Step = (typeof STEPS)[number];
 
+const STEP_HEADINGS: Record<Step, string> = {
+  name: "What's your name?",
+  data: 'How do you want to add data?',
+  habits: 'Which habits do you want to track?',
+};
+
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const { pageStyle, isTabletUp } = usePageLayout();
@@ -59,7 +65,15 @@ export default function OnboardingScreen() {
         : habitIds.length > 0;
 
   const goBack = () => {
-    if (stepIndex > 0) setStepIndex((i) => i - 1);
+    if (stepIndex > 0) {
+      setStepIndex((i) => i - 1);
+      return;
+    }
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/welcome');
+    }
   };
 
   const goNext = async () => {
@@ -102,6 +116,8 @@ export default function OnboardingScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
+          <Text style={styles.stepTitle}>{STEP_HEADINGS[step]}</Text>
+
           {step === 'name' && (
             <View style={styles.stepBlock}>
               <TextInput
@@ -172,13 +188,9 @@ export default function OnboardingScreen() {
         </ScrollView>
 
         <View style={styles.footer}>
-          {stepIndex > 0 ? (
-            <Pressable style={styles.backButton} onPress={goBack}>
-              <Text style={styles.backButtonText}>Back</Text>
-            </Pressable>
-          ) : (
-            <View style={styles.backPlaceholder} />
-          )}
+          <Pressable style={styles.backButton} onPress={goBack}>
+            <Text style={styles.backButtonText}>Back</Text>
+          </Pressable>
           <Pressable
             style={[styles.nextButton, (!canContinue || saving) && styles.nextButtonDisabled]}
             onPress={goNext}
@@ -235,6 +247,13 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'flex-end',
     paddingBottom: 8,
+  },
+  stepTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: palette.slate,
+    marginBottom: 20,
+    width: '100%',
   },
   stepBlock: {
     gap: 12,
@@ -327,9 +346,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: palette.slateMuted,
-  },
-  backPlaceholder: {
-    width: 72,
   },
   nextButton: {
     flex: 1,
