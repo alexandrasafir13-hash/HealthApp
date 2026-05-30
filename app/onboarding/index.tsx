@@ -234,10 +234,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  body: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
   containerPhone: {
     paddingHorizontal: 20,
   },
