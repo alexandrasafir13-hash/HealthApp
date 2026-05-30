@@ -40,6 +40,14 @@ const STEP_HEADINGS: Record<Step, string> = {
 const DATA_STEP_EXPLAINER =
   'Helps us in generating better insights for you. You can skip this for now and upload later, or manually enter the data you want to track.';
 
+function showUploadError(message: string) {
+  if (Platform.OS === 'web') {
+    globalThis.alert?.(message);
+    return;
+  }
+  Alert.alert('Upload failed', message);
+}
+
 function parsePositiveInt(value: string): number | null {
   const n = Number.parseInt(value.trim(), 10);
   return Number.isFinite(n) ? n : null;
@@ -117,7 +125,7 @@ export default function OnboardingScreen() {
         kind: 'pdf',
       });
     } catch {
-      Alert.alert('Upload failed', 'Could not open the PDF picker. Please try again.');
+      showUploadError('Could not open the PDF picker. Please try again.');
     }
   };
 
@@ -126,8 +134,7 @@ export default function OnboardingScreen() {
       if (Platform.OS !== 'web') {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!permission.granted) {
-          Alert.alert(
-            'Photo access needed',
+          showUploadError(
             'Allow photo library access to upload images of your medical documents.'
           );
           return;
@@ -141,25 +148,23 @@ export default function OnboardingScreen() {
       });
       if (picked.canceled || !picked.assets?.length) return;
 
-      const next = picked.assets.map((asset, index) => ({
-        id: `test-${Date.now()}-${index}`,
-        name: asset.fileName ?? `Medical document ${uploads.length + index + 1}.jpg`,
-        uri: asset.uri,
-        kind: 'image' as const,
-        uploadedAt: new Date().toISOString(),
-      }));
-      persistUploads([...next, ...uploads]);
+      setUploads((prev) => {
+        const next = [
+          ...picked.assets.map((asset, index) => ({
+            id: `test-${Date.now()}-${index}`,
+            name: asset.fileName ?? `Medical document ${prev.length + index + 1}.jpg`,
+            uri: asset.uri,
+            kind: 'image' as const,
+            uploadedAt: new Date().toISOString(),
+          })),
+          ...prev,
+        ];
+        void saveTestResults(next);
+        return next;
+      });
     } catch {
-      Alert.alert('Upload failed', 'Could not open your photo gallery. Please try again.');
+      showUploadError('Could not open your photo gallery. Please try again.');
     }
-  };
-
-  const openUploadPicker = () => {
-    Alert.alert('Upload document', 'Choose a file type', [
-      { text: 'PDF', onPress: () => void pickPdf() },
-      { text: 'Photo', onPress: () => void pickImages() },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
   };
 
   const removeUpload = (id: string) => {
@@ -338,17 +343,29 @@ export default function OnboardingScreen() {
 
           {step === 'data' && (
             <View style={styles.stepBlock}>
-              <Pressable
-                style={({ pressed }) => [styles.uploadArea, pressed && styles.uploadAreaPressed]}
-                onPress={openUploadPicker}
-                accessibilityRole="button"
-                accessibilityLabel="Upload medical document">
+              <View style={styles.uploadArea}>
                 <View style={styles.uploadIconWrap}>
                   <FileUp color={palette.teal} size={28} strokeWidth={2} />
                 </View>
                 <Text style={styles.uploadAreaTitle}>Tap to upload</Text>
                 <Text style={styles.uploadAreaHint}>PDF or photo from your device</Text>
-              </Pressable>
+                <View style={styles.uploadActions}>
+                  <Pressable
+                    style={({ pressed }) => [styles.uploadAction, pressed && styles.uploadActionPressed]}
+                    onPress={() => void pickPdf()}
+                    accessibilityRole="button"
+                    accessibilityLabel="Upload PDF">
+                    <Text style={styles.uploadActionText}>Upload PDF</Text>
+                  </Pressable>
+                  <Pressable
+                    style={({ pressed }) => [styles.uploadAction, pressed && styles.uploadActionPressed]}
+                    onPress={() => void pickImages()}
+                    accessibilityRole="button"
+                    accessibilityLabel="Upload photo from gallery">
+                    <Text style={styles.uploadActionText}>From gallery</Text>
+                  </Pressable>
+                </View>
+              </View>
 
               {uploads.length > 0 && (
                 <View style={styles.uploadList}>
@@ -480,12 +497,33 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderStyle: 'dashed',
     borderColor: palette.teal,
-    paddingVertical: 36,
-    paddingHorizontal: 24,
+    paddingVertical: 28,
+    paddingHorizontal: 20,
   },
-  uploadAreaPressed: {
-    opacity: 0.88,
+  uploadActions: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+    marginTop: 8,
+  },
+  uploadAction: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: palette.sageLight,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: palette.teal,
+  },
+  uploadActionPressed: {
+    opacity: 0.88,
+  },
+  uploadActionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: palette.tealDark,
   },
   uploadIconWrap: {
     width: 56,
