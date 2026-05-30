@@ -12,6 +12,7 @@ export type MedicalConditionId =
   | 'high-blood-pressure'
   | 'requires-monitoring'
   | 'autoimmune-chronic'
+  | 'other'
   | 'none';
 
 export interface UserProfile {

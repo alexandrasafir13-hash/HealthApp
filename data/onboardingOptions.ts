@@ -68,6 +68,11 @@ export const medicalConditionCatalog: MedicalConditionOption[] = [
     description: 'Long-term conditions such as thyroid, arthritis, or IBD',
   },
   {
+    id: 'other',
+    title: 'Other',
+    description: 'Another condition not listed here',
+  },
+  {
     id: 'none',
     title: 'None of the above',
     description: 'No underlying conditions to report',
