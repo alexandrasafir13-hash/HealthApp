@@ -211,13 +211,14 @@ export function normalizeStoredPlan(plan: AdaptivePlan | (AdaptivePlan & Record<
           const when = String(rule.when ?? rule.signal ?? rule.condition ?? '').trim();
           const then = String(rule.then ?? rule.instruction ?? rule.nextWeekAdjustment ?? rule.adjustment ?? '').trim();
           if (!when || !then) return null;
-          return {
+          const legacyRule: AdjustmentRule = {
             signalId: when,
-            condition: 'avg_below' as const,
+            condition: 'avg_below',
             threshold: 3,
-            adjustment: 'simplify_action' as const,
+            adjustment: 'simplify_action',
             instruction: then.slice(0, 80),
           };
+          return legacyRule;
         })
         .filter((item): item is AdjustmentRule => item != null);
 
