@@ -40,7 +40,8 @@
         {
           "photosPermission": "Allow Healthy to access your photos to upload lab test results."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true

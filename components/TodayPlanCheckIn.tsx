@@ -1,19 +1,12 @@
-import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import ActivePlanCard from '@/components/ActivePlanCard';
+import TimePickerField from '@/components/TimePickerField';
 import { Text } from '@/components/Themed';
 import { useHealth } from '@/context/HealthContext';
 import { DailyCheckInQuestion, questionUnitLabel } from '@/types/plan';
 import { palette } from '@/constants/theme';
 import { PlanCheckInAnswer } from '@/lib/planCheckInStorage';
-
-function parseTimeValue(value: PlanCheckInAnswer | undefined): { hours: string; minutes: string } {
-  if (typeof value !== 'string') return { hours: '', minutes: '' };
-  const match = value.trim().match(/^(\d{1,2}):(\d{1,2})$/);
-  if (!match) return { hours: '', minutes: '' };
-  return { hours: match[1], minutes: match[2] };
-}
 
 function NumberField({
   value,
@@ -55,60 +48,6 @@ function NumberField({
   );
 }
 
-function TimeField({
-  value,
-  onChange,
-}: {
-  value: PlanCheckInAnswer | undefined;
-  onChange: (value: PlanCheckInAnswer) => void;
-}) {
-  const parsed = parseTimeValue(value);
-  const [hours, setHours] = useState(parsed.hours);
-  const [minutes, setMinutes] = useState(parsed.minutes);
-
-  useEffect(() => {
-    const next = parseTimeValue(value);
-    setHours(next.hours);
-    setMinutes(next.minutes);
-  }, [value]);
-
-  const commit = (nextHours: string, nextMinutes: string) => {
-    setHours(nextHours);
-    setMinutes(nextMinutes);
-    if (nextHours.trim() && nextMinutes.trim()) {
-      onChange(`${nextHours}:${nextMinutes.padStart(2, '0')}`);
-      return;
-    }
-    onChange('');
-  };
-
-  return (
-    <View style={styles.timeRow}>
-      <TextInput
-        style={styles.timePart}
-        value={hours}
-        onChangeText={(text) => commit(text.replace(/\D/g, '').slice(0, 2), minutes)}
-        keyboardType="number-pad"
-        inputMode="numeric"
-        maxLength={2}
-        placeholder="HH"
-        placeholderTextColor={palette.slateSubtle}
-      />
-      <Text style={styles.timeSep}>:</Text>
-      <TextInput
-        style={styles.timePart}
-        value={minutes}
-        onChangeText={(text) => commit(hours, text.replace(/\D/g, '').slice(0, 2))}
-        keyboardType="number-pad"
-        inputMode="numeric"
-        maxLength={2}
-        placeholder="MM"
-        placeholderTextColor={palette.slateSubtle}
-      />
-    </View>
-  );
-}
-
 function QuestionField({
   question,
   value,
@@ -119,6 +58,10 @@ function QuestionField({
   onChange: (value: PlanCheckInAnswer) => void;
 }) {
   const unit = questionUnitLabel(question);
+
+  if (question.answerType === 'time') {
+    return <TimePickerField value={value} onChange={onChange} />;
+  }
 
   if (question.answerType === 'scale_1_5') {
     const selected = typeof value === 'number' ? value : null;
@@ -178,10 +121,6 @@ function QuestionField({
 
   if (question.answerType === 'number') {
     return <NumberField value={value} unit={unit} onChange={onChange} />;
-  }
-
-  if (question.answerType === 'time') {
-    return <TimeField value={value} onChange={onChange} />;
   }
 
   const textValue = value == null ? '' : String(value);
@@ -268,29 +207,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: palette.slateMuted,
     minWidth: 48,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  timePart: {
-    width: 72,
-    borderWidth: 1,
-    borderColor: palette.border,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 15,
-    color: palette.slate,
-    backgroundColor: palette.background,
-    minHeight: 44,
-    textAlign: 'center',
-  },
-  timeSep: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: palette.slateMuted,
   },
   scaleRow: { flexDirection: 'row', gap: 8 },
   scaleOption: {
