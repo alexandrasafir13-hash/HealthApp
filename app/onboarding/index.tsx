@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/Themed';
+import { PAGE_MAX_WIDTH } from '@/hooks/useBreakpoint';
 import { pageStyles, usePageLayout } from '@/hooks/usePageLayout';
 import { useHealth } from '@/context/HealthContext';
 import { habitCatalog, medicalConditionCatalog, sexOptions } from '@/data/onboardingOptions';
@@ -155,13 +156,13 @@ export default function OnboardingScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={pageStyles.scroll}
+      style={[pageStyles.scroll, styles.screen]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View
           style={[
             styles.container,
             isTabletUp ? styles.containerTablet : styles.containerPhone,
-            { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 },
+            { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16, maxWidth: PAGE_MAX_WIDTH },
           ]}>
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
@@ -329,8 +330,13 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    alignItems: 'center',
+  },
   container: {
     flex: 1,
+    width: '100%',
+    alignSelf: 'center',
   },
   containerPhone: {
     paddingHorizontal: 20,

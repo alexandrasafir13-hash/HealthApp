@@ -124,7 +124,7 @@ export function buildCheckInForDate(
   const symptoms = symptomsOverride ?? logged?.symptoms ?? ['None'];
   const hasSymptoms = hasReportedSymptoms({ date: dateKey, symptoms } as DailyCheckIn);
 
-  if (!hasActivity && !hasSymptoms) return null;
+  if (!hasActivity && !hasSymptoms && !logged) return null;
 
   const metrics =
     total > 0

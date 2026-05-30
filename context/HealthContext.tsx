@@ -15,6 +15,8 @@ import {
   loadHabitCompletions,
   saveHabitCompletions,
 } from '@/lib/habitCompletionStorage';
+import { metricsFromFeeling } from '@/lib/feelingScale';
+import { todayCheckInDraftKey } from '@/lib/todayCheckInDraft';
 import { localDateKey } from '@/lib/localDate';
 import { loadUserProfile, saveUserProfile } from '@/lib/onboardingStorage';
 import {
@@ -32,6 +34,9 @@ interface HealthContextValue {
   customHabits: CustomHabit[];
   completedActions: Set<string>;
   todayCheckIn: DailyCheckIn | null;
+  checkInLog: CheckInLog;
+  /** Feeling picked on Today (1–5); wins over habit-derived scores for today. */
+  todayFeeling: number | null;
   profile: UserProfile | null;
   onboardingComplete: boolean;
   isReady: boolean;
@@ -47,7 +52,18 @@ interface HealthContextValue {
   toggleCustomHabit: (id: string, dateKey?: string) => void;
   removeCustomHabit: (id: string) => void;
   completeAction: (insightId: string, actionId: string) => void;
-  saveCheckIn: (checkIn: Pick<DailyCheckIn, 'symptoms'>) => void;
+  todaySymptoms: string[];
+  updateTodayDraft: (
+    checkIn: Partial<Pick<DailyCheckIn, 'symptoms' | 'energy' | 'sleepQuality' | 'stress'>>,
+  ) => void;
+  submitTodayCheckIn: () => Promise<boolean>;
+  todayCheckInSaved: boolean;
+  /** Today screen shows AI response instead of the check-in form. */
+  todayShowInsights: boolean;
+  editTodayCheckIn: () => void;
+  saveCheckIn: (
+    checkIn: Partial<Pick<DailyCheckIn, 'symptoms' | 'energy' | 'sleepQuality' | 'stress'>>,
+  ) => void;
   syncRoutineCheckIn: (dateKey?: string) => Promise<DailyCheckIn | null>;
   hasRoutineCheckInData: (dateKey: string) => boolean;
   refreshTodayCheckIn: () => Promise<void>;
@@ -102,17 +118,6 @@ function mergeLegacyCompletions(
   return changed ? { ...log, [dateKey]: day } : log;
 }
 
-function checkInsEqual(a: DailyCheckIn, b: DailyCheckIn): boolean {
-  return (
-    a.date === b.date &&
-    a.energy === b.energy &&
-    a.sleepQuality === b.sleepQuality &&
-    a.stress === b.stress &&
-    a.symptoms.length === b.symptoms.length &&
-    a.symptoms.every((s, i) => s === b.symptoms[i])
-  );
-}
-
 export function HealthProvider({ children }: { children: React.ReactNode }) {
   const [habits, setHabits] = useState(defaultHabits);
   const [customHabits, setCustomHabits] = useState<CustomHabit[]>([]);
@@ -120,6 +125,9 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
   const [completedActions, setCompletedActions] = useState<Set<string>>(new Set());
   const [checkInLog, setCheckInLog] = useState<CheckInLog>({});
   const [userSymptoms, setUserSymptoms] = useState<string[]>(['None']);
+  const [manualFeeling, setManualFeeling] = useState<number | null>(null);
+  const [lastSubmittedDraftKey, setLastSubmittedDraftKey] = useState<string | null>(null);
+  const [todayShowInsights, setTodayShowInsights] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isReady, setIsReady] = useState(false);
 
@@ -156,6 +164,12 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       setHabitCompletions(completions);
       setCheckInLog(savedLog);
       setUserSymptoms(savedCheckIn?.symptoms ?? ['None']);
+      if (savedCheckIn?.energy != null) {
+        setLastSubmittedDraftKey(
+          todayCheckInDraftKey(savedCheckIn.energy, savedCheckIn.symptoms ?? ['None']),
+        );
+        setTodayShowInsights(true);
+      }
       setIsReady(true);
     });
     return () => {
@@ -300,15 +314,93 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
 
   const effectiveTodayCheckIn = useMemo((): DailyCheckIn | null => {
     if (!isReady) return null;
+    const today = localDateKey();
+    const saved = checkInLog[today];
+    if (saved) return saved;
     return buildCheckInForDate(
-      localDateKey(),
+      today,
       habits,
       customHabits,
       habitCompletions,
-      {},
-      userSymptoms,
+      checkInLog,
+      undefined,
     );
-  }, [isReady, habits, customHabits, habitCompletions, userSymptoms]);
+  }, [isReady, habits, customHabits, habitCompletions, checkInLog]);
+
+  const todayCheckInSaved = useMemo(() => {
+    if (manualFeeling == null || lastSubmittedDraftKey == null) return false;
+    return lastSubmittedDraftKey === todayCheckInDraftKey(manualFeeling, userSymptoms);
+  }, [manualFeeling, userSymptoms, lastSubmittedDraftKey]);
+
+  const updateTodayDraft = useCallback(
+    (input: Partial<Pick<DailyCheckIn, 'symptoms' | 'energy' | 'sleepQuality' | 'stress'>>) => {
+      if (input.energy !== undefined) {
+        setManualFeeling(input.energy);
+      }
+      if (input.symptoms !== undefined) {
+        setUserSymptoms(input.symptoms);
+      }
+    },
+    [],
+  );
+
+  const submitTodayCheckIn = useCallback(async (): Promise<boolean> => {
+    if (manualFeeling == null) return false;
+    const today = localDateKey();
+    const checkIn: DailyCheckIn = {
+      date: today,
+      ...metricsFromFeeling(manualFeeling),
+      symptoms: userSymptoms,
+    };
+    setCheckInLog((prev) => ({ ...prev, [today]: checkIn }));
+    await saveCheckInLogEntry(checkIn);
+    setLastSubmittedDraftKey(todayCheckInDraftKey(manualFeeling, userSymptoms));
+    setTodayShowInsights(true);
+    return true;
+  }, [manualFeeling, userSymptoms]);
+
+  const editTodayCheckIn = useCallback(() => {
+    const today = localDateKey();
+    const saved = checkInLog[today];
+    if (saved?.energy != null) {
+      setManualFeeling(saved.energy);
+      setUserSymptoms(saved.symptoms ?? ['None']);
+    } else {
+      setManualFeeling(null);
+      setUserSymptoms(['None']);
+    }
+    setLastSubmittedDraftKey(null);
+    setTodayShowInsights(false);
+  }, [checkInLog]);
+
+  const saveCheckIn = useCallback(
+    (input: Partial<Pick<DailyCheckIn, 'symptoms' | 'energy' | 'sleepQuality' | 'stress'>>) => {
+      const today = localDateKey();
+      if (input.symptoms !== undefined) {
+        setUserSymptoms(input.symptoms);
+      }
+
+      setCheckInLog((prev) => {
+        const existing = prev[today];
+        const symptoms = input.symptoms ?? existing?.symptoms ?? userSymptoms;
+        const metrics =
+          input.energy !== undefined
+            ? metricsFromFeeling(input.energy)
+            : {
+                energy: existing?.energy ?? 3,
+                sleepQuality: existing?.sleepQuality ?? 3,
+                stress: existing?.stress ?? 3,
+              };
+        const checkIn: DailyCheckIn = { date: today, ...metrics, symptoms };
+        void saveCheckInLogEntry(checkIn);
+        if (input.energy !== undefined) {
+          setLastSubmittedDraftKey(todayCheckInDraftKey(input.energy, symptoms));
+        }
+        return { ...prev, [today]: checkIn };
+      });
+    },
+    [userSymptoms],
+  );
 
   const syncRoutineCheckIn = useCallback(
     async (dateKey = localDateKey()) => {
@@ -325,20 +417,6 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     (dateKey: string) => buildCheckIn(dateKey) != null,
     [buildCheckIn],
   );
-
-  const todayCheckInKey = effectiveTodayCheckIn
-    ? `${effectiveTodayCheckIn.date}:${effectiveTodayCheckIn.energy}:${effectiveTodayCheckIn.sleepQuality}:${effectiveTodayCheckIn.stress}:${effectiveTodayCheckIn.symptoms.join('|')}`
-    : null;
-
-  useEffect(() => {
-    if (!isReady || !effectiveTodayCheckIn) return;
-    setCheckInLog((prev) => {
-      const existing = prev[effectiveTodayCheckIn.date];
-      if (existing && checkInsEqual(existing, effectiveTodayCheckIn)) return prev;
-      void saveCheckInLogEntry(effectiveTodayCheckIn);
-      return { ...prev, [effectiveTodayCheckIn.date]: effectiveTodayCheckIn };
-    });
-  }, [isReady, todayCheckInKey, effectiveTodayCheckIn]);
 
   const insightsCheckInLog = useMemo(() => {
     if (!effectiveTodayCheckIn) return checkInLog;
@@ -364,6 +442,14 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       customHabits: todayHabits.customHabits,
       completedActions,
       todayCheckIn: effectiveTodayCheckIn,
+      checkInLog,
+      todayFeeling: manualFeeling,
+      todaySymptoms: userSymptoms,
+      updateTodayDraft,
+      submitTodayCheckIn,
+      todayCheckInSaved,
+      todayShowInsights,
+      editTodayCheckIn,
       profile,
       onboardingComplete: profile !== null,
       isReady,
@@ -376,9 +462,7 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       completeAction: (insightId, actionId) => {
         setCompletedActions((prev) => new Set(prev).add(`${insightId}:${actionId}`));
       },
-      saveCheckIn: ({ symptoms }) => {
-        setUserSymptoms(symptoms);
-      },
+      saveCheckIn,
       syncRoutineCheckIn,
       hasRoutineCheckInData,
       refreshTodayCheckIn,
@@ -389,6 +473,18 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       insights,
       todayHabits,
       effectiveTodayCheckIn,
+      checkInLog,
+      manualFeeling,
+      userSymptoms,
+      lastSubmittedDraftKey,
+      todayShowInsights,
+      editTodayCheckIn,
+      updateTodayDraft,
+      submitTodayCheckIn,
+      todayCheckInSaved,
+      todayShowInsights,
+      editTodayCheckIn,
+      saveCheckIn,
       completedActions,
       profile,
       isReady,
