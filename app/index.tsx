@@ -8,7 +8,7 @@ export default function Index() {
   if (!isReady) return null;
 
   if (!onboardingComplete) {
-    return <Redirect href="/onboarding" />;
+    return <Redirect href="/welcome" />;
   }
 
   return <Redirect href="/(tabs)" />;

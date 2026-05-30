@@ -28,6 +28,7 @@ interface HealthContextValue {
     dataMethods: DataMethodId[];
     habitIds: string[];
   }) => Promise<void>;
+  continueAsGuest: () => Promise<void>;
 }
 
 const HealthContext = createContext<HealthContextValue | null>(null);
@@ -116,6 +117,18 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const continueAsGuest = useCallback(async () => {
+    const nextProfile: UserProfile = {
+      name: 'Guest',
+      dataMethods: ['manual'],
+      habitIds: habitCatalog.slice(0, 3).map((h) => h.id),
+      completedAt: new Date().toISOString(),
+    };
+    await saveUserProfile(nextProfile);
+    setProfile(nextProfile);
+    setHabits(habitsFromIds(nextProfile.habitIds));
+  }, []);
+
   const value = useMemo<HealthContextValue>(
     () => ({
       insights: mockInsights,
@@ -144,6 +157,7 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
         });
       },
       completeOnboarding,
+      continueAsGuest,
     }),
     [
       habits,
@@ -153,6 +167,7 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       profile,
       isReady,
       completeOnboarding,
+      continueAsGuest,
       addCustomHabit,
       toggleCustomHabit,
       removeCustomHabit,

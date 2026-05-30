@@ -70,6 +70,7 @@ function RootLayoutNav() {
       <ThemeProvider value={colorScheme === 'dark' ? HealthyDarkTheme : HealthyLightTheme}>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
+          <Stack.Screen name="welcome" />
           <Stack.Screen name="onboarding" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="insight/[id]" options={{ headerShown: true, title: 'Body insight' }} />
