@@ -1,6 +1,10 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
+import { FileUp } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,9 +18,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/Themed';
 import { pageStyles, usePageLayout } from '@/hooks/usePageLayout';
 import { useHealth } from '@/context/HealthContext';
-import { dataMethodOptions, habitCatalog, sexOptions } from '@/data/onboardingOptions';
+import { habitCatalog, sexOptions } from '@/data/onboardingOptions';
 import { palette } from '@/constants/theme';
+import { loadTestResults, saveTestResults } from '@/lib/testResultsStorage';
 import { BiologicalSex, DataMethodId } from '@/types/onboarding';
+import { TestResultUpload } from '@/types/health';
 
 const STEPS = ['habits', 'name', 'age', 'sex', 'weight', 'height', 'data'] as const;
 type Step = (typeof STEPS)[number];
@@ -27,9 +33,12 @@ const STEP_HEADINGS: Record<Step, string> = {
   sex: 'What is your sex?',
   weight: 'What is your weight?',
   height: 'What is your height?',
-  data: 'How do you want to add data?',
+  data: 'Upload medical documents?',
   habits: 'What do you want to improve?',
 };
+
+const DATA_STEP_EXPLAINER =
+  'Add lab results, doctor notes, or PDF reports. You can skip this for now and upload later.';
 
 function parsePositiveInt(value: string): number | null {
   const n = Number.parseInt(value.trim(), 10);
@@ -70,16 +79,95 @@ export default function OnboardingScreen() {
   const [height, setHeight] = useState('');
   const [dataMethod, setDataMethod] = useState<DataMethodId>('upload');
   const [habitIds, setHabitIds] = useState<string[]>([]);
+  const [uploads, setUploads] = useState<TestResultUpload[]>([]);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    loadTestResults().then(setUploads);
+  }, []);
+
+  const persistUploads = (next: TestResultUpload[]) => {
+    setUploads(next);
+    void saveTestResults(next);
+  };
+
+  const addUpload = (item: Omit<TestResultUpload, 'id' | 'uploadedAt'>) => {
+    persistUploads([
+      {
+        ...item,
+        id: `test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        uploadedAt: new Date().toISOString(),
+      },
+      ...uploads,
+    ]);
+  };
+
+  const pickPdf = async () => {
+    try {
+      const picked = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (picked.canceled || !picked.assets?.[0]) return;
+      const asset = picked.assets[0];
+      addUpload({
+        name: asset.name ?? 'Medical document.pdf',
+        uri: asset.uri,
+        kind: 'pdf',
+      });
+    } catch {
+      Alert.alert('Upload failed', 'Could not open the PDF picker. Please try again.');
+    }
+  };
+
+  const pickImages = async () => {
+    try {
+      if (Platform.OS !== 'web') {
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+          Alert.alert(
+            'Photo access needed',
+            'Allow photo library access to upload images of your medical documents.'
+          );
+          return;
+        }
+      }
+
+      const picked = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsMultipleSelection: true,
+        quality: 0.85,
+      });
+      if (picked.canceled || !picked.assets?.length) return;
+
+      const next = picked.assets.map((asset, index) => ({
+        id: `test-${Date.now()}-${index}`,
+        name: asset.fileName ?? `Medical document ${uploads.length + index + 1}.jpg`,
+        uri: asset.uri,
+        kind: 'image' as const,
+        uploadedAt: new Date().toISOString(),
+      }));
+      persistUploads([...next, ...uploads]);
+    } catch {
+      Alert.alert('Upload failed', 'Could not open your photo gallery. Please try again.');
+    }
+  };
+
+  const openUploadPicker = () => {
+    Alert.alert('Upload document', 'Choose a file type', [
+      { text: 'PDF', onPress: () => void pickPdf() },
+      { text: 'Photo', onPress: () => void pickImages() },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  const removeUpload = (id: string) => {
+    persistUploads(uploads.filter((upload) => upload.id !== id));
+  };
 
   const step = STEPS[stepIndex];
   const progress = (stepIndex + 1) / STEPS.length;
-
-  const selectDataMethod = (id: DataMethodId) => {
-    const option = dataMethodOptions.find((m) => m.id === id);
-    if (option?.enabled === false) return;
-    setDataMethod(id);
-  };
 
   const toggleHabit = (id: string) => {
     setHabitIds((prev) =>
@@ -162,6 +250,7 @@ export default function OnboardingScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
           <Text style={styles.stepTitle}>{STEP_HEADINGS[step]}</Text>
+          {step === 'data' && <Text style={styles.stepExplainer}>{DATA_STEP_EXPLAINER}</Text>}
 
           {step === 'name' && (
             <View style={styles.stepBlock}>
@@ -249,41 +338,41 @@ export default function OnboardingScreen() {
 
           {step === 'data' && (
             <View style={styles.stepBlock}>
-              {dataMethodOptions.map((option) => {
-                const enabled = option.enabled !== false;
-                const selected = enabled && dataMethod === option.id;
-                const OptionIcon = option.icon;
-                const iconColor = !enabled
-                  ? palette.slateSubtle
-                  : selected
-                    ? palette.teal
-                    : palette.slateMuted;
-                return (
-                  <Pressable
-                    key={option.id}
-                    style={[
-                      styles.optionCard,
-                      selected && styles.optionCardSelected,
-                      !enabled && styles.optionCardDisabled,
-                    ]}
-                    onPress={() => selectDataMethod(option.id)}
-                    disabled={!enabled}
-                    accessibilityRole="radio"
-                    accessibilityState={{ disabled: !enabled, selected }}>
-                    <View style={[styles.optionIcon, selected && styles.optionIconSelected]}>
-                      <OptionIcon color={iconColor} size={22} strokeWidth={2} />
+              <Pressable
+                style={({ pressed }) => [styles.uploadArea, pressed && styles.uploadAreaPressed]}
+                onPress={openUploadPicker}
+                accessibilityRole="button"
+                accessibilityLabel="Upload medical document">
+                <View style={styles.uploadIconWrap}>
+                  <FileUp color={palette.teal} size={28} strokeWidth={2} />
+                </View>
+                <Text style={styles.uploadAreaTitle}>Tap to upload</Text>
+                <Text style={styles.uploadAreaHint}>PDF or photo from your device</Text>
+              </Pressable>
+
+              {uploads.length > 0 && (
+                <View style={styles.uploadList}>
+                  {uploads.map((upload) => (
+                    <View key={upload.id} style={styles.uploadItem}>
+                      <View style={styles.uploadItemContent}>
+                        <Text style={styles.uploadItemName} numberOfLines={1}>
+                          {upload.name}
+                        </Text>
+                        <Text style={styles.uploadItemMeta}>
+                          {upload.kind === 'pdf' ? 'PDF' : 'Photo'}
+                        </Text>
+                      </View>
+                      <Pressable
+                        onPress={() => removeUpload(upload.id)}
+                        hitSlop={8}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove ${upload.name}`}>
+                        <Text style={styles.uploadRemove}>Remove</Text>
+                      </Pressable>
                     </View>
-                    <View style={styles.optionContent}>
-                      <Text style={[styles.optionTitle, !enabled && styles.optionTitleDisabled]}>
-                        {option.title}
-                      </Text>
-                    </View>
-                    <View style={[styles.optionRadio, selected && styles.optionRadioSelected]}>
-                      {selected && <View style={styles.optionRadioDot} />}
-                    </View>
-                  </Pressable>
-                );
-              })}
+                  ))}
+                </View>
+              )}
             </View>
           )}
 
@@ -370,9 +459,84 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     width: '100%',
   },
+  stepExplainer: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: palette.slateMuted,
+    marginTop: -8,
+    marginBottom: 20,
+    width: '100%',
+  },
   stepBlock: {
     gap: 12,
     width: '100%',
+  },
+  uploadArea: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: palette.card,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: palette.teal,
+    paddingVertical: 36,
+    paddingHorizontal: 24,
+  },
+  uploadAreaPressed: {
+    opacity: 0.88,
+    backgroundColor: palette.sageLight,
+  },
+  uploadIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: palette.sageLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  uploadAreaTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: palette.slate,
+  },
+  uploadAreaHint: {
+    fontSize: 14,
+    color: palette.slateMuted,
+  },
+  uploadList: {
+    gap: 8,
+  },
+  uploadItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: palette.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: palette.border,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  uploadItemContent: {
+    flex: 1,
+    minWidth: 0,
+  },
+  uploadItemName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: palette.slate,
+    marginBottom: 2,
+  },
+  uploadItemMeta: {
+    fontSize: 12,
+    color: palette.slateMuted,
+  },
+  uploadRemove: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: palette.slateMuted,
   },
   fieldInput: {
     backgroundColor: palette.card,
