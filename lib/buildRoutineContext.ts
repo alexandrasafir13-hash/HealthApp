@@ -1,19 +1,28 @@
 import { findGoalQuestion, labelForGoalAnswer } from '@/data/onboardingGoalQuestions';
 import { improvementGoalsFromHabitIds } from '@/lib/buildHealthInsightsContext';
-import { medicalConditionCatalog, sexOptions } from '@/data/onboardingOptions';
+import { habitCatalog, medicalConditionCatalog, sexOptions } from '@/data/onboardingOptions';
+import { rankGoalIds } from '@/lib/fallbackRoutine';
 import { UserProfile } from '@/types/onboarding';
 
-export interface RoutineGenerationContext {
-  age: number;
-  sex: string;
-  weightKg: number;
-  heightCm: number;
-  medicalConditions: string[];
-  selectedGoalIds: string[];
-  wantsToImprove: ReturnType<typeof improvementGoalsFromHabitIds>;
+export interface PlanGenerationContext {
+  userProfile: {
+    name: string;
+    age: number;
+    sex: string;
+    weightKg: number;
+    heightCm: number;
+  };
+  selectedGoal: {
+    id: string;
+    name: string;
+    reason: string;
+    onboardingAnswers: { question: string; answer: string }[];
+  };
+  onboardingAnswers: { question: string; answer: string }[];
   baselineMetrics: { label: string; value: string | number; unit: string | null }[];
-  userPreferences: string[];
+  desiredOutcome: string;
   constraints: string[];
+  medicalConditions: string[];
 }
 
 function labelsForConditions(ids: UserProfile['medicalConditionIds']): string[] {
@@ -22,56 +31,72 @@ function labelsForConditions(ids: UserProfile['medicalConditionIds']): string[] 
     .map((id) => medicalConditionCatalog.find((c) => c.id === id)?.title ?? id);
 }
 
-function baselineMetricsFromProfile(profile: UserProfile) {
-  const metrics: RoutineGenerationContext['baselineMetrics'] = [];
-  for (const habitId of profile.habitIds) {
-    const answers = profile.goalDetails?.[habitId];
-    if (!answers) continue;
-    for (const [questionId, value] of Object.entries(answers)) {
-      const question = findGoalQuestion(habitId, questionId);
-      if (!question || value == null) continue;
-      const label = labelForGoalAnswer(question, value);
-      if (!label) continue;
-      metrics.push({
-        label: question.title,
-        value: label,
-        unit: null,
-      });
-    }
+function baselineMetricsFromProfile(profile: UserProfile, goalId: string) {
+  const metrics: PlanGenerationContext['baselineMetrics'] = [];
+  const answers = profile.goalDetails?.[goalId];
+  if (!answers) return metrics;
+
+  for (const [questionId, value] of Object.entries(answers)) {
+    const question = findGoalQuestion(goalId, questionId);
+    if (!question || value == null) continue;
+    const label = labelForGoalAnswer(question, value);
+    if (!label) continue;
+    metrics.push({
+      label: question.title,
+      value: label,
+      unit: null,
+    });
   }
   return metrics.slice(0, 12);
 }
 
-function userPreferencesFromProfile(profile: UserProfile): string[] {
-  const prefs: string[] = [];
-  if (profile.dataMethods.includes('apple-health')) prefs.push('Uses Apple Health');
-  if (profile.dataMethods.includes('google-health')) prefs.push('Uses Google Health Connect');
-  if (profile.dataMethods.includes('upload')) prefs.push('Uploads health documents');
-  for (const goal of improvementGoalsFromHabitIds(profile.habitIds, profile.goalDetails)) {
-    if (goal.onboardingAnswers?.length) {
-      prefs.push(...goal.onboardingAnswers.map((row) => `${row.question}: ${row.answer}`));
-    }
-  }
-  return prefs.slice(0, 10);
+function onboardingAnswersForGoal(profile: UserProfile, goalId: string) {
+  const answers = profile.goalDetails?.[goalId];
+  if (!answers) return [];
+  return Object.entries(answers)
+    .map(([questionId, value]) => {
+      const question = findGoalQuestion(goalId, questionId);
+      if (!question || value == null) return null;
+      const answer = labelForGoalAnswer(question, value);
+      if (!answer) return null;
+      return { question: question.title, answer };
+    })
+    .filter((row): row is { question: string; answer: string } => row != null);
 }
 
 function constraintsFromProfile(profile: UserProfile): string[] {
   const constraints = labelsForConditions(profile.medicalConditionIds);
   if (profile.age >= 65) constraints.push('Age 65+ — keep changes gentle');
+  if (profile.dataMethods.includes('upload')) constraints.push('User may reference uploaded health documents');
   return constraints;
 }
 
-export function buildRoutineGenerationContext(profile: UserProfile): RoutineGenerationContext {
+export function buildRoutineGenerationContext(profile: UserProfile): PlanGenerationContext {
+  const goalId = rankGoalIds(profile.habitIds, profile.goalDetails)[0] ?? profile.habitIds[0] ?? 'sleep-schedule';
+  const habit = habitCatalog.find((h) => h.id === goalId);
+  const onboardingAnswers = onboardingAnswersForGoal(profile, goalId);
+
   return {
-    age: profile.age,
-    sex: sexOptions.find((o) => o.id === profile.sex)?.label ?? profile.sex,
-    weightKg: Math.round(profile.weightKg),
-    heightCm: Math.round(profile.heightCm),
-    medicalConditions: labelsForConditions(profile.medicalConditionIds),
-    selectedGoalIds: profile.habitIds,
-    wantsToImprove: improvementGoalsFromHabitIds(profile.habitIds, profile.goalDetails),
-    baselineMetrics: baselineMetricsFromProfile(profile),
-    userPreferences: userPreferencesFromProfile(profile),
+    userProfile: {
+      name: profile.name,
+      age: profile.age,
+      sex: sexOptions.find((o) => o.id === profile.sex)?.label ?? profile.sex,
+      weightKg: Math.round(profile.weightKg),
+      heightCm: Math.round(profile.heightCm),
+    },
+    selectedGoal: {
+      id: goalId,
+      name: habit?.title ?? goalId,
+      reason: habit?.reason ?? '',
+      onboardingAnswers,
+    },
+    onboardingAnswers,
+    baselineMetrics: baselineMetricsFromProfile(profile, goalId),
+    desiredOutcome: habit?.reason ?? `Improve ${habit?.title?.toLowerCase() ?? 'this area'}`,
     constraints: constraintsFromProfile(profile),
+    medicalConditions: labelsForConditions(profile.medicalConditionIds),
   };
 }
+
+/** @deprecated alias */
+export type RoutineGenerationContext = PlanGenerationContext;

@@ -7,7 +7,8 @@ import {
   PLAN_WEEK_COUNT,
   PlanGenerationResult,
   PlanWeek,
-  SuggestedExperiment,
+  PlanExperiment,
+  PrimaryMetric,
 } from '@/types/plan';
 
 function weekQuestions(goalId: string, weekNumber: number): DailyCheckInQuestion[] {
@@ -19,7 +20,7 @@ function weekQuestions(goalId: string, weekNumber: number): DailyCheckInQuestion
         answerType: 'short_text',
         required: true,
         options: null,
-        whyItMatters: 'Helps track whether the plan is moving your baseline.',
+        unit: null,
       },
       {
         id: `w${weekNumber}-blocker`,
@@ -27,35 +28,35 @@ function weekQuestions(goalId: string, weekNumber: number): DailyCheckInQuestion
         answerType: 'short_text',
         required: true,
         options: null,
-        whyItMatters: 'Repeated blockers show what to adjust next week.',
+        unit: null,
       },
       {
-        id: `w${weekNumber}-difficulty`,
-        question: 'How hard did the plan feel today?',
+        id: `w${weekNumber}-helped`,
+        question: 'What helped more than you expected?',
+        answerType: 'short_text',
+        required: true,
+        options: null,
+        unit: null,
+      },
+      {
+        id: `w${weekNumber}-fit`,
+        question: 'How well did this week’s plan fit your real day?',
         answerType: 'scale_1_5',
         required: true,
         options: null,
-        whyItMatters: 'Difficulty trend guides whether next week should be easier or harder.',
-      },
-      {
-        id: `w${weekNumber}-tomorrow`,
-        question: 'Do you want tomorrow to be easier, the same, or slightly harder?',
-        answerType: 'single_choice',
-        required: true,
-        options: ['Easier', 'Same', 'Slightly harder'],
-        whyItMatters: 'Lets the plan adapt day to day within the week.',
+        unit: null,
       },
     ];
   }
 
   return [
     {
-      id: `w${weekNumber}-worked`,
-      question: 'What worked better than expected today?',
+      id: `w${weekNumber}-progress`,
+      question: 'What progress did you notice today?',
       answerType: 'short_text',
       required: true,
       options: null,
-      whyItMatters: 'Shows what to keep or expand next week.',
+      unit: null,
     },
     {
       id: `w${weekNumber}-blocker`,
@@ -63,39 +64,39 @@ function weekQuestions(goalId: string, weekNumber: number): DailyCheckInQuestion
       answerType: 'short_text',
       required: true,
       options: null,
-      whyItMatters: 'Repeated blockers show what to adjust next week.',
-      },
+      unit: null,
+    },
     {
-      id: `w${weekNumber}-difficulty`,
-      question: 'How hard did the plan feel today?',
+      id: `w${weekNumber}-helped`,
+      question: 'What helped more than you expected?',
+      answerType: 'short_text',
+      required: true,
+      options: null,
+      unit: null,
+    },
+    {
+      id: `w${weekNumber}-fit`,
+      question: 'How well did this week’s plan fit your real day?',
       answerType: 'scale_1_5',
       required: true,
       options: null,
-      whyItMatters: 'Difficulty trend guides weekly adjustments.',
-    },
-    {
-      id: `w${weekNumber}-tomorrow`,
-      question: 'Do you want tomorrow to be easier, the same, or slightly harder?',
-      answerType: 'single_choice',
-      required: true,
-      options: ['Easier', 'Same', 'Slightly harder'],
-      whyItMatters: 'Helps the plan adapt within the week.',
+      unit: null,
     },
   ];
 }
 
-function experimentsForGoal(goalId: string): SuggestedExperiment[] {
+function experimentsForGoal(goalId: string): PlanExperiment[] {
   if (goalId === 'screen-time') {
     return [
       {
         title: 'Quiet hour experiment',
         description: 'Pick one evening hour with no social apps.',
-        whenToUse: 'Try on a low-stress evening when you want more wind-down time.',
+        whatItTests: 'Whether a fixed quiet hour reduces late scrolling.',
       },
       {
         title: 'Phone-outside-bedroom trial',
         description: 'Charge your phone outside the bedroom for one night.',
-        whenToUse: 'Try when late scrolling is your main blocker.',
+        whatItTests: 'Whether removing the phone from bed changes your wind-down.',
       },
     ];
   }
@@ -104,7 +105,7 @@ function experimentsForGoal(goalId: string): SuggestedExperiment[] {
       {
         title: 'Morning water experiment',
         description: 'Drink one glass of water right after waking.',
-        whenToUse: 'Try on mornings when you feel sluggish early in the day.',
+        whatItTests: 'Whether an early water cue makes hydration easier later.',
       },
     ];
   }
@@ -112,7 +113,7 @@ function experimentsForGoal(goalId: string): SuggestedExperiment[] {
     {
       title: 'Small win experiment',
       description: 'Try one tiny version of this week’s focus and notice what happens.',
-      whenToUse: 'Use on days when the full target feels like too much.',
+      whatItTests: 'Whether a smaller version of the plan still moves you forward.',
     },
   ];
 }
@@ -132,30 +133,36 @@ function buildWeek(goalId: string, goalName: string, weekNumber: number): PlanWe
     weekNumber,
     status,
     focus,
-    target:
+    weeklyTarget:
       weekNumber === 1
-        ? 'Collect honest daily check-ins and try one small experiment when it fits.'
-        : 'Continue check-ins and adjust based on what felt realistic last week.',
-    whyThisWeek:
+        ? 'Collect honest daily check-ins and notice what fits your real days.'
+        : 'Continue check-ins; this week may change after your review.',
+    planForTheWeek:
       weekNumber === 1
-        ? 'Week 1 is about learning, not perfection.'
-        : 'This week may change after your weekly review.',
-    weeklyStrategy:
-      weekNumber === 1
-        ? 'Notice patterns, try experiments optionally, and report what felt realistic.'
+        ? 'Report progress, blockers, and what helped. Optional experiments are available if they fit.'
         : 'Provisional — will adapt after your end-of-week review.',
-    suggestedExperiments: weekNumber === 1 ? experimentsForGoal(goalId) : [],
+    experiments: weekNumber === 1 ? experimentsForGoal(goalId) : [],
     dailyCheckInQuestions: weekQuestions(goalId, weekNumber),
-    endOfWeekReviewSignals:
+    weeklyReviewSignals:
       weekNumber === 1
         ? [
-            'Average difficulty rating',
+            'Average plan-fit rating',
             'Repeated blockers',
-            'What worked better than expected',
-            'Preference for easier/same/harder days',
+            'What helped more than expected',
+            'Whether experiments were useful',
           ]
         : ['Will be set after Week 1 review'],
   };
+}
+
+function primaryMetricForGoal(goalId: string, goalName: string): PrimaryMetric {
+  if (goalId === 'screen-time') {
+    return { label: 'Daily screen time', unit: 'hours', baselineValue: null };
+  }
+  if (goalId === 'hydration') {
+    return { label: 'Daily water intake', unit: 'glasses', baselineValue: null };
+  }
+  return { label: `${goalName} progress`, unit: null, baselineValue: null };
 }
 
 export function buildFallbackAdaptivePlan(
@@ -172,24 +179,20 @@ export function buildFallbackAdaptivePlan(
     goalId,
     goalName,
     goalSummary: `A 4-week plan to improve ${goalName.toLowerCase()} through daily check-ins and weekly adjustments.`,
-    startingPoint: {
-      summary: `You want to work on ${goalName.toLowerCase()}. Week 1 focuses on learning your baseline.`,
-      knownMetrics: [],
-      assumptions: ['You are starting with small, reversible changes.'],
-    },
+    baselineSummary: `You want to work on ${goalName.toLowerCase()}. Week 1 focuses on learning your baseline.`,
     desiredOutcome: `Feel more in control of ${goalName.toLowerCase()} with a plan that adapts to your real week.`,
-    planPrinciple: 'Consistency and learning first, then gradual improvement.',
+    primaryMetric: primaryMetricForGoal(goalId, goalName),
     weeks: Array.from({ length: PLAN_WEEK_COUNT }, (_, index) =>
       buildWeek(goalId, goalName, index + 1),
     ),
-    adaptationRules: [
+    adjustmentRules: [
       {
-        condition: 'Average difficulty stays high for several days',
-        adjustment: 'Make the next week easier and reduce optional experiments.',
+        signal: 'Plan-fit ratings stay low for several days',
+        nextWeekAdjustment: 'Make the next week easier and offer fewer experiments.',
       },
       {
-        condition: 'User often asks for harder days and reports low blockers',
-        adjustment: 'Slightly increase the next week’s target.',
+        signal: 'User reports low blockers and high plan-fit',
+        nextWeekAdjustment: 'Slightly increase the next week’s target.',
       },
     ],
   };

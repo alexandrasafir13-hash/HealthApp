@@ -28,6 +28,7 @@ import {
   PersonalPlan,
   PlanGenerationResult,
   PlanWeek,
+  normalizeStoredPlan,
 } from '@/types/plan';
 
 interface HealthContextValue {
@@ -112,7 +113,7 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
   const acceptPlan = useCallback(async () => {
     if (!pendingPlan) return;
     const plan: PersonalPlan = {
-      ...pendingPlan.plan,
+      ...normalizeStoredPlan(pendingPlan.plan),
       generatedAt: pendingPlan.generatedAt,
       source: pendingPlan.source,
       activeWeekNumber: 1,
@@ -135,7 +136,14 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     ]).then(([saved, savedLog, savedPlan, savedPending, savedPlanCheckIns]) => {
       if (!mounted) return;
       if (saved) setProfile(saved);
-      if (savedPlan) setPersonalPlan(savedPlan);
+      if (savedPlan) {
+        setPersonalPlan({
+          ...normalizeStoredPlan(savedPlan),
+          generatedAt: savedPlan.generatedAt,
+          source: savedPlan.source,
+          activeWeekNumber: savedPlan.activeWeekNumber,
+        });
+      }
       if (savedPending) setPendingPlan(savedPending);
       setCheckInLog(savedLog);
       setPlanCheckInLog(savedPlanCheckIns);

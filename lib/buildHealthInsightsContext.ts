@@ -31,6 +31,8 @@ export interface HealthInsightsContext {
     personalPlan: {
       title: string;
       goalSummary: string;
+      baselineSummary: string;
+      primaryMetric: { label: string; unit: string | null; baselineValue: number | string | null };
       activeWeekFocus: string | null;
       activeWeekTarget: string | null;
     } | null;
@@ -128,8 +130,10 @@ export function buildHealthInsightsContext(input: {
     ? {
         title: planDisplayTitle(personalPlan),
         goalSummary: personalPlan.goalSummary,
+        baselineSummary: personalPlan.baselineSummary,
+        primaryMetric: personalPlan.primaryMetric,
         activeWeekFocus: activeWeek?.focus ?? null,
-        activeWeekTarget: activeWeek?.target ?? null,
+        activeWeekTarget: activeWeek?.weeklyTarget ?? null,
       }
     : null;
 

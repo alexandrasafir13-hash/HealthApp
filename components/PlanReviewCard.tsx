@@ -11,30 +11,38 @@ type Props = {
 
 export default function PlanReviewCard({ plan, onAccept, error }: Props) {
   const week1 = plan.weeks.find((week) => week.weekNumber === 1);
+  const metricUnit = plan.primaryMetric.unit ? ` ${plan.primaryMetric.unit}` : '';
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.card} showsVerticalScrollIndicator={false}>
       <Text style={styles.heading}>{planDisplayTitle(plan)}</Text>
       <Text style={styles.summary}>{plan.goalSummary}</Text>
-      <Text style={styles.body}>{plan.startingPoint.summary}</Text>
-      <Text style={styles.principle}>{plan.planPrinciple}</Text>
+      <Text style={styles.body}>{plan.baselineSummary}</Text>
+      <Text style={styles.outcome}>Goal: {plan.desiredOutcome}</Text>
+      <Text style={styles.metric}>
+        Tracking: {plan.primaryMetric.label}
+        {plan.primaryMetric.baselineValue != null
+          ? ` — baseline ${plan.primaryMetric.baselineValue}${metricUnit}`
+          : ''}
+      </Text>
 
       {week1 != null && (
         <View style={styles.weekBlock}>
           <Text style={styles.weekLabel}>Week 1 — {week1.focus}</Text>
-          <Text style={styles.weekTarget}>{week1.target}</Text>
+          <Text style={styles.weekTarget}>{week1.weeklyTarget}</Text>
+          <Text style={styles.planForWeek}>{week1.planForTheWeek}</Text>
           <Text style={styles.sectionLabel}>Daily check-ins</Text>
           {week1.dailyCheckInQuestions.map((question) => (
             <Text key={question.id} style={styles.question}>
               • {question.question}
             </Text>
           ))}
-          {week1.suggestedExperiments.length > 0 && (
+          {week1.experiments.length > 0 && (
             <>
               <Text style={styles.sectionLabel}>Optional experiments</Text>
-              {week1.suggestedExperiments.map((experiment) => (
+              {week1.experiments.map((experiment) => (
                 <Text key={experiment.title} style={styles.experiment}>
-                  • {experiment.title}
+                  • {experiment.title} — {experiment.whatItTests}
                 </Text>
               ))}
             </>
@@ -55,10 +63,7 @@ export default function PlanReviewCard({ plan, onAccept, error }: Props) {
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    width: '100%',
-    flex: 1,
-  },
+  scroll: { width: '100%', flex: 1 },
   card: {
     backgroundColor: palette.card,
     borderRadius: 16,
@@ -68,62 +73,19 @@ const styles = StyleSheet.create({
     gap: 10,
     width: '100%',
   },
-  heading: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: palette.slate,
-  },
-  summary: {
-    fontSize: 16,
-    lineHeight: 22,
-    color: palette.slate,
-  },
-  body: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: palette.slateMuted,
-  },
-  principle: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: palette.teal,
-    fontWeight: '600',
-  },
-  weekBlock: {
-    gap: 8,
-    marginTop: 4,
-  },
-  weekLabel: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: palette.slate,
-  },
-  weekTarget: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: palette.slateMuted,
-  },
-  sectionLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: palette.slate,
-    marginTop: 4,
-  },
-  question: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: palette.slateMuted,
-  },
-  experiment: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: palette.slateMuted,
-  },
-  note: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: palette.slateSubtle,
-  },
+  heading: { fontSize: 24, fontWeight: '700', color: palette.slate },
+  summary: { fontSize: 16, lineHeight: 22, color: palette.slate },
+  body: { fontSize: 15, lineHeight: 22, color: palette.slateMuted },
+  outcome: { fontSize: 14, lineHeight: 20, color: palette.slate },
+  metric: { fontSize: 14, lineHeight: 20, color: palette.teal, fontWeight: '600' },
+  weekBlock: { gap: 8, marginTop: 4 },
+  weekLabel: { fontSize: 16, fontWeight: '700', color: palette.slate },
+  weekTarget: { fontSize: 14, lineHeight: 20, color: palette.slateMuted },
+  planForWeek: { fontSize: 14, lineHeight: 20, color: palette.slate },
+  sectionLabel: { fontSize: 14, fontWeight: '700', color: palette.slate, marginTop: 4 },
+  question: { fontSize: 14, lineHeight: 20, color: palette.slateMuted },
+  experiment: { fontSize: 14, lineHeight: 20, color: palette.slateMuted },
+  note: { fontSize: 13, lineHeight: 18, color: palette.slateSubtle },
   acceptButton: {
     marginTop: 8,
     backgroundColor: palette.teal,
@@ -131,17 +93,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
   },
-  acceptButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  error: {
-    fontSize: 13,
-    color: palette.high,
-  },
-  disclaimer: {
-    fontSize: 12,
-    color: palette.slateSubtle,
-  },
+  acceptButtonText: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  error: { fontSize: 13, color: palette.high },
+  disclaimer: { fontSize: 12, color: palette.slateSubtle },
 });

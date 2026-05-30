@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import { useHealth } from '@/context/HealthContext';
-import { DailyCheckInQuestion } from '@/types/plan';
+import { DailyCheckInQuestion, questionUnitLabel } from '@/types/plan';
 import { palette } from '@/constants/theme';
 import { PlanCheckInAnswer } from '@/lib/planCheckInStorage';
 
@@ -72,7 +72,15 @@ function QuestionField({
   }
 
   const textValue = value == null ? '' : String(value);
-  const keyboardType = question.answerType === 'number' ? 'numeric' : 'default';
+  const unit = questionUnitLabel(question);
+  const keyboardType =
+    question.answerType === 'number' ? 'numeric' : question.answerType === 'time' ? 'default' : 'default';
+  const placeholder =
+    question.answerType === 'time'
+      ? 'e.g. 10:30 PM'
+      : unit
+        ? `Your answer (${unit})`
+        : 'Your answer';
 
   return (
     <TextInput
@@ -87,7 +95,7 @@ function QuestionField({
         }
       }}
       keyboardType={keyboardType}
-      placeholder="Your answer"
+      placeholder={placeholder}
       placeholderTextColor={palette.slateSubtle}
       multiline={question.answerType === 'short_text'}
     />
@@ -101,13 +109,16 @@ export default function TodayPlanCheckIn() {
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.weekLabel}>Week {activeWeek.weekNumber} — {activeWeek.focus}</Text>
-      <Text style={styles.target}>{activeWeek.target}</Text>
+      <Text style={styles.weekLabel}>
+        Week {activeWeek.weekNumber} — {activeWeek.focus}
+      </Text>
+      <Text style={styles.target}>{activeWeek.weeklyTarget}</Text>
+      <Text style={styles.planForWeek}>{activeWeek.planForTheWeek}</Text>
 
-      {activeWeek.suggestedExperiments.length > 0 && (
+      {activeWeek.experiments.length > 0 && (
         <View style={styles.experiments}>
           <Text style={styles.experimentsLabel}>Optional experiments this week</Text>
-          {activeWeek.suggestedExperiments.map((experiment) => (
+          {activeWeek.experiments.map((experiment) => (
             <Text key={experiment.title} style={styles.experiment}>
               {experiment.title} — {experiment.description}
             </Text>
@@ -120,7 +131,9 @@ export default function TodayPlanCheckIn() {
         {activeWeek.dailyCheckInQuestions.map((question) => (
           <View key={question.id} style={styles.questionBlock}>
             <Text style={styles.question}>{question.question}</Text>
-            <Text style={styles.why}>{question.whyItMatters}</Text>
+            {questionUnitLabel(question) != null && (
+              <Text style={styles.unitHint}>Unit: {questionUnitLabel(question)}</Text>
+            )}
             <QuestionField
               question={question}
               value={todayCheckInDraft[question.id]}
@@ -134,45 +147,20 @@ export default function TodayPlanCheckIn() {
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    width: '100%',
-    gap: 16,
-  },
-  weekLabel: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: palette.slate,
-    lineHeight: 28,
-  },
-  target: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: palette.slateMuted,
-  },
+  wrap: { width: '100%', gap: 16 },
+  weekLabel: { fontSize: 22, fontWeight: '700', color: palette.slate, lineHeight: 28 },
+  target: { fontSize: 15, lineHeight: 22, color: palette.slateMuted },
+  planForWeek: { fontSize: 14, lineHeight: 20, color: palette.slate },
   experiments: {
     gap: 6,
     backgroundColor: palette.background,
     borderRadius: 12,
     padding: 12,
   },
-  experimentsLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: palette.slate,
-  },
-  experiment: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: palette.slateMuted,
-  },
-  sectionLabel: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: palette.slate,
-  },
-  list: {
-    gap: 14,
-  },
+  experimentsLabel: { fontSize: 14, fontWeight: '700', color: palette.slate },
+  experiment: { fontSize: 13, lineHeight: 18, color: palette.slateMuted },
+  sectionLabel: { fontSize: 17, fontWeight: '700', color: palette.slate },
+  list: { gap: 14 },
   questionBlock: {
     gap: 8,
     backgroundColor: palette.card,
@@ -181,16 +169,8 @@ const styles = StyleSheet.create({
     borderColor: palette.border,
     padding: 14,
   },
-  question: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: palette.slate,
-  },
-  why: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: palette.slateMuted,
-  },
+  question: { fontSize: 16, fontWeight: '600', color: palette.slate },
+  unitHint: { fontSize: 12, color: palette.slateSubtle },
   input: {
     borderWidth: 1,
     borderColor: palette.border,
@@ -202,10 +182,7 @@ const styles = StyleSheet.create({
     backgroundColor: palette.background,
     minHeight: 44,
   },
-  scaleRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
+  scaleRow: { flexDirection: 'row', gap: 8 },
   scaleOption: {
     flex: 1,
     borderRadius: 10,
@@ -215,23 +192,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: palette.background,
   },
-  scaleOptionSelected: {
-    borderColor: palette.teal,
-    backgroundColor: palette.sageLight,
-  },
-  scaleText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: palette.slate,
-  },
-  scaleTextSelected: {
-    color: palette.tealDark,
-  },
-  choiceWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
+  scaleOptionSelected: { borderColor: palette.teal, backgroundColor: palette.sageLight },
+  scaleText: { fontSize: 15, fontWeight: '600', color: palette.slate },
+  scaleTextSelected: { color: palette.tealDark },
+  choiceWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   choiceChip: {
     borderRadius: 999,
     borderWidth: 1,
@@ -240,16 +204,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     backgroundColor: palette.background,
   },
-  choiceChipSelected: {
-    borderColor: palette.teal,
-    backgroundColor: palette.sageLight,
-  },
-  choiceText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: palette.slate,
-  },
-  choiceTextSelected: {
-    color: palette.tealDark,
-  },
+  choiceChipSelected: { borderColor: palette.teal, backgroundColor: palette.sageLight },
+  choiceText: { fontSize: 14, fontWeight: '600', color: palette.slate },
+  choiceTextSelected: { color: palette.tealDark },
 });

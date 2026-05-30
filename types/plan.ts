@@ -3,26 +3,21 @@ export type CheckInAnswerType =
   | 'scale_1_5'
   | 'single_choice'
   | 'multi_choice'
-  | 'short_text';
+  | 'short_text'
+  | 'time';
 
 export type WeekStatus = 'active' | 'provisional';
 
-export interface PlanMetric {
+export interface PrimaryMetric {
   label: string;
-  value: number | string | null;
   unit: string | null;
+  baselineValue: number | string | null;
 }
 
-export interface PlanStartingPoint {
-  summary: string;
-  knownMetrics: PlanMetric[];
-  assumptions: string[];
-}
-
-export interface SuggestedExperiment {
+export interface PlanExperiment {
   title: string;
   description: string;
-  whenToUse: string;
+  whatItTests: string;
 }
 
 export interface DailyCheckInQuestion {
@@ -31,24 +26,23 @@ export interface DailyCheckInQuestion {
   answerType: CheckInAnswerType;
   required: boolean;
   options: string[] | null;
-  whyItMatters: string;
+  unit: string | null;
 }
 
 export interface PlanWeek {
   weekNumber: number;
   status: WeekStatus;
   focus: string;
-  target: string;
-  whyThisWeek: string;
-  weeklyStrategy: string;
-  suggestedExperiments: SuggestedExperiment[];
+  weeklyTarget: string;
+  planForTheWeek: string;
+  experiments: PlanExperiment[];
   dailyCheckInQuestions: DailyCheckInQuestion[];
-  endOfWeekReviewSignals: string[];
+  weeklyReviewSignals: string[];
 }
 
-export interface AdaptationRule {
-  condition: string;
-  adjustment: string;
+export interface AdjustmentRule {
+  signal: string;
+  nextWeekAdjustment: string;
 }
 
 export interface AdaptivePlan {
@@ -56,11 +50,11 @@ export interface AdaptivePlan {
   goalId: string;
   goalName: string;
   goalSummary: string;
-  startingPoint: PlanStartingPoint;
+  baselineSummary: string;
   desiredOutcome: string;
-  planPrinciple: string;
+  primaryMetric: PrimaryMetric;
   weeks: PlanWeek[];
-  adaptationRules: AdaptationRule[];
+  adjustmentRules: AdjustmentRule[];
 }
 
 export type PersonalPlan = AdaptivePlan & {
@@ -87,4 +81,85 @@ export function getPlanWeek(plan: AdaptivePlan, weekNumber: number): PlanWeek | 
 
 export function getActivePlanWeek(plan: PersonalPlan): PlanWeek | null {
   return getPlanWeek(plan, plan.activeWeekNumber);
+}
+
+export function questionUnitLabel(question: DailyCheckInQuestion): string | null {
+  return question.unit?.trim() || null;
+}
+
+/** Normalize plans saved with older field names. */
+export function normalizeStoredPlan(plan: AdaptivePlan | (AdaptivePlan & Record<string, unknown>)): AdaptivePlan {
+  const legacy = plan as Record<string, unknown>;
+  const startingPoint = legacy.startingPoint as
+    | { summary?: string; knownMetrics?: { label: string; value: unknown; unit: string | null }[] }
+    | undefined;
+
+  const baselineSummary =
+    plan.baselineSummary?.trim() ||
+    String(startingPoint?.summary ?? '').trim() ||
+    plan.goalSummary;
+
+  const primaryMetric =
+    plan.primaryMetric?.label != null
+      ? plan.primaryMetric
+      : {
+          label: startingPoint?.knownMetrics?.[0]?.label ?? 'Progress',
+          unit: startingPoint?.knownMetrics?.[0]?.unit ?? null,
+          baselineValue:
+            (startingPoint?.knownMetrics?.[0]?.value as number | string | null) ?? null,
+        };
+
+  const weeks = (plan.weeks ?? []).map((week) => {
+    const w = week as PlanWeek & Record<string, unknown>;
+    return {
+      weekNumber: w.weekNumber,
+      status: w.status,
+      focus: w.focus,
+      weeklyTarget: w.weeklyTarget || String(w.target ?? ''),
+      planForTheWeek:
+        w.planForTheWeek || String(w.weeklyStrategy ?? w.whyThisWeek ?? ''),
+      experiments: (w.experiments ?? w.suggestedExperiments ?? []).map((exp) => {
+        const e = exp as PlanExperiment & { whenToUse?: string };
+        return {
+          title: e.title,
+          description: e.description,
+          whatItTests: e.whatItTests || e.whenToUse || '',
+        };
+      }),
+      dailyCheckInQuestions: (w.dailyCheckInQuestions ?? []).map((q) => {
+        const question = q as DailyCheckInQuestion & { whyItMatters?: string };
+        return {
+          id: question.id,
+          question: question.question,
+          answerType: question.answerType,
+          required: question.required,
+          options: question.options,
+          unit: question.unit ?? null,
+        };
+      }),
+      weeklyReviewSignals: w.weeklyReviewSignals ?? w.endOfWeekReviewSignals ?? [],
+    };
+  });
+
+  const adjustmentRules = (plan.adjustmentRules ?? []).length
+    ? plan.adjustmentRules
+    : ((legacy.adaptationRules as AdjustmentRule[] | undefined) ?? []).map((rule) => {
+        const r = rule as AdjustmentRule & { condition?: string; adjustment?: string };
+        return {
+          signal: r.signal || r.condition || '',
+          nextWeekAdjustment: r.nextWeekAdjustment || r.adjustment || '',
+        };
+      });
+
+  return {
+    id: plan.id,
+    goalId: plan.goalId,
+    goalName: plan.goalName,
+    goalSummary: plan.goalSummary,
+    baselineSummary,
+    desiredOutcome: plan.desiredOutcome,
+    primaryMetric,
+    weeks,
+    adjustmentRules,
+  };
 }
