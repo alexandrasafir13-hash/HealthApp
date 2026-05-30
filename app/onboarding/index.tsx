@@ -18,7 +18,7 @@ import { dataMethodOptions, habitCatalog, sexOptions } from '@/data/onboardingOp
 import { palette } from '@/constants/theme';
 import { BiologicalSex, DataMethodId } from '@/types/onboarding';
 
-const STEPS = ['name', 'age', 'sex', 'weight', 'height', 'data', 'habits'] as const;
+const STEPS = ['habits', 'name', 'age', 'sex', 'weight', 'height', 'data'] as const;
 type Step = (typeof STEPS)[number];
 
 const STEP_HEADINGS: Record<Step, string> = {
