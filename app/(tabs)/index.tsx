@@ -2,7 +2,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import PageTitle from '@/components/PageTitle';
-import HealthSnapshotCard from '@/components/HealthSnapshotCard';
+import TodayProfileGuide from '@/components/TodayProfileGuide';
 import TodayCheckInBanner from '@/components/TodayCheckInBanner';
 import TodayPlanModalTrigger from '@/components/TodayPlanModalTrigger';
 import TopPriorityCategories from '@/components/TopPriorityCategories';
@@ -13,7 +13,8 @@ import { pageStyles, usePageLayout } from '@/hooks/usePageLayout';
 
 export default function TodayScreen() {
   const { contentContainerStyle, pageStyle } = usePageLayout();
-  const { insights, todayCheckIn, habits, customHabits, profile, refreshTodayCheckIn } = useHealth();
+  const { insights, todayCheckIn, habits, customHabits, profile, refreshTodayCheckIn, toggleHabit } =
+    useHealth();
   const topPriorities = useMemo(() => getAttentionCategories(insights), [insights]);
   const healthSnapshot = useMemo(
     () =>
@@ -39,8 +40,15 @@ export default function TodayScreen() {
     <ScrollView style={pageStyles.scroll} contentContainerStyle={contentContainerStyle}>
       <View style={pageStyle}>
         <PageTitle title="Listening to your body today" friendly />
-        {healthSnapshot && (
-          <HealthSnapshotCard snapshot={healthSnapshot} name={profile?.name} />
+        {healthSnapshot && profile && (
+          <TodayProfileGuide
+            snapshot={healthSnapshot}
+            name={profile.name}
+            habitIds={profile.habitIds}
+            habits={habits}
+            checkIn={todayCheckIn}
+            onToggleHabit={(id) => toggleHabit(id)}
+          />
         )}
         {showRoutineBanner && (
           <TodayCheckInBanner
