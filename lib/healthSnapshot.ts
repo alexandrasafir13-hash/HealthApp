@@ -18,8 +18,10 @@ export interface ProfileMetrics {
 
 /** General targets derived from profile — guidelines, not raw inputs. */
 export interface HealthRecommendations {
-  activeCalorieMin: number;
-  activeCalorieMax: number;
+  /** Mostly desk, driving, minimal walking (×1.2 resting). */
+  maintenanceSedentaryKcal: number;
+  /** Regular walks or errands on foot most days (×1.375 resting). */
+  maintenanceWalkingKcal: number;
   dailyWaterLiters: number;
   sleepMinHours: number;
   sleepMaxHours: number;
@@ -103,11 +105,14 @@ export function weightVsHealthyBand(
   return { status: 'above', detail: `${offset} kg above healthy range for your height` };
 }
 
-/** Light to moderate daily calories from resting (Mifflin-St Jeor) baseline. */
-export function dailyCalorieRange(restingCaloriesKcal: number): { min: number; max: number } {
+/** Calories to maintain weight for common day-to-day routines. */
+export function maintenanceCalories(restingCaloriesKcal: number): {
+  sedentaryKcal: number;
+  walkingKcal: number;
+} {
   return {
-    min: Math.round(restingCaloriesKcal * 1.375),
-    max: Math.round(restingCaloriesKcal * 1.55),
+    sedentaryKcal: Math.round(restingCaloriesKcal * 1.2),
+    walkingKcal: Math.round(restingCaloriesKcal * 1.375),
   };
 }
 
@@ -122,7 +127,7 @@ export function buildHealthSnapshot(
   const range = healthyWeightRangeKg(heightCm);
   const sleep = recommendedSleepHours(age);
   const resting = restingCalories(weightKg, heightCm, age, sex);
-  const calories = dailyCalorieRange(resting);
+  const maintenance = maintenanceCalories(resting);
   const weightBand = weightVsHealthyBand(weightKg, range.min, range.max);
 
   return {
@@ -138,8 +143,8 @@ export function buildHealthSnapshot(
       restingCalories: resting,
     },
     recommendations: {
-      activeCalorieMin: calories.min,
-      activeCalorieMax: calories.max,
+      maintenanceSedentaryKcal: maintenance.sedentaryKcal,
+      maintenanceWalkingKcal: maintenance.walkingKcal,
       dailyWaterLiters: dailyWaterLiters(weightKg),
       sleepMinHours: sleep.minHours,
       sleepMaxHours: sleep.maxHours,

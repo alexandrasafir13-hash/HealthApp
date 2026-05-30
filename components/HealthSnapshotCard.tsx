@@ -90,11 +90,16 @@ export default function HealthSnapshotCard({ snapshot, name }: Props) {
 
       <Section
         title="Recommendations"
-        subtitle="General targets based on your profile — not medical advice.">
+        subtitle="Pick the calorie line that matches a typical day — eating about that much helps keep weight steady. Not medical advice.">
         <Stat
-          label="Daily calories"
-          value={`~${recommendations.activeCalorieMin.toLocaleString()}–${recommendations.activeCalorieMax.toLocaleString()}`}
-          detail="With light activity"
+          label="Mostly sitting"
+          value={`~${recommendations.maintenanceSedentaryKcal.toLocaleString()} kcal`}
+          detail="Desk work, driving, little walking"
+        />
+        <Stat
+          label="Walk most days"
+          value={`~${recommendations.maintenanceWalkingKcal.toLocaleString()} kcal`}
+          detail="30+ min walking or errands on foot"
         />
         <Stat
           label="Water"
