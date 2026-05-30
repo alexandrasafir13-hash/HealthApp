@@ -117,9 +117,13 @@ export function normalizeStoredPlan(plan: AdaptivePlan | (AdaptivePlan & Record<
       weekNumber: w.weekNumber,
       status: w.status,
       focus: w.focus,
-      weeklyTarget: w.weeklyTarget || String(w.target ?? ''),
-      planForTheWeek:
-        w.planForTheWeek || String(w.weeklyStrategy ?? w.whyThisWeek ?? ''),
+      weeklyTarget: w.weeklyTarget || String(w.target ?? w.likelyTarget ?? ''),
+      planForTheWeek: (() => {
+        const preview =
+          w.planForTheWeek || String(w.weeklyStrategy ?? w.whyThisWeek ?? w.preview ?? '');
+        const dependsOn = String(w.dependsOn ?? '').trim();
+        return preview && dependsOn ? `${preview} ${dependsOn}` : preview || dependsOn;
+      })(),
       experiments: (w.experiments ?? w.suggestedExperiments ?? []).map((exp) => {
         const e = exp as PlanExperiment & { whenToUse?: string };
         return {

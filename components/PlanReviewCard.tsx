@@ -11,12 +11,9 @@ type Props = {
 };
 
 export default function PlanReviewCard({ plan, onAccept, error }: Props) {
-  const week1 = plan.weeks.find((week) => week.weekNumber === 1);
-  if (week1 == null) return null;
-
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.wrap} showsVerticalScrollIndicator={false}>
-      <ActivePlanCard plan={plan} week={week1} />
+      <ActivePlanCard plan={plan} activeWeekNumber={1} />
 
       <Pressable style={styles.acceptButton} onPress={onAccept} accessibilityRole="button">
         <Text style={styles.acceptButtonText}>Start Week 1</Text>

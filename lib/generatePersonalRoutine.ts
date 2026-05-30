@@ -336,11 +336,14 @@ function parseCheckInQuestion(raw: unknown): DailyCheckInQuestion | null {
 function parseWeek(raw: unknown): PlanWeek | null {
   if (!raw || typeof raw !== 'object') return null;
   const obj = raw as Record<string, unknown>;
-  const weekNumber = Number(obj.weekNumber);
+  const weekNumber = Number(obj.weekNumber ?? obj.week);
   const status = String(obj.status ?? '').trim() as WeekStatus;
   const focus = String(obj.focus ?? '').trim();
-  const weeklyTarget = String(obj.weeklyTarget ?? obj.target ?? '').trim();
-  const planForTheWeek = String(obj.planForTheWeek ?? obj.weeklyStrategy ?? obj.whyThisWeek ?? '').trim();
+  const weeklyTarget = String(obj.weeklyTarget ?? obj.target ?? obj.likelyTarget ?? '').trim();
+  const preview = String(obj.planForTheWeek ?? obj.weeklyStrategy ?? obj.whyThisWeek ?? obj.preview ?? '').trim();
+  const dependsOn = String(obj.dependsOn ?? '').trim();
+  const planForTheWeek =
+    preview && dependsOn ? `${preview} ${dependsOn}` : preview || dependsOn;
   if (
     !Number.isFinite(weekNumber) ||
     !WEEK_STATUSES.includes(status) ||
@@ -362,14 +365,16 @@ function parseWeek(raw: unknown): PlanWeek | null {
         .filter((item): item is DailyCheckInQuestion => item != null)
     : [];
 
-  const reviewRaw = obj.weeklyReviewSignals ?? obj.endOfWeekReviewSignals;
+  const reviewRaw = obj.weeklyReviewSignals ?? obj.endOfWeekReviewSignals ?? obj.reviewSignals;
   const weeklyReviewSignals = Array.isArray(reviewRaw)
     ? reviewRaw
         .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
         .map((item) => item.trim())
     : [];
 
-  if (dailyCheckInQuestions.length < 3 || weeklyReviewSignals.length < 1) return null;
+  if (weekNumber === 1 && (dailyCheckInQuestions.length < 3 || weeklyReviewSignals.length < 1)) {
+    return null;
+  }
 
   return {
     weekNumber,

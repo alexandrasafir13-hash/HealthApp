@@ -144,7 +144,11 @@ export default function TodayPlanCheckIn() {
 
   return (
     <View style={styles.wrap}>
-      <ActivePlanCard plan={personalPlan} week={activeWeek} showIntro={false} />
+      <ActivePlanCard
+        plan={personalPlan}
+        activeWeekNumber={personalPlan.activeWeekNumber}
+        showIntro={false}
+      />
 
       <View style={styles.list}>
         {activeWeek.dailyCheckInQuestions.map((question) => (
