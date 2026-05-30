@@ -36,7 +36,7 @@ export default function OnboardingScreen() {
 
   const [stepIndex, setStepIndex] = useState(0);
   const [name, setName] = useState('');
-  const [dataMethods, setDataMethods] = useState<DataMethodId[]>(['manual']);
+  const [dataMethod, setDataMethod] = useState<DataMethodId>('manual');
   const [habitIds, setHabitIds] = useState<string[]>(
     habitCatalog.slice(0, 3).map((h) => h.id)
   );
@@ -45,12 +45,10 @@ export default function OnboardingScreen() {
   const step = STEPS[stepIndex];
   const progress = (stepIndex + 1) / STEPS.length;
 
-  const toggleDataMethod = (id: DataMethodId) => {
+  const selectDataMethod = (id: DataMethodId) => {
     const option = dataMethodOptions.find((m) => m.id === id);
     if (option?.enabled === false) return;
-    setDataMethods((prev) =>
-      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]
-    );
+    setDataMethod(id);
   };
 
   const toggleHabit = (id: string) => {
@@ -63,7 +61,7 @@ export default function OnboardingScreen() {
     step === 'name'
       ? name.trim().length >= 2
       : step === 'data'
-        ? dataMethods.length > 0
+        ? dataMethod != null
         : habitIds.length > 0;
 
   const goBack = () => {
@@ -88,7 +86,7 @@ export default function OnboardingScreen() {
     try {
       await completeOnboarding({
         name: name.trim(),
-        dataMethods,
+        dataMethods: [dataMethod],
         habitIds,
       });
       router.replace('/(tabs)');
@@ -138,7 +136,7 @@ export default function OnboardingScreen() {
             <View style={styles.stepBlock}>
               {dataMethodOptions.map((option) => {
                 const enabled = option.enabled !== false;
-                const selected = enabled && dataMethods.includes(option.id);
+                const selected = enabled && dataMethod === option.id;
                 return (
                   <Pressable
                     key={option.id}
@@ -147,9 +145,10 @@ export default function OnboardingScreen() {
                       selected && styles.optionCardSelected,
                       !enabled && styles.optionCardDisabled,
                     ]}
-                    onPress={() => toggleDataMethod(option.id)}
+                    onPress={() => selectDataMethod(option.id)}
                     disabled={!enabled}
-                    accessibilityState={{ disabled: !enabled }}>
+                    accessibilityRole="radio"
+                    accessibilityState={{ disabled: !enabled, selected }}>
                     <View style={[styles.optionIcon, selected && styles.optionIconSelected]}>
                       <SymbolView
                         name={option.icon as 'heart.fill'}
@@ -164,8 +163,8 @@ export default function OnboardingScreen() {
                         {option.title}
                       </Text>
                     </View>
-                    <View style={[styles.optionCheck, selected && styles.optionCheckSelected]}>
-                      {selected && <Text style={styles.optionCheckMark}>✓</Text>}
+                    <View style={[styles.optionRadio, selected && styles.optionRadioSelected]}>
+                      {selected && <View style={styles.optionRadioDot} />}
                     </View>
                   </Pressable>
                 );
@@ -322,10 +321,29 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: palette.teal,
   },
-  optionCheck: {
+  optionRadio: {
     width: 24,
     height: 24,
     borderRadius: 12,
+    borderWidth: 2,
+    borderColor: palette.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.card,
+  },
+  optionRadioSelected: {
+    borderColor: palette.teal,
+  },
+  optionRadioDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: palette.teal,
+  },
+  optionCheck: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
     borderWidth: 2,
     borderColor: palette.border,
     alignItems: 'center',
