@@ -1,7 +1,7 @@
 import { localDateKey } from '@/lib/localDate';
 import { DailyRoutineProgress, RoutineCompletionLog } from '@/lib/routineCompletionStorage';
 import { normalizePersonalRoutine } from '@/lib/routineSteps';
-import { PersonalRoutine } from '@/types/routine';
+import { PersonalRoutine, dailyActionsFromRoutine } from '@/types/routine';
 
 export type RoutineDaySummary = {
   date: string;
@@ -17,23 +17,26 @@ function summarizeDay(
   progress: DailyRoutineProgress,
   routine: PersonalRoutine,
 ): RoutineDaySummary {
-  const normalized = normalizePersonalRoutine(routine);
-  const steps = normalized.steps.map((step, index) => ({
-    id: step.id?.trim() || `${normalized.id}-step-${index}`,
-    title: step.title,
+  const normalized = normalizePersonalRoutine({
+    ...routine,
+    dailyActions: dailyActionsFromRoutine(routine),
+  });
+  const actions = normalized.dailyActions.map((action, index) => ({
+    id: action.id?.trim() || `${normalized.id}-action-${index}`,
+    title: action.title,
   }));
   const completedTitles: string[] = [];
   const missedTitles: string[] = [];
 
-  for (const step of steps) {
-    if (progress.steps[step.id]) completedTitles.push(step.title);
-    else missedTitles.push(step.title);
+  for (const action of actions) {
+    if (progress.steps[action.id]) completedTitles.push(action.title);
+    else missedTitles.push(action.title);
   }
 
   return {
     date: dateKey,
     completedCount: completedTitles.length,
-    totalCount: steps.length,
+    totalCount: actions.length,
     completedTitles,
     missedTitles,
     finishedAt: progress.finishedAt ?? null,
@@ -46,14 +49,13 @@ export function recentRoutineDaysFromLog(
   days = 14,
 ): RoutineDaySummary[] {
   if (!routine) return [];
-  const normalized = normalizePersonalRoutine(routine);
   const results: RoutineDaySummary[] = [];
 
   for (let offset = days - 1; offset >= 0; offset--) {
     const dateKey = shiftDateKey(localDateKey(), -offset);
     const progress = log[dateKey];
     if (!progress || Object.keys(progress.steps).length === 0) continue;
-    results.push(summarizeDay(dateKey, progress, normalized));
+    results.push(summarizeDay(dateKey, progress, routine));
   }
 
   return results;

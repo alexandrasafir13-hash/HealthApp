@@ -2,9 +2,9 @@ import { habitCatalog } from '@/data/onboardingOptions';
 import { GoalDetails } from '@/types/onboarding';
 import {
   ROUTINE_OPTION_COUNT,
+  RoutineDailyAction,
   RoutineOption,
   RoutineProposalSet,
-  RoutineStep,
 } from '@/types/routine';
 
 const GOAL_PRIORITY = [
@@ -15,114 +15,137 @@ const GOAL_PRIORITY = [
   'eating-habits',
 ] as const;
 
-const FALLBACK_STEPS: Record<string, RoutineStep[]> = {
+const FALLBACK_OVERVIEW_TIPS: Record<string, string[]> = {
+  'sleep-schedule': [
+    'A steady bedtime matters more than a perfect one — pick something you can repeat.',
+    'Light and screens in the last hour often decide how fast you fall asleep.',
+  ],
+  'exercise-routine': [
+    'Short movement beats a perfect workout you skip.',
+    'Pair movement with something you already do, like after a meal.',
+  ],
+  'eating-habits': [
+    'Decide meals before you are hungry — it cuts impulsive choices.',
+    'One extra vegetable today is a win; you do not need a full diet overhaul.',
+  ],
+  hydration: [
+    'Thirst often shows up late — sip before you feel dry.',
+    'Keep water where you actually spend time, not just in the kitchen.',
+  ],
+  'screen-time': [
+    'Evening screen cutoffs help sleep more than all-day limits at first.',
+    'Charge away from bed so the phone is not the first thing you reach for.',
+  ],
+};
+
+const FALLBACK_ACTIONS: Record<string, RoutineDailyAction[]> = {
   'sleep-schedule': [
     {
-      title: 'Pick a wind-down time',
-      description: 'Choose a time to start relaxing — about 30–45 minutes before you want to sleep.',
+      title: 'Set a wind-down alarm',
+      doneWhen: 'An alarm fired at the time you chose to start relaxing before bed.',
       timeHint: 'Evening',
     },
     {
-      title: 'Dim the lights',
-      description: 'Lower bright overhead lights and switch to softer lamps to signal bedtime.',
+      title: 'Dim overhead lights 30 minutes before bed',
+      doneWhen: 'Bright ceiling lights were off and you used softer lighting before sleep.',
       timeHint: 'Before bed',
     },
     {
-      title: 'Phone-free buffer',
-      description: 'Put your phone on charge outside the bedroom for the last hour before sleep.',
+      title: 'Charge phone outside the bedroom',
+      doneWhen: 'Your phone is on its charger outside the bedroom before you get into bed.',
       timeHint: 'Before bed',
     },
     {
-      title: 'Same wake time',
-      description: 'Wake up within the same 30-minute window each day, even on weekends.',
+      title: 'Wake within the same 30-minute window',
+      doneWhen: 'You got out of bed within 30 minutes of your chosen wake time.',
       timeHint: 'Morning',
     },
   ],
   'exercise-routine': [
     {
-      title: 'Five-minute morning stretch',
-      description: 'Roll shoulders, reach overhead, and loosen your hips before the day starts.',
+      title: 'Stretch for 5 minutes after waking',
+      doneWhen: 'You spent at least 5 minutes stretching shoulders, back, and hips.',
       timeHint: 'Morning',
     },
     {
-      title: 'Walk after a meal',
-      description: 'Take a 10-minute walk after lunch or dinner — no pace target needed.',
+      title: 'Walk 10 minutes after a meal',
+      doneWhen: 'You walked at least 10 minutes after lunch or dinner.',
       timeHint: 'After meals',
     },
     {
-      title: 'Movement reminder',
-      description: 'Set one phone reminder to stand and move for two minutes mid-afternoon.',
+      title: 'Stand and move for 2 minutes mid-afternoon',
+      doneWhen: 'You stood up and moved for at least 2 minutes between noon and 5pm.',
       timeHint: 'Afternoon',
     },
     {
-      title: 'Prep easy shoes',
-      description: 'Leave walking shoes by the door so a short walk takes less effort.',
+      title: 'Leave walking shoes by the door',
+      doneWhen: 'Your walking shoes are placed by the door before the end of the day.',
       timeHint: 'Anytime',
     },
   ],
   'eating-habits': [
     {
-      title: 'Plan one meal',
-      description: 'Decide tomorrow’s breakfast or lunch tonight so you’re not deciding when hungry.',
+      title: 'Decide tomorrow’s breakfast tonight',
+      doneWhen: 'You wrote down or decided exactly what you will eat for breakfast tomorrow.',
       timeHint: 'Evening',
     },
     {
-      title: 'Add one vegetable',
-      description: 'Include one extra serving of vegetables at your main meal today.',
+      title: 'Add 1 serving of vegetables at a main meal',
+      doneWhen: 'You ate at least one extra serving of vegetables at lunch or dinner.',
       timeHint: 'Lunch or dinner',
     },
     {
-      title: 'Snack swap',
-      description: 'Keep one ready-to-eat healthy snack visible in the fridge or counter.',
+      title: 'Put 1 healthy snack in sight',
+      doneWhen: 'One ready-to-eat healthy snack is visible on the counter or fridge shelf.',
       timeHint: 'Anytime',
     },
     {
-      title: 'Slow first bites',
-      description: 'Put your fork down between the first few bites to notice fullness sooner.',
+      title: 'Put fork down for the first 3 bites',
+      doneWhen: 'You paused between your first three bites at one meal today.',
       timeHint: 'Meals',
     },
   ],
   hydration: [
     {
-      title: 'Morning glass',
-      description: 'Drink one full glass of water right after you wake up.',
+      title: 'Drink 1 full glass of water after waking',
+      doneWhen: 'You finished one full glass of water within 30 minutes of getting up.',
       timeHint: 'Morning',
     },
     {
-      title: 'Bottle in sight',
-      description: 'Fill a water bottle and keep it where you work or relax.',
+      title: 'Fill a water bottle and keep it in sight',
+      doneWhen: 'A filled bottle is sitting where you work or relax.',
       timeHint: 'Anytime',
     },
     {
-      title: 'Meal pairing',
-      description: 'Have a glass of water with each main meal today.',
+      title: 'Drink 1 glass of water with a main meal',
+      doneWhen: 'You drank at least one glass of water during lunch or dinner.',
       timeHint: 'Meals',
     },
     {
-      title: 'Afternoon top-up',
-      description: 'Refill your bottle once in the afternoon before you feel thirsty.',
+      title: 'Refill your bottle once in the afternoon',
+      doneWhen: 'You refilled your water bottle once between noon and 5pm.',
       timeHint: 'Afternoon',
     },
   ],
   'screen-time': [
     {
-      title: 'Check your baseline',
-      description: 'Glance at today’s screen time so you know your starting point.',
+      title: 'Check today’s screen time once',
+      doneWhen: 'You opened screen time settings and looked at today’s total.',
       timeHint: 'Morning',
     },
     {
-      title: 'Quiet hour',
-      description: 'Pick one hour tonight with no social apps — messages and calls are fine.',
+      title: 'Skip social apps for 1 chosen hour tonight',
+      doneWhen: 'You did not open social apps during the hour you picked this evening.',
       timeHint: 'Evening',
     },
     {
-      title: 'Charge away from bed',
-      description: 'Charge your phone outside the bedroom overnight.',
+      title: 'Charge phone outside the bedroom overnight',
+      doneWhen: 'Your phone is charging outside the bedroom before sleep.',
       timeHint: 'Before bed',
     },
     {
-      title: 'Replace one scroll',
-      description: 'Swap one usual scroll session for a 5-minute walk or stretch.',
+      title: 'Replace 1 scroll with a 5-minute walk',
+      doneWhen: 'You swapped one usual scroll session for at least 5 minutes of walking.',
       timeHint: 'Anytime',
     },
   ],
@@ -134,21 +157,21 @@ const SINGLE_GOAL_VARIANTS = [
     why: (title: string) =>
       `A low-pressure start for ${title.toLowerCase()} — good if you want the smallest possible first step.`,
     intro: (title: string) => `Three easy habits to ease into ${title.toLowerCase()}.`,
-    stepCount: 3,
+    actionCount: 3,
   },
   {
     suffix: 'balanced',
     why: (title: string) =>
       `A balanced daily plan for ${title.toLowerCase()} based on what you shared in onboarding.`,
     intro: (title: string) => `A steady routine to build ${title.toLowerCase()} into your day.`,
-    stepCount: 4,
+    actionCount: 4,
   },
   {
     suffix: 'focused',
     why: (title: string) =>
       `A more structured approach to ${title.toLowerCase()} if you are ready to commit a bit more.`,
     intro: (title: string) => `A fuller routine to make ${title.toLowerCase()} stick.`,
-    stepCount: 4,
+    actionCount: 4,
   },
 ] as const;
 
@@ -194,10 +217,11 @@ function buildOptionForGoal(
   optionId: string,
   whyThisGoal: string,
   intro: string,
-  stepCount: number,
+  actionCount: number,
 ): RoutineOption {
   const habit = habitCatalog.find((h) => h.id === goalId);
-  const allSteps = FALLBACK_STEPS[goalId] ?? FALLBACK_STEPS['sleep-schedule'];
+  const allActions = FALLBACK_ACTIONS[goalId] ?? FALLBACK_ACTIONS['sleep-schedule'];
+  const overviewTips = FALLBACK_OVERVIEW_TIPS[goalId] ?? FALLBACK_OVERVIEW_TIPS['sleep-schedule'];
 
   return {
     id: optionId,
@@ -205,7 +229,8 @@ function buildOptionForGoal(
     primaryGoalTitle: habit?.title ?? goalId,
     whyThisGoal,
     intro,
-    steps: allSteps.slice(0, stepCount),
+    overviewTips,
+    dailyActions: allActions.slice(0, actionCount),
   };
 }
 
@@ -231,7 +256,7 @@ export function buildFallbackRoutineProposals(
           `${goalId}-${variant.suffix}`,
           variant.why(title),
           variant.intro(title),
-          variant.stepCount,
+          variant.actionCount,
         ),
       );
     }

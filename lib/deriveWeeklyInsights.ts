@@ -13,6 +13,7 @@ import { addDaysToDateKey, compareDateKeys } from '@/lib/dateKeys';
 import { localDateKey } from '@/lib/localDate';
 import { RoutineCompletionLog } from '@/lib/routineCompletionStorage';
 import { normalizePersonalRoutine } from '@/lib/routineSteps';
+import { dailyActionsFromRoutine } from '@/types/routine';
 import {
   BodyInsight,
   DailyCheckIn,
@@ -99,8 +100,11 @@ function computeRoutineStats(
     return { routineDaysTracked: 0, routineDaysFinished: 0, routineCompletionRate: 0 };
   }
 
-  const routine = normalizePersonalRoutine(personalRoutine);
-  const stepCount = routine.steps.length;
+  const routine = normalizePersonalRoutine({
+    ...personalRoutine,
+    dailyActions: dailyActionsFromRoutine(personalRoutine),
+  });
+  const stepCount = routine.dailyActions.length;
   if (stepCount === 0) {
     return { routineDaysTracked: 0, routineDaysFinished: 0, routineCompletionRate: 0 };
   }

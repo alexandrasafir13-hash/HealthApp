@@ -16,6 +16,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 
 import { palette } from '@/constants/theme';
 import { PAGE_MAX_WIDTH, useBreakpoint } from '@/hooks/useBreakpoint';
+import { actionDoneWhen } from '@/types/routine';
 import { RoutineOption } from '@/types/routine';
 
 type Props = {
@@ -206,14 +207,30 @@ export default function RoutineProposalPicker({ options, onSelect, error }: Prop
                     <Text style={styles.body}>{item.whyThisGoal}</Text>
                     <Text style={styles.intro}>{item.intro}</Text>
 
-                    {item.steps.map((step, stepIndex) => (
-                      <View key={`${item.id}-${stepIndex}`} style={styles.stepRow}>
-                        <Text style={styles.stepBullet}>•</Text>
-                        <Text style={styles.stepPreview}>
-                          <Text style={styles.stepPreviewTitle}>{step.title}</Text>
-                          {' — '}
-                          {step.description}
-                        </Text>
+                    {item.overviewTips.length > 0 && (
+                      <>
+                        <Text style={styles.sectionLabel}>Overview</Text>
+                        {item.overviewTips.map((tip, tipIndex) => (
+                          <View key={`${item.id}-tip-${tipIndex}`} style={styles.tipRow}>
+                            <Text style={styles.tipBullet}>•</Text>
+                            <Text style={styles.tipText}>{tip}</Text>
+                          </View>
+                        ))}
+                      </>
+                    )}
+
+                    <Text style={styles.sectionLabel}>Daily checklist</Text>
+                    {item.dailyActions.map((action, actionIndex) => (
+                      <View key={`${item.id}-action-${actionIndex}`} style={styles.actionRow}>
+                        <View style={styles.actionCheckbox}>
+                          <Text style={styles.actionCheckboxMark}> </Text>
+                        </View>
+                        <View style={styles.actionContent}>
+                          <Text style={styles.actionTitle}>{action.title}</Text>
+                          <Text style={styles.actionMeta}>
+                            {action.timeHint} · Done when: {actionDoneWhen(action)}
+                          </Text>
+                        </View>
                       </View>
                     ))}
                   </ScrollView>
@@ -337,25 +354,61 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: palette.slate,
   },
-  stepRow: {
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: palette.slate,
+    marginTop: 4,
+  },
+  tipRow: {
     flexDirection: 'row',
     gap: 8,
     alignItems: 'flex-start',
   },
-  stepBullet: {
+  tipBullet: {
     fontSize: 14,
     lineHeight: 20,
-    color: palette.teal,
+    color: palette.slateSubtle,
   },
-  stepPreview: {
+  tipText: {
     flex: 1,
     fontSize: 13,
     lineHeight: 18,
     color: palette.slateMuted,
   },
-  stepPreviewTitle: {
+  actionRow: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'flex-start',
+    backgroundColor: palette.background,
+    borderRadius: 10,
+    padding: 10,
+  },
+  actionCheckbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: palette.teal,
+    marginTop: 2,
+  },
+  actionCheckboxMark: {
+    fontSize: 1,
+    color: 'transparent',
+  },
+  actionContent: {
+    flex: 1,
+    gap: 2,
+  },
+  actionTitle: {
+    fontSize: 14,
     fontWeight: '700',
     color: palette.slate,
+  },
+  actionMeta: {
+    fontSize: 12,
+    lineHeight: 16,
+    color: palette.slateMuted,
   },
   chooseButton: {
     marginTop: 12,

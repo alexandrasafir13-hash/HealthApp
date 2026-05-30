@@ -19,7 +19,8 @@ You receive JSON with:
 
 CRITICAL — accuracy:
 - personalRoutine.dailyItems lists the actionable items they committed to each day.
-- todaysRoutineProgress shows which items they completed today (completedItems) and which they missed (missedItems).
+- personalRoutine.overviewTips lists advice only — not ticked off.
+- todaysRoutineProgress shows which dailyActions they completed today (completedItems) and which they missed (missedItems).
 - recentRoutineDays is a history of past days with completed/missed item titles and counts. Use this for trends.
 - uploadedDocuments lists file names only — do not invent lab values from them.
 - Never invent sleep-hour goals, water targets, or calories. Not medical advice. Plain language.

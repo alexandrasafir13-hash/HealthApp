@@ -5,7 +5,7 @@ import { palette } from '@/constants/theme';
 
 interface Props {
   title: string;
-  description: string;
+  doneWhen: string;
   timeHint?: string;
   completed: boolean;
   onPress: () => void;
@@ -13,7 +13,7 @@ interface Props {
 
 export default function RoutineChecklistItem({
   title,
-  description,
+  doneWhen,
   timeHint,
   completed,
   onPress,
@@ -35,7 +35,7 @@ export default function RoutineChecklistItem({
             <Text style={styles.timeHint}>{timeHint}</Text>
           )}
         </View>
-        <Text style={styles.description}>{description}</Text>
+        <Text style={styles.doneWhen}>Done when: {doneWhen}</Text>
       </View>
     </Pressable>
   );
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: palette.teal,
   },
-  description: {
+  doneWhen: {
     fontSize: 13,
     lineHeight: 18,
     color: palette.slateMuted,

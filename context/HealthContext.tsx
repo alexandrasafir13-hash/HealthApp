@@ -13,7 +13,7 @@ import {
   RoutineCompletionLog,
   saveRoutineCompletionLog,
 } from '@/lib/routineCompletionStorage';
-import { normalizePersonalRoutine, withStepIds } from '@/lib/routineSteps';
+import { normalizePersonalRoutine, withActionIds } from '@/lib/routineSteps';
 import {
   clearRoutineProposals,
   loadPersonalRoutine,
@@ -23,9 +23,9 @@ import {
 } from '@/lib/routineStorage';
 import { BodyInsight } from '@/types/health';
 import { BiologicalSex, DataMethodId, GoalDetails, MedicalConditionId, UserProfile } from '@/types/onboarding';
-import { PersonalRoutine, RoutineProposalSet, RoutineStep } from '@/types/routine';
+import { PersonalRoutine, RoutineProposalSet, RoutineDailyAction, dailyActionsFromRoutine } from '@/types/routine';
 
-export type TodayRoutineStep = RoutineStep & {
+export type TodayRoutineStep = RoutineDailyAction & {
   id: string;
   completed: boolean;
 };
@@ -111,7 +111,7 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       if (!option || !routineProposals) return;
 
       const routine: PersonalRoutine = {
-        ...withStepIds(option),
+        ...withActionIds(option),
         generatedAt: routineProposals.generatedAt,
         source: routineProposals.source,
       };
@@ -136,7 +136,14 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     ]).then(([saved, savedLog, savedRoutine, savedProposals, savedRoutineLog]) => {
       if (!mounted) return;
       if (saved) setProfile(saved);
-      if (savedRoutine) setPersonalRoutine(normalizePersonalRoutine(savedRoutine));
+      if (savedRoutine) {
+        const normalized = normalizePersonalRoutine({
+          ...savedRoutine,
+          dailyActions: dailyActionsFromRoutine(savedRoutine as PersonalRoutine & { steps?: RoutineDailyAction[] }),
+          overviewTips: savedRoutine.overviewTips ?? [],
+        });
+        setPersonalRoutine(normalized);
+      }
       if (savedProposals) setRoutineProposals(savedProposals);
       setCheckInLog(savedLog);
       setRoutineCompletionLog(savedRoutineLog);
@@ -168,11 +175,14 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
 
   const todayRoutineSteps = useMemo((): TodayRoutineStep[] => {
     if (!personalRoutine) return [];
-    const routine = normalizePersonalRoutine(personalRoutine);
-    return routine.steps.map((step, index) => {
-      const id = step.id?.trim() || `${routine.id}-step-${index}`;
+    const routine = normalizePersonalRoutine({
+      ...personalRoutine,
+      dailyActions: dailyActionsFromRoutine(personalRoutine),
+    });
+    return routine.dailyActions.map((action, index) => {
+      const id = action.id?.trim() || `${routine.id}-action-${index}`;
       return {
-        ...step,
+        ...action,
         id,
         completed: todayRoutineProgress.steps[id] === true,
       };

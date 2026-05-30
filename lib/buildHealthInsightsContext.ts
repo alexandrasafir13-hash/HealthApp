@@ -10,7 +10,7 @@ import {
 import { RoutineDaySummary, todayRoutineSummaryForLlm } from '@/lib/routineCompletionHistory';
 import { DailyCheckIn, TestResultUpload } from '@/types/health';
 import { UserProfile } from '@/types/onboarding';
-import { PersonalRoutine } from '@/types/routine';
+import { PersonalRoutine, dailyActionsFromRoutine, overviewTipsFromRoutine, actionDoneWhen } from '@/types/routine';
 
 export interface ImprovementGoal {
   area: string;
@@ -20,7 +20,7 @@ export interface ImprovementGoal {
 
 export type LlmRoutineItem = {
   title: string;
-  description: string;
+  doneWhen: string;
   timeHint: string;
 };
 
@@ -37,7 +37,8 @@ export interface HealthInsightsContext {
     personalRoutine: {
       focus: string;
       intro: string;
-      dailyItems: LlmRoutineItem[];
+      overviewTips: string[];
+      dailyActions: LlmRoutineItem[];
     } | null;
     todaysRoutineProgress: {
       completedCount: number;
@@ -133,7 +134,7 @@ function uploadedDocumentSummaries(uploads: TestResultUpload[]) {
 export function buildHealthInsightsContext(input: {
   profile: UserProfile;
   personalRoutine: PersonalRoutine | null;
-  todayRoutineSteps: { id: string; title: string; description: string; timeHint: string; completed: boolean }[];
+  todayRoutineSteps: { id: string; title: string; doneWhen: string; timeHint: string; completed: boolean }[];
   uploadedDocuments: TestResultUpload[];
   recentRoutineDays: RoutineDaySummary[];
 }): HealthInsightsContext {
@@ -144,10 +145,11 @@ export function buildHealthInsightsContext(input: {
     ? {
         focus: personalRoutine.primaryGoalTitle,
         intro: personalRoutine.intro,
-        dailyItems: personalRoutine.steps.map((step) => ({
-          title: step.title,
-          description: step.description,
-          timeHint: step.timeHint,
+        overviewTips: overviewTipsFromRoutine(personalRoutine),
+        dailyActions: dailyActionsFromRoutine(personalRoutine).map((action) => ({
+          title: action.title,
+          doneWhen: actionDoneWhen(action),
+          timeHint: action.timeHint,
         })),
       }
     : null;

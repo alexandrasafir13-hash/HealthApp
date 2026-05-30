@@ -10,15 +10,27 @@ import {
   isHealthInsightsConfigured,
 } from '@/lib/healthInsightsConfig';
 import { parseModelJson } from '@/lib/parseModelJson';
+import { assertDailyActions, looksLikeRoutineTip } from '@/lib/validateRoutineActions';
 import { UserProfile } from '@/types/onboarding';
 import {
   ROUTINE_OPTION_COUNT,
+  RoutineDailyAction,
   RoutineOption,
   RoutineProposalSet,
-  RoutineStep,
 } from '@/types/routine';
 
 const ROUTINE_MAX_OUTPUT_TOKENS = Math.max(HEALTH_INSIGHTS_MAX_OUTPUT_TOKENS, 2048);
+
+const DAILY_ACTION_SCHEMA = {
+  type: 'object',
+  properties: {
+    title: { type: 'string' },
+    doneWhen: { type: 'string' },
+    timeHint: { type: 'string' },
+  },
+  required: ['title', 'doneWhen', 'timeHint'],
+  additionalProperties: false,
+};
 
 const ROUTINE_OPTION_SCHEMA = {
   type: 'object',
@@ -27,23 +39,20 @@ const ROUTINE_OPTION_SCHEMA = {
     primaryGoalId: { type: 'string' },
     whyThisGoal: { type: 'string' },
     intro: { type: 'string' },
-    steps: {
+    overviewTips: {
       type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          title: { type: 'string' },
-          description: { type: 'string' },
-          timeHint: { type: 'string' },
-        },
-        required: ['title', 'description', 'timeHint'],
-        additionalProperties: false,
-      },
+      items: { type: 'string' },
+      minItems: 2,
+      maxItems: 4,
+    },
+    dailyActions: {
+      type: 'array',
+      items: DAILY_ACTION_SCHEMA,
       minItems: 3,
       maxItems: 5,
     },
   },
-  required: ['id', 'primaryGoalId', 'whyThisGoal', 'intro', 'steps'],
+  required: ['id', 'primaryGoalId', 'whyThisGoal', 'intro', 'overviewTips', 'dailyActions'],
   additionalProperties: false,
 };
 
@@ -65,54 +74,92 @@ const SYSTEM_PROMPT = `You are a supportive wellness coach building starter dail
 
 You receive JSON with the user's age, sex, weight, height, medical conditions, and wantsToImprove — goals they picked in onboarding plus their answers to follow-up questions.
 
-Your job:
-1. Propose exactly 3 distinct daily routines the user can choose from.
-2. Each routine should feel meaningfully different — prioritize different goals from selectedGoalIds when the user picked multiple. If they picked only one goal, offer 3 distinct approaches (gentle, balanced, more structured).
-3. For each routine, explain why that focus could help them and include 3–5 small, actionable daily items they can tick off each day.
+Your job: propose exactly 3 distinct daily routines. Each routine has TWO separate parts:
 
-Rules:
-- Return exactly 3 options with unique id values (e.g. "routine-1", "routine-2", "routine-3").
-- primaryGoalId on each option MUST be one of the ids in selectedGoalIds.
-- Each step must be a concrete daily action the user can check off — start titles with a verb (e.g. "Drink a glass of water", "Take a 10-minute walk"). Not vague tips or advice.
-- description should clarify how to do the action in one sentence.
-- Use plain language. Not medical advice. No diagnosis or medication suggestions.
+PART A — OVERVIEW (tips and context — NOT ticked off):
+- whyThisGoal: 1–2 sentences on why this focus helps them
+- intro: 1 sentence summary of the routine approach
+- overviewTips: 2–4 short advice bullets (recommendations, context, encouragement). These are tips only.
+
+PART B — DAILY CHECKLIST (binary tasks the user ticks off every day):
+- dailyActions: 3–5 concrete tasks. Each must pass the CHECKBOX TEST: at the end of the day the user can honestly say "yes I did this" or "no I didn't".
+
+CRITICAL — do NOT put tips in dailyActions:
+BAD dailyActions (these belong in overviewTips instead):
+- "Stay hydrated throughout the day"
+- "Try to reduce screen time"
+- "Focus on better sleep"
+- "Remember to stretch"
+- "Consider walking more"
+- "Keep stress low"
+
+GOOD dailyActions (specific, measurable, one-time per day):
+- title: "Drink 1 glass of water after waking" | doneWhen: "You finished one full glass within 30 minutes of getting up." | timeHint: "Morning"
+- title: "Walk 10 minutes after lunch" | doneWhen: "You walked at least 10 minutes after your midday meal." | timeHint: "After lunch"
+- title: "Put phone on charger outside bedroom" | doneWhen: "Your phone is charging outside the bedroom before you get into bed." | timeHint: "Before bed"
+
+dailyActions rules:
+- title: imperative verb first, max 10 words, include amount/duration/when when possible
+- doneWhen: one sentence describing how they know it's complete — NOT why it's good for them
+- timeHint: short (e.g. "Morning", "Before bed", "After lunch")
+- Never duplicate overviewTips as dailyActions
+
+Other rules:
+- Return exactly 3 options with unique id values (routine-1, routine-2, routine-3)
+- primaryGoalId MUST be one of selectedGoalIds
+- Plain language. Not medical advice. No diagnosis or medication suggestions.
 - Be cautious with medical conditions — gentle habits only.
-- timeHint should be short (e.g. "Morning", "Before bed", "After lunch").
 - Do not invent goals they did not select.
 
 Respond with JSON only:
 {
-  "options": [
-    {
-      "id": string,
-      "primaryGoalId": string,
-      "whyThisGoal": string,
-      "intro": string,
-      "steps": [{ "title": string, "description": string, "timeHint": string }]
-    }
-  ]
+  "options": [{
+    "id": string,
+    "primaryGoalId": string,
+    "whyThisGoal": string,
+    "intro": string,
+    "overviewTips": string[],
+    "dailyActions": [{ "title": string, "doneWhen": string, "timeHint": string }]
+  }]
 }`;
 
-function parseSteps(raw: unknown): RoutineStep[] {
-  if (!Array.isArray(raw)) throw new Error('Routine response missing steps');
-  const steps = raw
+function parseOverviewTips(raw: unknown, whyThisGoal: string): string[] {
+  if (Array.isArray(raw)) {
+    const tips = raw
+      .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+      .map((item) => item.trim())
+      .slice(0, 4);
+    if (tips.length >= 2) return tips;
+  }
+  const fallback = whyThisGoal.trim();
+  if (fallback.length > 0) {
+    return [fallback, 'Tick off each checklist item when you complete it today.'];
+  }
+  throw new Error('Routine response missing overviewTips');
+}
+
+function parseDailyActions(raw: unknown, obj?: Record<string, unknown>): RoutineDailyAction[] {
+  const list = Array.isArray(raw)
+    ? raw
+    : obj && Array.isArray(obj.steps)
+      ? obj.steps
+      : null;
+  if (!list) throw new Error('Routine response missing dailyActions');
+
+  const actions = list
     .filter(
-      (item): item is RoutineStep =>
-        item != null &&
-        typeof item === 'object' &&
-        typeof (item as RoutineStep).title === 'string' &&
-        typeof (item as RoutineStep).description === 'string' &&
-        typeof (item as RoutineStep).timeHint === 'string',
+      (item): item is Record<string, unknown> =>
+        item != null && typeof item === 'object',
     )
-    .map((item) => ({
-      title: item.title.trim(),
-      description: item.description.trim(),
-      timeHint: item.timeHint.trim(),
-    }))
-    .filter((item) => item.title && item.description && item.timeHint)
-    .slice(0, 5);
-  if (steps.length < 3) throw new Error('Routine response had too few steps');
-  return steps;
+    .map((item) => {
+      const title = String(item.title ?? '').trim();
+      const doneWhen = String(item.doneWhen ?? item.description ?? '').trim();
+      const timeHint = String(item.timeHint ?? '').trim();
+      return { title, doneWhen, timeHint };
+    })
+    .filter((item) => item.title && item.doneWhen && item.timeHint);
+
+  return assertDailyActions(actions);
 }
 
 function normalizeRoutineOption(raw: unknown, profile: UserProfile, index: number): RoutineOption {
@@ -127,6 +174,12 @@ function normalizeRoutineOption(raw: unknown, profile: UserProfile, index: numbe
   const id = String(obj.id ?? `routine-${index + 1}`).trim() || `routine-${index + 1}`;
   if (!whyThisGoal || !intro) throw new Error('Routine response missing copy');
 
+  const dailyActions = parseDailyActions(obj.dailyActions, obj);
+  const tipLike = dailyActions.filter((a) => looksLikeRoutineTip(a.title));
+  if (tipLike.length > 0) {
+    throw new Error(`Routine dailyActions still contain tips: ${tipLike.map((a) => a.title).join('; ')}`);
+  }
+
   const habit = habitCatalog.find((h) => h.id === primaryGoalId);
   return {
     id,
@@ -134,7 +187,8 @@ function normalizeRoutineOption(raw: unknown, profile: UserProfile, index: numbe
     primaryGoalTitle: habit?.title ?? primaryGoalId,
     whyThisGoal,
     intro,
-    steps: parseSteps(obj.steps),
+    overviewTips: parseOverviewTips(obj.overviewTips, whyThisGoal),
+    dailyActions,
   };
 }
 

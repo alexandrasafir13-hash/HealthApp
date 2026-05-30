@@ -1,25 +1,25 @@
-import { PersonalRoutine, RoutineOption, RoutineStep } from '@/types/routine';
+import { PersonalRoutine, RoutineOption, RoutineDailyAction } from '@/types/routine';
 
-export function routineStepId(routineId: string, index: number): string {
-  return `${routineId}-step-${index}`;
+export function routineActionId(routineId: string, index: number): string {
+  return `${routineId}-action-${index}`;
 }
 
-export function ensureRoutineStepIds<T extends { id: string; steps: RoutineStep[] }>(
+export function ensureRoutineActionIds<T extends { id: string; dailyActions: RoutineDailyAction[] }>(
   routine: T,
 ): T {
   return {
     ...routine,
-    steps: routine.steps.map((step, index) => ({
-      ...step,
-      id: step.id?.trim() || routineStepId(routine.id, index),
+    dailyActions: routine.dailyActions.map((action, index) => ({
+      ...action,
+      id: action.id?.trim() || routineActionId(routine.id, index),
     })),
   };
 }
 
-export function withStepIds(option: RoutineOption): RoutineOption {
-  return ensureRoutineStepIds(option);
+export function withActionIds(option: RoutineOption): RoutineOption {
+  return ensureRoutineActionIds(option);
 }
 
 export function normalizePersonalRoutine(routine: PersonalRoutine): PersonalRoutine {
-  return ensureRoutineStepIds(routine);
+  return ensureRoutineActionIds(routine);
 }

@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import RoutineChecklistItem from '@/components/RoutineChecklistItem';
 import { palette } from '@/constants/theme';
-import { PersonalRoutine } from '@/types/routine';
+import { actionDoneWhen, dailyActionsFromRoutine, overviewTipsFromRoutine, PersonalRoutine } from '@/types/routine';
 
 type Props = {
   routine: PersonalRoutine;
@@ -9,6 +10,9 @@ type Props = {
 };
 
 export default function PersonalRoutineCard({ routine, error }: Props) {
+  const overviewTips = overviewTipsFromRoutine(routine);
+  const dailyActions = dailyActionsFromRoutine(routine);
+
   return (
     <View style={styles.card}>
       <Text style={styles.sectionTitle}>Your starter routine</Text>
@@ -16,13 +20,24 @@ export default function PersonalRoutineCard({ routine, error }: Props) {
       <Text style={styles.body}>{routine.whyThisGoal}</Text>
       <Text style={styles.intro}>{routine.intro}</Text>
 
-      {routine.steps.map((step, index) => (
-        <View key={`${step.title}-${index}`} style={styles.stepCard}>
-          <View style={styles.stepHeader}>
-            <Text style={styles.stepTitle}>{step.title}</Text>
-            <Text style={styles.timeHint}>{step.timeHint}</Text>
-          </View>
-          <Text style={styles.stepBody}>{step.description}</Text>
+      {overviewTips.length > 0 && (
+        <>
+          <Text style={styles.subheading}>Overview</Text>
+          {overviewTips.map((tip, index) => (
+            <Text key={`tip-${index}`} style={styles.tip}>
+              • {tip}
+            </Text>
+          ))}
+        </>
+      )}
+
+      <Text style={styles.subheading}>Daily checklist</Text>
+      {dailyActions.map((action, index) => (
+        <View key={`${action.title}-${index}`} style={styles.actionPreview}>
+          <Text style={styles.actionTitle}>{action.title}</Text>
+          <Text style={styles.actionMeta}>
+            {action.timeHint} · Done when: {actionDoneWhen(action)}
+          </Text>
         </View>
       ))}
 
@@ -62,32 +77,31 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: palette.slate,
   },
-  stepCard: {
+  subheading: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: palette.slate,
+    marginTop: 4,
+  },
+  tip: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: palette.slateMuted,
+  },
+  actionPreview: {
     backgroundColor: palette.background,
     borderRadius: 12,
     padding: 12,
-    gap: 6,
+    gap: 4,
   },
-  stepHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 8,
-  },
-  stepTitle: {
-    flex: 1,
+  actionTitle: {
     fontSize: 15,
     fontWeight: '700',
     color: palette.slate,
   },
-  timeHint: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: palette.teal,
-  },
-  stepBody: {
-    fontSize: 14,
-    lineHeight: 20,
+  actionMeta: {
+    fontSize: 13,
+    lineHeight: 18,
     color: palette.slateMuted,
   },
   note: {

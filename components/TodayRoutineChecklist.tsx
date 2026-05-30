@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import RoutineChecklistItem from '@/components/RoutineChecklistItem';
 import { Text } from '@/components/Themed';
 import { useHealth } from '@/context/HealthContext';
+import { actionDoneWhen } from '@/types/routine';
 import { palette } from '@/constants/theme';
 
 export default function TodayRoutineChecklist() {
@@ -23,12 +24,13 @@ export default function TodayRoutineChecklist() {
         </Text>
       </View>
 
+      <Text style={styles.sectionLabel}>Today&apos;s checklist</Text>
       <View style={styles.list}>
         {todayRoutineSteps.map((step) => (
           <RoutineChecklistItem
             key={step.id}
             title={step.title}
-            description={step.description}
+            doneWhen={actionDoneWhen(step)}
             timeHint={step.timeHint}
             completed={step.completed}
             onPress={() => toggleRoutineStep(step.id)}
@@ -60,6 +62,11 @@ const styles = StyleSheet.create({
   progress: {
     fontSize: 14,
     fontWeight: '600',
+    color: palette.slate,
+  },
+  sectionLabel: {
+    fontSize: 17,
+    fontWeight: '700',
     color: palette.slate,
   },
   list: {
