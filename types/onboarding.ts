@@ -1,3 +1,5 @@
+import type { LucideIcon } from 'lucide-react-native';
+
 export type DataMethodId = 'apple-health' | 'google-health' | 'upload' | 'manual';
 
 export interface UserProfile {
@@ -11,7 +13,7 @@ export interface DataMethodOption {
   id: DataMethodId;
   title: string;
   description: string;
-  icon: string;
+  icon: LucideIcon;
   enabled?: boolean;
 }
 

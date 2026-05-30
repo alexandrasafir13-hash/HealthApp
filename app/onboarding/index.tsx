@@ -1,4 +1,3 @@
-import { SymbolView } from 'expo-symbols';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -137,6 +136,12 @@ export default function OnboardingScreen() {
               {dataMethodOptions.map((option) => {
                 const enabled = option.enabled !== false;
                 const selected = enabled && dataMethod === option.id;
+                const OptionIcon = option.icon;
+                const iconColor = !enabled
+                  ? palette.slateSubtle
+                  : selected
+                    ? palette.teal
+                    : palette.slateMuted;
                 return (
                   <Pressable
                     key={option.id}
@@ -150,13 +155,7 @@ export default function OnboardingScreen() {
                     accessibilityRole="radio"
                     accessibilityState={{ disabled: !enabled, selected }}>
                     <View style={[styles.optionIcon, selected && styles.optionIconSelected]}>
-                      <SymbolView
-                        name={option.icon as 'heart.fill'}
-                        tintColor={
-                          !enabled ? palette.slateSubtle : selected ? palette.teal : palette.slateMuted
-                        }
-                        size={22}
-                      />
+                      <OptionIcon color={iconColor} size={22} strokeWidth={2} />
                     </View>
                     <View style={styles.optionContent}>
                       <Text style={[styles.optionTitle, !enabled && styles.optionTitleDisabled]}>
