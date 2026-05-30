@@ -30,7 +30,6 @@ export default function TodayScreen() {
     acceptPlan,
     todayShowInsights,
     editTodayCheckIn,
-    planCheckInLog,
   } = useHealth();
 
   const [contentTop, setContentTop] = useState<number | null>(null);
@@ -51,7 +50,6 @@ export default function TodayScreen() {
   } = useHealthInsights({
     profile,
     personalPlan,
-    planCheckInLog,
     enabled: todayShowInsights && !reviewingPlan,
   });
 

@@ -7,8 +7,7 @@ import {
   healthyWeightRangeKg,
   weightVsHealthyBand,
 } from '@/lib/healthSnapshot';
-import { PlanCheckInEntry } from '@/lib/planCheckInStorage';
-import { DailyCheckIn, TestResultUpload } from '@/types/health';
+import { TestResultUpload } from '@/types/health';
 import { UserProfile } from '@/types/onboarding';
 import { getActivePlanWeek, PersonalPlan, planDisplayTitle } from '@/types/plan';
 
@@ -35,11 +34,6 @@ export interface HealthInsightsContext {
       primaryMetric: { label: string; unit: string | null; baselineValue: number | string | null };
       activeWeekFocus: string | null;
       activeWeekTarget: string | null;
-    } | null;
-    todaysPlanCheckIn: {
-      weekNumber: number;
-      answers: Record<string, string | number | string[]>;
-      submittedAt: string;
     } | null;
   };
   wantsToImprove: ImprovementGoal[];
@@ -120,10 +114,9 @@ function uploadedDocumentSummaries(uploads: TestResultUpload[]) {
 export function buildHealthInsightsContext(input: {
   profile: UserProfile;
   personalPlan: PersonalPlan | null;
-  todayPlanCheckIn: PlanCheckInEntry | null;
   uploadedDocuments: TestResultUpload[];
 }): HealthInsightsContext {
-  const { profile, personalPlan, todayPlanCheckIn, uploadedDocuments } = input;
+  const { profile, personalPlan, uploadedDocuments } = input;
   const activeWeek = personalPlan ? getActivePlanWeek(personalPlan) : null;
 
   const planForLlm = personalPlan
@@ -137,14 +130,6 @@ export function buildHealthInsightsContext(input: {
       }
     : null;
 
-  const todaysPlanCheckIn = todayPlanCheckIn
-    ? {
-        weekNumber: todayPlanCheckIn.weekNumber,
-        answers: todayPlanCheckIn.answers,
-        submittedAt: todayPlanCheckIn.submittedAt,
-      }
-    : null;
-
   return {
     whatYouEntered: {
       age: profile.age,
@@ -155,7 +140,6 @@ export function buildHealthInsightsContext(input: {
       dataMethodsTheySelected: labelsForDataMethods(profile.dataMethods),
       uploadedDocuments: uploadedDocumentSummaries(uploadedDocuments),
       personalPlan: planForLlm,
-      todaysPlanCheckIn,
     },
     wantsToImprove: improvementGoalsFromHabitIds(profile.habitIds, profile.goalDetails),
     optionalDerivedFromEnteredMeasurements: optionalBmiContext(
@@ -167,9 +151,4 @@ export function buildHealthInsightsContext(input: {
 
 export function fingerprintHealthInsightsContext(context: HealthInsightsContext): string {
   return JSON.stringify(context);
-}
-
-/** @deprecated Legacy check-in payload */
-export function checkInPayloadForLlm(_entry: DailyCheckIn) {
-  return { symptoms: [] as string[] };
 }

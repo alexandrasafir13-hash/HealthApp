@@ -7,9 +7,7 @@ import {
 import { fetchHealthInsights } from '@/lib/fetchHealthInsights';
 import { isHealthInsightsConfigured } from '@/lib/healthInsightsConfig';
 import { loadHealthInsightsCache, saveHealthInsightsCache } from '@/lib/healthInsightsCache';
-import { PlanCheckInLog } from '@/lib/planCheckInStorage';
 import { loadTestResults } from '@/lib/testResultsStorage';
-import { localDateKey } from '@/lib/localDate';
 import { HealthLlmInsight } from '@/types/healthInsights';
 import { PersonalPlan } from '@/types/plan';
 import { UserProfile } from '@/types/onboarding';
@@ -19,7 +17,6 @@ type Status = 'idle' | 'loading' | 'ready' | 'error';
 interface Input {
   profile: UserProfile | null;
   personalPlan: PersonalPlan | null;
-  planCheckInLog: PlanCheckInLog;
   enabled: boolean;
 }
 
@@ -55,14 +52,12 @@ export function useHealthInsights(input: Input) {
 
   const context = useMemo(() => {
     if (!input.profile) return null;
-    const todayEntry = input.planCheckInLog[localDateKey()] ?? null;
     return buildHealthInsightsContext({
       profile: input.profile,
       personalPlan: input.personalPlan,
-      todayPlanCheckIn: todayEntry,
       uploadedDocuments,
     });
-  }, [input.profile, input.personalPlan, input.planCheckInLog, uploadedDocuments]);
+  }, [input.profile, input.personalPlan, uploadedDocuments]);
 
   const fingerprint = useMemo(
     () => (context ? fingerprintHealthInsightsContext(context) : null),
