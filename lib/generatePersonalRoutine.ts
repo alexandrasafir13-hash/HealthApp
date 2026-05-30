@@ -167,97 +167,94 @@ const PLAN_RESPONSE_SCHEMA = {
   additionalProperties: false,
 };
 
-const SYSTEM_PROMPT = `You are a behavior-change coach inside a wellness app.
+const SYSTEM_PROMPT = `You create compact 4-week behavior-change plans for a wellness app.
 
-Create one adaptive 4-week plan for the user's selected goal.
-
-The app does not use daily habit checkboxes.
-Daily check-ins are used to learn how the plan is going, so the next week can be updated.
+The user wants a plan, not an essay.
 
 Input JSON includes:
 
-* userProfile
 * selectedGoal
-* onboardingAnswers
 * baselineMetrics
 * desiredOutcome
 * constraints
 * medicalConditions
+* onboardingAnswers
 
-Your job:
-Generate a 4-week plan with weekly progression.
+Create ONE 4-week adaptive plan.
 
 Rules:
 
-* Week 1 must be concrete and ready to start.
-* Weeks 2-4 must be provisional, because they will be updated after weekly reviews.
-* Do not create daily todos.
-* Do not create generic wellness tips.
-* Do not create multiple routine options.
-* The plan must be specific to the user's goal, baseline, desired outcome, and constraints.
-* Daily check-ins should collect useful data, not ask the user to tick off tasks.
-* Use 3-5 daily check-in questions per week.
-* Daily questions should measure: actual progress, friction/blockers, what helped, and whether the weekly plan fit the user's real day.
-* The user should not be asked to redesign the plan daily.
-* At the end of each week, the app uses check-in patterns to update the next week.
+* Return JSON only.
+* Be concise.
+* No paragraphs.
+* No motivational text.
+* No generic wellness advice.
+* No daily todos.
+* No habit checkboxes.
+* Daily check-ins collect data for the weekly review.
+* Week 1 is active.
+* Weeks 2-4 are provisional.
+* Each week must fit on a small app screen.
+
+Hard limits:
+
+* goalSummary: max 140 characters
+* each week focus: max 60 characters
+* each weeklyTarget: max 90 characters
+* each planStep: max 70 characters
+* each check-in question: max 70 characters
+* max 3 planSteps per week
+* exactly 4 daily check-in questions per week
+* max 3 reviewSignals per week
 
 Safety:
-Keep suggestions gentle. Do not diagnose, mention medication, suggest supplements, fasting, calorie restriction, intense exercise, BMI, or comments about body size. Adapt around medicalConditions and constraints.
+Keep plans gentle. Do not diagnose, mention medication, suggest supplements, fasting, calorie restriction, intense exercise, BMI, or body-size comments.
 
-Tone:
-Plain, practical, calm. No shame. No motivational clichés. No clinical lecture.
-
-Return JSON only.
-
-Schema:
+Output schema:
 {
 "plan": {
 "id": "plan-1",
 "goalId": string,
 "goalName": string,
 "goalSummary": string,
-"baselineSummary": string,
-"desiredOutcome": string,
-"primaryMetric": {
+"baseline": {
 "label": string,
-"unit": string | null,
-"baselineValue": number | string | null
+"value": number | string | null,
+"unit": string | null
+},
+"target": {
+"label": string,
+"value": number | string | null,
+"unit": string | null
 },
 "weeks": [
 {
-"weekNumber": number,
-"status": "active" | "provisional",
+"week": 1,
+"status": "active",
 "focus": string,
 "weeklyTarget": string,
-"planForTheWeek": string,
-"experiments": [
-{
-"title": string,
-"description": string,
-"whatItTests": string
-}
-],
-"dailyCheckInQuestions": [
+"planSteps": string[],
+"checkInQuestions": [
 {
 "id": string,
-"question": string,
-"answerType": "number" | "scale_1_5" | "single_choice" | "multi_choice" | "short_text" | "time",
-"required": boolean,
-"options": string[] | null,
-"unit": string | null
+"label": string,
+"type": "number" | "scale_1_5" | "single_choice" | "short_text" | "time",
+"unit": string | null,
+"options": string[] | null
 }
 ],
-"weeklyReviewSignals": string[]
+"reviewSignals": string[]
 }
 ],
-"adjustmentRules": [
+"adaptationRules": [
 {
-"signal": string,
-"nextWeekAdjustment": string
+"when": string,
+"then": string
 }
 ]
 }
 }`;
+
 
 function parsePrimaryMetric(raw: unknown): PrimaryMetric {
   if (!raw || typeof raw !== 'object') throw new Error('Plan missing primaryMetric');

@@ -1,8 +1,9 @@
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
+import ActivePlanCard from '@/components/ActivePlanCard';
 import { Text } from '@/components/Themed';
 import { useHealth } from '@/context/HealthContext';
-import { DailyCheckInQuestion, questionUnitLabel } from '@/types/plan';
+import { DailyCheckInQuestion } from '@/types/plan';
 import { palette } from '@/constants/theme';
 import { PlanCheckInAnswer } from '@/lib/planCheckInStorage';
 
@@ -72,15 +73,7 @@ function QuestionField({
   }
 
   const textValue = value == null ? '' : String(value);
-  const unit = questionUnitLabel(question);
-  const keyboardType =
-    question.answerType === 'number' ? 'numeric' : question.answerType === 'time' ? 'default' : 'default';
-  const placeholder =
-    question.answerType === 'time'
-      ? 'e.g. 10:30 PM'
-      : unit
-        ? `Your answer (${unit})`
-        : 'Your answer';
+  const keyboardType = question.answerType === 'number' ? 'numeric' : 'default';
 
   return (
     <TextInput
@@ -95,7 +88,7 @@ function QuestionField({
         }
       }}
       keyboardType={keyboardType}
-      placeholder={placeholder}
+      placeholder="Your answer"
       placeholderTextColor={palette.slateSubtle}
       multiline={question.answerType === 'short_text'}
     />
@@ -109,31 +102,12 @@ export default function TodayPlanCheckIn() {
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.weekLabel}>
-        Week {activeWeek.weekNumber} — {activeWeek.focus}
-      </Text>
-      <Text style={styles.target}>{activeWeek.weeklyTarget}</Text>
-      <Text style={styles.planForWeek}>{activeWeek.planForTheWeek}</Text>
+      <ActivePlanCard plan={personalPlan} week={activeWeek} showIntro={false} />
 
-      {activeWeek.experiments.length > 0 && (
-        <View style={styles.experiments}>
-          <Text style={styles.experimentsLabel}>Optional experiments this week</Text>
-          {activeWeek.experiments.map((experiment) => (
-            <Text key={experiment.title} style={styles.experiment}>
-              {experiment.title} — {experiment.description}
-            </Text>
-          ))}
-        </View>
-      )}
-
-      <Text style={styles.sectionLabel}>Today&apos;s check-in</Text>
       <View style={styles.list}>
         {activeWeek.dailyCheckInQuestions.map((question) => (
           <View key={question.id} style={styles.questionBlock}>
             <Text style={styles.question}>{question.question}</Text>
-            {questionUnitLabel(question) != null && (
-              <Text style={styles.unitHint}>Unit: {questionUnitLabel(question)}</Text>
-            )}
             <QuestionField
               question={question}
               value={todayCheckInDraft[question.id]}
@@ -147,20 +121,8 @@ export default function TodayPlanCheckIn() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { width: '100%', gap: 16 },
-  weekLabel: { fontSize: 22, fontWeight: '700', color: palette.slate, lineHeight: 28 },
-  target: { fontSize: 15, lineHeight: 22, color: palette.slateMuted },
-  planForWeek: { fontSize: 14, lineHeight: 20, color: palette.slate },
-  experiments: {
-    gap: 6,
-    backgroundColor: palette.background,
-    borderRadius: 12,
-    padding: 12,
-  },
-  experimentsLabel: { fontSize: 14, fontWeight: '700', color: palette.slate },
-  experiment: { fontSize: 13, lineHeight: 18, color: palette.slateMuted },
-  sectionLabel: { fontSize: 17, fontWeight: '700', color: palette.slate },
-  list: { gap: 14 },
+  wrap: { width: '100%', gap: 20 },
+  list: { gap: 12 },
   questionBlock: {
     gap: 8,
     backgroundColor: palette.card,
@@ -170,7 +132,6 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   question: { fontSize: 16, fontWeight: '600', color: palette.slate },
-  unitHint: { fontSize: 12, color: palette.slateSubtle },
   input: {
     borderWidth: 1,
     borderColor: palette.border,

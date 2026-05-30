@@ -114,7 +114,6 @@ export default function TodayScreen() {
           <>
             <View onLayout={onAnchorLayout}>
               <Text style={styles.greeting}>{greeting}</Text>
-              <Text style={styles.prompt}>Your check-in for today</Text>
             </View>
             <TodayPlanCheckIn />
             <TodayPlanSubmitButton />
@@ -168,13 +167,6 @@ const styles = StyleSheet.create({
     lineHeight: 42,
     color: palette.slate,
     textAlign: 'left',
-  },
-  prompt: {
-    fontSize: 20,
-    lineHeight: 28,
-    color: palette.slateMuted,
-    textAlign: 'left',
-    marginTop: 12,
   },
   insightsIntro: {
     fontSize: 16,

@@ -42,7 +42,7 @@ export default function TodayPlanSubmitButton() {
       </Pressable>
       <Text style={styles.hint}>
         {todayCheckInCanSubmit
-          ? 'Your answers help adapt the plan at the end of the week.'
+          ? 'Save when you’re done reflecting on today.'
           : 'Answer the required questions to save today’s check-in.'}
       </Text>
     </View>
