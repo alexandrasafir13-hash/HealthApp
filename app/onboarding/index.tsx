@@ -364,12 +364,14 @@ const styles = StyleSheet.create({
     color: palette.slate,
   },
   sexOptions: {
-    gap: 10,
+    flexDirection: 'row',
+    gap: 8,
   },
   sexOption: {
+    flex: 1,
     borderRadius: 14,
     paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
     borderWidth: 1,
     borderColor: palette.border,
     backgroundColor: palette.card,
@@ -380,9 +382,10 @@ const styles = StyleSheet.create({
     backgroundColor: palette.sageLight,
   },
   sexOptionText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: palette.slate,
+    textAlign: 'center',
   },
   sexOptionTextSelected: {
     color: palette.tealDark,
