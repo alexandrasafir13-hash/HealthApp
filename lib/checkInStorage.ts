@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { localDateKey } from '@/lib/localDate';
+import { normalizeDailyCheckIn } from '@/lib/checkInPeriod';
 import { DailyCheckIn } from '@/types/health';
 
 const CHECK_IN_KEY = 'healthy:today-check-in';
@@ -23,7 +24,13 @@ export async function loadCheckInLog(): Promise<CheckInLog> {
   if (raw) {
     try {
       const parsed = JSON.parse(raw) as CheckInLog;
-      if (parsed && typeof parsed === 'object') return parsed;
+      if (parsed && typeof parsed === 'object') {
+        const normalized: CheckInLog = {};
+        for (const [date, entry] of Object.entries(parsed)) {
+          normalized[date] = normalizeDailyCheckIn({ ...entry, date });
+        }
+        return normalized;
+      }
     } catch {
       // fall through to legacy migration
     }
@@ -31,7 +38,7 @@ export async function loadCheckInLog(): Promise<CheckInLog> {
 
   const legacy = await loadLegacyTodayCheckIn();
   if (legacy) {
-    const log = { [legacy.date]: legacy };
+    const log = { [legacy.date]: normalizeDailyCheckIn(legacy) };
     await saveCheckInLog(log);
     return log;
   }

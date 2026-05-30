@@ -80,27 +80,25 @@ export interface DeviceCategoryGroup {
   devices: DataSource[];
 }
 
+export type CheckInPeriod = 'morning' | 'afternoon' | 'evening';
+
+export interface PeriodCheckIn {
+  /** User-facing feeling word, e.g. Weak, Drained, Steady, Strong, Energized. */
+  feeling: string;
+  symptoms: string[];
+  submittedAt: string;
+}
+
 export interface DailyCheckIn {
   date: string;
   energy: number;
-  sleepQuality: number;
-  stress: number;
+  /** Derived from morning check-in when logged. */
+  sleepQuality?: number;
+  /** Derived from evening check-in when logged. */
+  stress?: number;
   symptoms: string[];
-}
-
-export interface PreventionHabit {
-  id: string;
-  title: string;
-  time: string;
-  completed: boolean;
-  reason: string;
-}
-
-export interface CustomHabit {
-  id: string;
-  title: string;
-  time: string;
-  completed: boolean;
+  /** Per-period check-ins keyed by local-time window (morning / afternoon / evening). */
+  periods?: Partial<Record<CheckInPeriod, PeriodCheckIn>>;
 }
 
 export interface BodyStatus {

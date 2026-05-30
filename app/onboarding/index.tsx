@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -12,28 +12,26 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/Themed';
+import { getQuestionForStep, OnboardingGoalQuestion } from '@/components/OnboardingGoalQuestion';
 import { PAGE_MAX_WIDTH } from '@/hooks/useBreakpoint';
 import { pageStyles, usePageLayout } from '@/hooks/usePageLayout';
 import { useHealth } from '@/context/HealthContext';
 import { habitCatalog, medicalConditionCatalog, sexOptions } from '@/data/onboardingOptions';
+import {
+  buildOnboardingSteps,
+  CONDITIONS_STEP_EXPLAINER,
+  getGoalAnswer,
+  goalDetailExplainer,
+  goalDetailHeading,
+  GOALS_STEP_EXPLAINER,
+  isGoalDetailStepValid,
+  OnboardingStep,
+  STEP_HEADINGS,
+} from '@/lib/onboardingFlow';
 import { palette } from '@/constants/theme';
-import { BiologicalSex, DataMethodId, MedicalConditionId } from '@/types/onboarding';
+import { BiologicalSex, DataMethodId, GoalDetails, MedicalConditionId } from '@/types/onboarding';
 
-const STEPS = ['habits', 'name', 'age', 'sex', 'weight', 'height', 'conditions'] as const;
-type Step = (typeof STEPS)[number];
-
-const STEP_HEADINGS: Record<Step, string> = {
-  name: "What's your name?",
-  age: 'How old are you?',
-  sex: 'What is your sex?',
-  weight: 'What is your weight?',
-  height: 'What is your height?',
-  conditions: 'Any underlying medical condition?',
-  habits: 'What do you want to improve?',
-};
-
-const CONDITIONS_STEP_EXPLAINER =
-  'Select all that apply. This helps us tailor insights — not for diagnosis.';
+const PROFILE_STEP = (step: OnboardingStep) => step.kind === 'profile' ? step.step : null;
 
 function parsePositiveInt(value: string): number | null {
   const n = Number.parseInt(value.trim(), 10);
@@ -74,16 +72,42 @@ export default function OnboardingScreen() {
   const [height, setHeight] = useState('');
   const [dataMethod, setDataMethod] = useState<DataMethodId>('upload');
   const [habitIds, setHabitIds] = useState<string[]>([]);
+  const [goalDetails, setGoalDetails] = useState<GoalDetails>({});
   const [medicalConditionIds, setMedicalConditionIds] = useState<MedicalConditionId[]>([]);
   const [saving, setSaving] = useState(false);
 
-  const step = STEPS[stepIndex];
-  const progress = (stepIndex + 1) / STEPS.length;
+  const steps = useMemo(() => buildOnboardingSteps(habitIds), [habitIds]);
+  const step = steps[stepIndex] ?? steps[0];
+  const progress = steps.length > 0 ? (stepIndex + 1) / steps.length : 0;
+  const profileStep = PROFILE_STEP(step);
+
+  useEffect(() => {
+    if (stepIndex >= steps.length) {
+      setStepIndex(Math.max(0, steps.length - 1));
+    }
+  }, [stepIndex, steps.length]);
 
   const toggleHabit = (id: string) => {
-    setHabitIds((prev) =>
-      prev.includes(id) ? prev.filter((h) => h !== id) : [...prev, id]
-    );
+    setHabitIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((h) => h !== id) : [...prev, id];
+      if (!next.includes(id)) {
+        setGoalDetails((details) => {
+          const { [id]: _, ...rest } = details;
+          return rest;
+        });
+      }
+      return next;
+    });
+  };
+
+  const setGoalAnswer = (habitId: string, questionId: string, value: string | string[]) => {
+    setGoalDetails((prev) => ({
+      ...prev,
+      [habitId]: {
+        ...prev[habitId],
+        [questionId]: value,
+      },
+    }));
   };
 
   const toggleMedicalCondition = (id: MedicalConditionId) => {
@@ -99,19 +123,23 @@ export default function OnboardingScreen() {
   };
 
   const canContinue =
-    step === 'name'
-      ? name.trim().length >= 2
-      : step === 'age'
-        ? isAgeValid(age)
-        : step === 'sex'
-          ? sex != null
-          : step === 'weight'
-            ? isWeightValid(weight)
-            : step === 'height'
-              ? isHeightValid(height)
-              : step === 'conditions'
-                ? medicalConditionIds.length > 0
-                : habitIds.length > 0;
+    step.kind === 'goals'
+      ? habitIds.length > 0
+      : step.kind === 'goal-detail'
+        ? isGoalDetailStepValid(step.habitId, step.questionId, goalDetails)
+        : profileStep === 'name'
+          ? name.trim().length >= 2
+          : profileStep === 'age'
+            ? isAgeValid(age)
+            : profileStep === 'sex'
+              ? sex != null
+              : profileStep === 'weight'
+                ? isWeightValid(weight)
+                : profileStep === 'height'
+                  ? isHeightValid(height)
+                  : profileStep === 'conditions'
+                    ? medicalConditionIds.length > 0
+                    : false;
 
   const goBack = () => {
     if (stepIndex > 0) {
@@ -127,7 +155,7 @@ export default function OnboardingScreen() {
 
   const goNext = async () => {
     if (!canContinue) return;
-    if (stepIndex < STEPS.length - 1) {
+    if (stepIndex < steps.length - 1) {
       setStepIndex((i) => i + 1);
       return;
     }
@@ -146,6 +174,7 @@ export default function OnboardingScreen() {
         heightCm,
         dataMethods: [dataMethod],
         habitIds,
+        goalDetails,
         medicalConditionIds,
       });
       router.replace('/(tabs)');
@@ -173,12 +202,26 @@ export default function OnboardingScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
-          <Text style={styles.stepTitle}>{STEP_HEADINGS[step]}</Text>
-          {step === 'conditions' && (
+          <Text style={styles.stepTitle}>
+            {step.kind === 'goal-detail'
+              ? goalDetailHeading(step.habitId, step.questionId)
+              : step.kind === 'profile'
+                ? STEP_HEADINGS[step.step]
+                : STEP_HEADINGS.goals}
+          </Text>
+          {step.kind === 'goals' && (
+            <Text style={styles.stepExplainer}>{GOALS_STEP_EXPLAINER}</Text>
+          )}
+          {step.kind === 'goal-detail' && (
+            <Text style={styles.stepExplainer}>
+              {goalDetailExplainer(step.habitId, step.questionId)}
+            </Text>
+          )}
+          {profileStep === 'conditions' && (
             <Text style={styles.stepExplainer}>{CONDITIONS_STEP_EXPLAINER}</Text>
           )}
 
-          {step === 'name' && (
+          {profileStep === 'name' && (
             <View style={styles.stepBlock}>
               <TextInput
                 style={styles.fieldInput}
@@ -194,7 +237,7 @@ export default function OnboardingScreen() {
             </View>
           )}
 
-          {step === 'age' && (
+          {profileStep === 'age' && (
             <View style={styles.stepBlock}>
               <TextInput
                 style={styles.fieldInput}
@@ -210,7 +253,7 @@ export default function OnboardingScreen() {
             </View>
           )}
 
-          {step === 'sex' && (
+          {profileStep === 'sex' && (
             <View style={styles.stepBlock}>
               <View style={styles.sexOptions}>
                 {sexOptions.map((option) => {
@@ -232,7 +275,7 @@ export default function OnboardingScreen() {
             </View>
           )}
 
-          {step === 'weight' && (
+          {profileStep === 'weight' && (
             <View style={styles.stepBlock}>
               <TextInput
                 style={styles.fieldInput}
@@ -247,7 +290,7 @@ export default function OnboardingScreen() {
             </View>
           )}
 
-          {step === 'height' && (
+          {profileStep === 'height' && (
             <View style={styles.stepBlock}>
               <TextInput
                 style={styles.fieldInput}
@@ -262,7 +305,7 @@ export default function OnboardingScreen() {
             </View>
           )}
 
-          {step === 'conditions' && (
+          {profileStep === 'conditions' && (
             <View style={styles.stepBlock}>
               {medicalConditionCatalog.map((condition) => {
                 const selected = medicalConditionIds.includes(condition.id);
@@ -284,18 +327,18 @@ export default function OnboardingScreen() {
             </View>
           )}
 
-          {step === 'habits' && (
+          {step.kind === 'goals' && (
             <View style={styles.stepBlock}>
-              {habitCatalog.map((habit) => {
-                const selected = habitIds.includes(habit.id);
+              {habitCatalog.map((goal) => {
+                const selected = habitIds.includes(goal.id);
                 return (
                   <Pressable
-                    key={habit.id}
+                    key={goal.id}
                     style={[styles.optionCard, selected && styles.optionCardSelected]}
-                    onPress={() => toggleHabit(habit.id)}>
+                    onPress={() => toggleHabit(goal.id)}>
                     <View style={styles.optionContent}>
-                      <Text style={styles.optionTitle}>{habit.title}</Text>
-                      <Text style={styles.optionBody}>{habit.reason}</Text>
+                      <Text style={styles.optionTitle}>{goal.title}</Text>
+                      <Text style={styles.optionBody}>{goal.reason}</Text>
                     </View>
                     <View style={[styles.optionCheck, selected && styles.optionCheckSelected]}>
                       {selected && <Text style={styles.optionCheckMark}>✓</Text>}
@@ -305,6 +348,20 @@ export default function OnboardingScreen() {
               })}
             </View>
           )}
+
+          {step.kind === 'goal-detail' && (() => {
+            const question = getQuestionForStep(step.habitId, step.questionId);
+            if (!question) return null;
+            return (
+              <View style={styles.stepBlock}>
+                <OnboardingGoalQuestion
+                  question={question}
+                  value={getGoalAnswer(goalDetails, step.habitId, step.questionId)}
+                  onChange={(value) => setGoalAnswer(step.habitId, step.questionId, value)}
+                />
+              </View>
+            );
+          })()}
         </ScrollView>
 
         <View style={styles.footer}>
@@ -316,9 +373,9 @@ export default function OnboardingScreen() {
             onPress={goNext}
             disabled={!canContinue || saving}>
             <Text style={styles.nextButtonText}>
-              {stepIndex === STEPS.length - 1
+              {stepIndex === steps.length - 1
                 ? saving
-                  ? 'Setting up…'
+                  ? 'Building your options…'
                   : 'Get started'
                 : 'Continue'}
             </Text>

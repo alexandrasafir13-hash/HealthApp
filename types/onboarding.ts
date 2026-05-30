@@ -10,7 +10,6 @@ export type MedicalConditionId =
   | 'recent-surgery'
   | 'heart-condition'
   | 'high-blood-pressure'
-  | 'requires-monitoring'
   | 'autoimmune-chronic'
   | 'other'
   | 'none';
@@ -23,9 +22,14 @@ export interface UserProfile {
   heightCm: number;
   dataMethods: DataMethodId[];
   habitIds: string[];
+  /** Answers to goal-specific onboarding questions, keyed by habit id then question id. */
+  goalDetails?: GoalDetails;
   medicalConditionIds: MedicalConditionId[];
   completedAt: string;
 }
+
+/** habitId -> questionId -> answer (string for single/number, string[] for multi). */
+export type GoalDetails = Record<string, Record<string, string | string[]>>;
 
 export interface SexOption {
   id: BiologicalSex;

@@ -8,6 +8,7 @@ function normalizeProfile(raw: UserProfile): UserProfile {
   return {
     ...raw,
     medicalConditionIds: raw.medicalConditionIds ?? [],
+    goalDetails: raw.goalDetails ?? {},
   };
 }
 

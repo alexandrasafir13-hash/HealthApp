@@ -7,15 +7,18 @@ export const FEELING_OPTIONS = [
   { value: 5, label: 'Energized' },
 ] as const;
 
-export function feelingLabelForValue(value: number): string | null {
+export type FeelingLabel = (typeof FEELING_OPTIONS)[number]['label'];
+
+export function feelingLabelForValue(value: number): FeelingLabel | null {
   return FEELING_OPTIONS.find((o) => o.value === value)?.label ?? null;
 }
 
+export function feelingValueForLabel(label: string): number | null {
+  return FEELING_OPTIONS.find((o) => o.label === label)?.value ?? null;
+}
+
+/** Maps Today body-feeling (1–5) to stored energy only. Sleep/stress are not inferred. */
 export function metricsFromFeeling(value: number) {
   const clamped = Math.min(5, Math.max(1, value));
-  return {
-    energy: clamped,
-    sleepQuality: clamped,
-    stress: 6 - clamped,
-  };
+  return { energy: clamped };
 }

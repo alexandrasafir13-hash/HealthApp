@@ -5,50 +5,53 @@ import { palette } from '@/constants/theme';
 
 interface Props {
   title: string;
-  reason: string;
+  description: string;
+  timeHint?: string;
   completed: boolean;
   onPress: () => void;
-  onLongPress?: () => void;
 }
 
-export default function HabitListCard({
+export default function RoutineChecklistItem({
   title,
-  reason,
+  description,
+  timeHint,
   completed,
   onPress,
-  onLongPress,
 }: Props) {
   return (
     <Pressable
-      style={[styles.habitCard, completed && styles.habitDone]}
+      style={[styles.card, completed && styles.cardDone]}
       onPress={onPress}
-      onLongPress={onLongPress}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: completed }}
-      accessibilityHint={onLongPress ? 'Long press to remove this habit' : undefined}>
+      accessibilityLabel={title}>
       <View pointerEvents="none" style={[styles.checkbox, completed && styles.checkboxDone]}>
         {completed && <Text style={styles.checkmark}>✓</Text>}
       </View>
-      <View pointerEvents="none" style={styles.habitContent}>
-        <Text style={[styles.habitTitle, completed && styles.habitTitleDone]}>{title}</Text>
-        <Text style={styles.habitReason}>{reason}</Text>
+      <View pointerEvents="none" style={styles.content}>
+        <View style={styles.titleRow}>
+          <Text style={[styles.title, completed && styles.titleDone]}>{title}</Text>
+          {timeHint != null && timeHint.length > 0 && (
+            <Text style={styles.timeHint}>{timeHint}</Text>
+          )}
+        </View>
+        <Text style={styles.description}>{description}</Text>
       </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  habitCard: {
+  card: {
     flexDirection: 'row',
     gap: 14,
     backgroundColor: palette.card,
     borderRadius: 14,
     padding: 14,
-    marginBottom: 10,
     borderWidth: 1,
     borderColor: palette.border,
   },
-  habitDone: {
+  cardDone: {
     opacity: 0.92,
   },
   checkbox: {
@@ -70,20 +73,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-  habitContent: {
+  content: {
     flex: 1,
+    gap: 4,
   },
-  habitTitle: {
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  title: {
+    flex: 1,
     fontSize: 16,
     fontWeight: '600',
     color: palette.slate,
-    marginBottom: 4,
   },
-  habitTitleDone: {
+  titleDone: {
     textDecorationLine: 'line-through',
     color: palette.slateSubtle,
   },
-  habitReason: {
+  timeHint: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: palette.teal,
+  },
+  description: {
     fontSize: 13,
     lineHeight: 18,
     color: palette.slateMuted,

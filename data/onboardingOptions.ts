@@ -58,11 +58,6 @@ export const medicalConditionCatalog: MedicalConditionOption[] = [
     description: 'Hypertension or related cardiovascular risk',
   },
   {
-    id: 'requires-monitoring',
-    title: 'Needs regular monitoring',
-    description: 'A condition that requires ongoing checks or follow-up',
-  },
-  {
     id: 'autoimmune-chronic',
     title: 'Autoimmune or chronic illness',
     description: 'Long-term conditions such as thyroid, arthritis, or IBD',
@@ -82,32 +77,35 @@ export const medicalConditionCatalog: MedicalConditionOption[] = [
 export const habitCatalog: HabitOption[] = [
   {
     id: 'sleep-schedule',
-    title: 'Sleep schedule',
+    title: 'Sleep better',
     time: '10:30 PM',
-    reason: 'Get better rest',
+    reason: 'Build a calmer bedtime routine',
   },
   {
     id: 'exercise-routine',
-    title: 'Exercise routine',
+    title: 'Move more',
     time: '7:00 AM',
-    reason: 'Be more in shape',
+    reason: 'Add simple activity to your day',
   },
   {
     id: 'eating-habits',
-    title: 'Eating habits',
+    title: 'Eat better',
     time: '12:00 PM',
-    reason: 'Eat healthier',
+    reason: 'Make food choices easier',
   },
   {
     id: 'hydration',
-    title: 'Hydration',
+    title: 'Stay hydrated',
     time: '10:00 AM',
-    reason: 'Get the required amount of water',
+    reason: 'Keep your intake on track',
   },
   {
     id: 'screen-time',
-    title: 'Less screen time',
+    title: 'Use your phone less',
     time: '9:00 PM',
-    reason: 'Reduce tiredness',
+    reason: 'Create more quiet time',
   },
 ];
+
+/** Goals picked during onboarding — used for personalized recommendations, not daily checklists. */
+export const goalCatalog = habitCatalog;

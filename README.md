@@ -25,7 +25,7 @@ Then press `a` for Android emulator, scan the QR code with **Expo Go** on your p
 On the **Today** tab, personalized tips use your profile, health snapshot, check-in, and routine. To enable them:
 
 1. Copy `.env.example` to `.env`
-2. Add a [Google AI Studio](https://aistudio.google.com/apikey) Gemini API key as `EXPO_PUBLIC_GEMINI_API_KEY`
+2. Add an [OpenAI](https://platform.openai.com/api-keys) API key as `EXPO_PUBLIC_OPENAI_API_KEY`
 3. Restart the dev server
 
 For production, prefer `EXPO_PUBLIC_HEALTH_INSIGHTS_API_URL` pointing at your own server so the API key stays off the phone.

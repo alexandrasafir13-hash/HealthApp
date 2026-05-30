@@ -1,9 +1,10 @@
 import { HealthInsightsContext } from '@/lib/buildHealthInsightsContext';
 import {
-  getGeminiApiKey,
   getHealthInsightsProxyUrl,
+  getOpenAiApiKey,
   HEALTH_INSIGHTS_MAX_OUTPUT_TOKENS,
   HEALTH_INSIGHTS_MODEL,
+  HEALTH_INSIGHTS_TEMPERATURE,
   isHealthInsightsConfigured,
 } from '@/lib/healthInsightsConfig';
 import { parseModelJson } from '@/lib/parseModelJson';
@@ -12,20 +13,21 @@ import { HealthLlmInsight } from '@/types/healthInsights';
 const SYSTEM_PROMPT = `You are a supportive wellness coach inside a personal health app.
 
 You receive JSON with:
-- whatYouEntered: facts the user typed or logged (profile, today's body feeling word, check-in scores 1–5, symptoms, routine done today, uploaded document names, recent daily check-ins, data methods they picked)
+- whatYouEntered: facts the user typed or logged (profile, their chosen daily routine, today's ticked-off items, recent routine days, uploaded document names, data methods they picked)
 - wantsToImprove: areas they chose in onboarding and their own words for why
 - optionalDerivedFromEnteredMeasurements: BMI from weight/height — NOT a goal they set
 
 CRITICAL — accuracy:
-- Reference todaysBodyFeeling (e.g. Weak, Energized) and today's check-in when present.
+- personalRoutine.dailyItems lists the actionable items they committed to each day.
+- todaysRoutineProgress shows which items they completed today (completedItems) and which they missed (missedItems).
+- recentRoutineDays is a history of past days with completed/missed item titles and counts. Use this for trends.
 - uploadedDocuments lists file names only — do not invent lab values from them.
-- Scores energy, sleepQuality, stress are 1–5 (5 is best for energy/sleep; stress is lower-is-better).
 - Never invent sleep-hour goals, water targets, or calories. Not medical advice. Plain language.
 - Medical conditions: cautious habits only. No diagnosis or medication advice.
 
 Respond with JSON only:
 {
-  "insights": string[] — 2–3 short observations connecting their feeling, check-in, history, and goals,
+  "insights": string[] — 2–3 short observations connecting their routine progress, history, and goals,
   "recommendations": string[] — 3–4 practical next steps for today or this week,
   "questions": string[] — 2–3 thoughtful questions they can reflect on (not yes/no)
 }`;
@@ -38,6 +40,7 @@ const INSIGHT_RESPONSE_SCHEMA = {
     questions: { type: 'array', items: { type: 'string' } },
   },
   required: ['insights', 'recommendations', 'questions'],
+  additionalProperties: false,
 };
 
 function parseStringList(raw: unknown, field: string, max: number): string[] {
@@ -75,28 +78,20 @@ function parseInsightPayload(raw: unknown): HealthLlmInsight {
   };
 }
 
-function geminiTextFromResponse(data: {
-  candidates?: {
-    content?: { parts?: { text?: string }[] };
-    finishReason?: string;
+function openAiTextFromResponse(data: {
+  choices?: {
+    message?: { content?: string | null };
+    finish_reason?: string;
   }[];
 }): string {
-  const candidate = data.candidates?.[0];
-  if (!candidate?.content?.parts?.length) {
-    throw new Error('Empty model response');
-  }
-
-  const text = candidate.content.parts
-    .map((part) => part.text?.trim())
-    .filter((t): t is string => Boolean(t))
-    .join('\n')
-    .trim();
+  const choice = data.choices?.[0];
+  const text = choice?.message?.content?.trim();
 
   if (!text) {
     throw new Error('Empty model response');
   }
 
-  if (candidate.finishReason === 'MAX_TOKENS') {
+  if (choice?.finish_reason === 'length') {
     throw new Error('Response was cut off. Tap Refresh to try again.');
   }
 
@@ -122,36 +117,34 @@ async function fetchViaProxy(context: HealthInsightsContext): Promise<HealthLlmI
   return parseInsightPayload(data);
 }
 
-async function fetchViaGemini(context: HealthInsightsContext): Promise<HealthLlmInsight> {
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) throw new Error('Gemini API key not configured');
+async function fetchViaOpenAi(context: HealthInsightsContext): Promise<HealthLlmInsight> {
+  const apiKey = getOpenAiApiKey();
+  if (!apiKey) throw new Error('OpenAI API key not configured');
 
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${HEALTH_INSIGHTS_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
-
-  const res = await fetch(endpoint, {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
     body: JSON.stringify({
-      systemInstruction: {
-        parts: [{ text: SYSTEM_PROMPT }],
-      },
-      contents: [
+      model: HEALTH_INSIGHTS_MODEL,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
         {
           role: 'user',
-          parts: [
-            {
-              text: `User health data (JSON):\n${JSON.stringify(context, null, 2)}`,
-            },
-          ],
+          content: `User health data (JSON):\n${JSON.stringify(context, null, 2)}`,
         },
       ],
-      generationConfig: {
-        temperature: 0.6,
-        maxOutputTokens: HEALTH_INSIGHTS_MAX_OUTPUT_TOKENS,
-        responseMimeType: 'application/json',
-        responseSchema: INSIGHT_RESPONSE_SCHEMA,
-        // Thinking models (e.g. gemini-3.x) otherwise burn the token budget before JSON is finished.
-        thinkingConfig: { thinkingBudget: 0 },
+      temperature: HEALTH_INSIGHTS_TEMPERATURE,
+      max_completion_tokens: HEALTH_INSIGHTS_MAX_OUTPUT_TOKENS,
+      response_format: {
+        type: 'json_schema',
+        json_schema: {
+          name: 'health_insights',
+          strict: true,
+          schema: INSIGHT_RESPONSE_SCHEMA,
+        },
       },
     }),
   });
@@ -160,18 +153,18 @@ async function fetchViaGemini(context: HealthInsightsContext): Promise<HealthLlm
     const errBody = (await res.json().catch(() => null)) as {
       error?: { message?: string };
     } | null;
-    const message = errBody?.error?.message ?? `Gemini request failed (${res.status})`;
+    const message = errBody?.error?.message ?? `OpenAI request failed (${res.status})`;
     throw new Error(message);
   }
 
   const data = (await res.json()) as {
-    candidates?: {
-      content?: { parts?: { text?: string }[] };
-      finishReason?: string;
+    choices?: {
+      message?: { content?: string | null };
+      finish_reason?: string;
     }[];
   };
 
-  const text = geminiTextFromResponse(data);
+  const text = openAiTextFromResponse(data);
   return parseInsightPayload(parseModelJson(text));
 }
 
@@ -182,5 +175,5 @@ export async function fetchHealthInsights(context: HealthInsightsContext): Promi
   if (getHealthInsightsProxyUrl()) {
     return fetchViaProxy(context);
   }
-  return fetchViaGemini(context);
+  return fetchViaOpenAi(context);
 }

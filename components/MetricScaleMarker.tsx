@@ -69,14 +69,17 @@ export function getWorstMetricState(states: MetricScaleState[]): MetricScaleStat
 
 export function getCheckInOverviewState(checkIn: {
   energy: number;
-  sleepQuality: number;
-  stress: number;
+  sleepQuality?: number;
+  stress?: number;
 }): MetricScaleState {
-  return getWorstMetricState([
-    getCheckInMetricState(checkIn.energy),
-    getCheckInMetricState(checkIn.sleepQuality),
-    getCheckInMetricState(checkIn.stress, true),
-  ]);
+  const states = [getCheckInMetricState(checkIn.energy)];
+  if (checkIn.sleepQuality != null) {
+    states.push(getCheckInMetricState(checkIn.sleepQuality));
+  }
+  if (checkIn.stress != null) {
+    states.push(getCheckInMetricState(checkIn.stress, true));
+  }
+  return getWorstMetricState(states);
 }
 
 export function getMetricStateBoxStyle(state: MetricScaleState) {

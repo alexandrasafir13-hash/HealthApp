@@ -2,16 +2,15 @@ import { useCallback, useMemo, useState } from 'react';
 import { LayoutChangeEvent, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import PersonalRoutineSection from '@/components/PersonalRoutineSection';
 import HealthInsightsCard from '@/components/HealthInsightsCard';
-import TodayFeelingDetails from '@/components/TodayFeelingDetails';
-import TodayFeelingPicker from '@/components/TodayFeelingPicker';
-import TodaySubmitButton from '@/components/TodaySubmitButton';
+import TodayRoutineChecklist from '@/components/TodayRoutineChecklist';
+import TodayRoutineDoneButton from '@/components/TodayRoutineDoneButton';
 import { Text } from '@/components/Themed';
 import { useHealth } from '@/context/HealthContext';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useHealthInsights } from '@/hooks/useHealthInsights';
-import { feelingLabelForValue } from '@/lib/feelingScale';
-import { feelingPrompt, todayGreetingLine } from '@/lib/todayGreeting';
+import { todayGreetingLine } from '@/lib/todayGreeting';
 import { pageStyles, usePageLayout } from '@/hooks/usePageLayout';
 import { palette } from '@/constants/theme';
 
@@ -24,36 +23,27 @@ export default function TodayScreen() {
   const { isTabletUp } = useBreakpoint();
   const {
     profile,
-    todayFeeling,
-    todayCheckIn,
+    personalRoutine,
+    routineProposals,
+    routineLoading,
+    routineError,
+    selectPersonalRoutine,
     todayShowInsights,
-    editTodayCheckIn,
-    checkInLog,
-    habits,
-    customHabits,
+    editTodayRoutine,
+    routineCompletionLog,
+    todayRoutineSteps,
   } = useHealth();
 
   const [contentTop, setContentTop] = useState<number | null>(null);
 
-  const greeting = todayGreetingLine(profile?.name);
-  const prompt = feelingPrompt();
-  const hasSelection = todayFeeling != null;
-
-  const feelingLabel = useMemo(() => {
-    if (todayCheckIn?.energy != null) {
-      return feelingLabelForValue(todayCheckIn.energy);
-    }
-    if (todayFeeling != null) {
-      return feelingLabelForValue(todayFeeling);
-    }
-    return null;
-  }, [todayCheckIn, todayFeeling]);
-
-  const routineCompleted = useMemo(
-    () => [...habits, ...customHabits].filter((h) => h.completed).length,
-    [habits, customHabits],
+  const choosingRoutine = useMemo(
+    () =>
+      !personalRoutine &&
+      (routineLoading || (routineProposals?.options.length ?? 0) > 0),
+    [personalRoutine, routineLoading, routineProposals],
   );
-  const routineTotal = habits.length + customHabits.length;
+
+  const greeting = todayGreetingLine(profile?.name);
 
   const {
     configured: insightsConfigured,
@@ -63,26 +53,52 @@ export default function TodayScreen() {
     refresh: refreshInsights,
   } = useHealthInsights({
     profile,
-    todayCheckIn,
-    routineCompleted,
-    routineTotal,
-    todayFeelingLabel: feelingLabel,
-    checkInLog,
-    enabled: todayShowInsights,
+    personalRoutine,
+    todayRoutineSteps,
+    routineCompletionLog,
+    enabled: todayShowInsights && !choosingRoutine,
   });
 
   const onAnchorLayout = useCallback(
     (event: LayoutChangeEvent) => {
-      if (contentTop != null || todayShowInsights) return;
+      if (contentTop != null || todayShowInsights || choosingRoutine) return;
       const anchorHeight = event.nativeEvent.layout.height;
       const visibleHeight = windowHeight - insets.top - insets.bottom - TAB_BAR_HEIGHT;
       const top = Math.max(insets.top + 16, (visibleHeight - anchorHeight) / 2);
       setContentTop(top);
     },
-    [contentTop, todayShowInsights, insets.bottom, insets.top, windowHeight],
+    [contentTop, todayShowInsights, choosingRoutine, insets.bottom, insets.top, windowHeight],
   );
 
   const scrollPaddingTop = todayShowInsights ? insets.top + 16 : (contentTop ?? insets.top + 48);
+
+  if (choosingRoutine) {
+    return (
+      <View style={[pageStyles.scroll, styles.chooserScreen]}>
+        <View
+          style={[
+            pageStyles.content,
+            isTabletUp && pageStyles.contentTablet,
+            styles.chooserContent,
+            {
+              paddingTop: insets.top + 12,
+              paddingBottom: insets.bottom + TAB_BAR_HEIGHT + 12,
+            },
+          ]}>
+          <View style={[pageStyle, styles.chooserPage]}>
+            <PersonalRoutineSection
+              personalRoutine={personalRoutine}
+              routineProposals={routineProposals}
+              isLoading={routineLoading}
+              error={routineError}
+              onSelectRoutine={selectPersonalRoutine}
+              choosingMode
+            />
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -101,31 +117,25 @@ export default function TodayScreen() {
         {!todayShowInsights ? (
           <>
             <View onLayout={onAnchorLayout}>
-              <View style={styles.header}>
-                <Text style={styles.greeting}>{greeting}</Text>
-                <Text style={styles.prompt}>{prompt}</Text>
-              </View>
-              <TodayFeelingPicker />
+              <Text style={styles.greeting}>{greeting}</Text>
+              <Text style={styles.prompt}>Your routine for today</Text>
             </View>
-            {hasSelection && (
-              <>
-                <TodayFeelingDetails feelingValue={todayFeeling!} />
-                <TodaySubmitButton />
-              </>
-            )}
+            <TodayRoutineChecklist />
+            <TodayRoutineDoneButton />
           </>
         ) : (
           profile && (
             <View style={styles.insightsView}>
               <Text style={styles.greeting}>{greeting}</Text>
-              <Text style={styles.insightsIntro}>Based on your check-in today</Text>
+              <Text style={styles.insightsIntro}>Based on your routine today</Text>
               <HealthInsightsCard
                 configured={insightsConfigured}
                 insight={llmInsight}
                 isLoading={insightsLoading}
                 error={insightsError}
                 onRefresh={refreshInsights}
-                onEditCheckIn={editTodayCheckIn}
+                onEditCheckIn={editTodayRoutine}
+                editLabel="Edit today's routine"
               />
             </View>
           )
@@ -136,15 +146,21 @@ export default function TodayScreen() {
 }
 
 const styles = StyleSheet.create({
+  chooserScreen: {
+    flex: 1,
+  },
+  chooserContent: {
+    flex: 1,
+  },
+  chooserPage: {
+    flex: 1,
+  },
   scrollContent: {
     flexGrow: 1,
   },
   page: {
     width: '100%',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 8,
+    gap: 16,
   },
   insightsView: {
     width: '100%',
@@ -161,7 +177,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     lineHeight: 28,
     color: palette.slateMuted,
-    textAlign: 'center',
+    textAlign: 'left',
     marginTop: 12,
   },
   insightsIntro: {

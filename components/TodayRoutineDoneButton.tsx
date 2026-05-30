@@ -5,25 +5,33 @@ import { Text } from '@/components/Themed';
 import { useHealth } from '@/context/HealthContext';
 import { palette } from '@/constants/theme';
 
-export default function TodaySubmitButton() {
-  const { todayFeeling, todayCheckIn, todayCheckInSaved, submitTodayCheckIn } = useHealth();
+export default function TodayRoutineDoneButton() {
+  const {
+    todayRoutineSteps,
+    todayRoutineFinished,
+    todayRoutineCanFinish,
+    finishTodayRoutine,
+  } = useHealth();
   const [busy, setBusy] = useState(false);
 
-  if (todayFeeling == null) return null;
+  if (todayRoutineSteps.length === 0) return null;
+
+  const completedCount = todayRoutineSteps.filter((step) => step.completed).length;
+  const allDone = completedCount === todayRoutineSteps.length;
 
   const label = busy
     ? 'Saving…'
-    : todayCheckInSaved
+    : todayRoutineFinished
       ? 'Saved for today'
-      : todayCheckIn != null
-        ? 'Update check-in'
-        : 'Save check-in';
+      : allDone
+        ? 'Finish day'
+        : 'Save progress';
 
   const handlePress = async () => {
-    if (busy || todayCheckInSaved) return;
+    if (busy || todayRoutineFinished || !todayRoutineCanFinish) return;
     setBusy(true);
     try {
-      await submitTodayCheckIn();
+      await finishTodayRoutine();
     } finally {
       setBusy(false);
     }
@@ -34,11 +42,12 @@ export default function TodaySubmitButton() {
       <Pressable
         style={({ pressed }) => [
           styles.button,
-          todayCheckInSaved && styles.buttonSaved,
-          pressed && !todayCheckInSaved && !busy && styles.buttonPressed,
+          todayRoutineFinished && styles.buttonSaved,
+          !todayRoutineCanFinish && styles.buttonDisabled,
+          pressed && todayRoutineCanFinish && !todayRoutineFinished && !busy && styles.buttonPressed,
         ]}
         onPress={handlePress}
-        disabled={busy || todayCheckInSaved}
+        disabled={busy || todayRoutineFinished || !todayRoutineCanFinish}
         accessibilityRole="button"
         accessibilityLabel={label}>
         {busy ? (
@@ -47,7 +56,11 @@ export default function TodaySubmitButton() {
           <Text style={styles.buttonText}>{label}</Text>
         )}
       </Pressable>
-      <Text style={styles.hint}>Saves your check-in and loads personalized insights.</Text>
+      <Text style={styles.hint}>
+        {todayRoutineCanFinish
+          ? 'Tick off what you did, then save to get personalized insights.'
+          : 'Tick at least one item to save your progress.'}
+      </Text>
     </View>
   );
 }
@@ -69,6 +82,9 @@ const styles = StyleSheet.create({
   buttonSaved: {
     backgroundColor: palette.sage,
     opacity: 0.85,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
   buttonPressed: {
     opacity: 0.88,

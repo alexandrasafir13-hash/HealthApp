@@ -24,16 +24,20 @@ export function applyCheckInToInsights(
 
     switch (insight.category) {
       case 'sleep':
-        if (checkIn.sleepQuality <= 2) severity = bumpSeverity(severity, 'high');
-        else if (checkIn.sleepQuality === 3) severity = bumpSeverity(severity, 'medium');
+        if (checkIn.sleepQuality != null) {
+          if (checkIn.sleepQuality <= 2) severity = bumpSeverity(severity, 'high');
+          else if (checkIn.sleepQuality === 3) severity = bumpSeverity(severity, 'medium');
+        }
         break;
       case 'recovery':
         if (checkIn.energy <= 2) severity = bumpSeverity(severity, 'high');
         else if (checkIn.energy === 3) severity = bumpSeverity(severity, 'medium');
         break;
       case 'stress':
-        if (checkIn.stress >= 5) severity = bumpSeverity(severity, 'high');
-        else if (checkIn.stress >= 4) severity = bumpSeverity(severity, 'medium');
+        if (checkIn.stress != null) {
+          if (checkIn.stress >= 5) severity = bumpSeverity(severity, 'high');
+          else if (checkIn.stress >= 4) severity = bumpSeverity(severity, 'medium');
+        }
         break;
       case 'immunity':
         if (hasSymptoms(checkIn)) {
@@ -53,10 +57,18 @@ export function applyCheckInToInsights(
 }
 
 export function formatRoutineMetricsSummary(checkIn: DailyCheckIn): string {
+  const parts: string[] = [];
   const energyLabel = ['Very low', 'Low', 'OK', 'Good', 'High'][checkIn.energy - 1];
-  const sleepLabel = ['Poor', 'Fair', 'OK', 'Good', 'Great'][checkIn.sleepQuality - 1];
-  const stressLabel = ['Calm', 'Mild', 'Moderate', 'High', 'Very high'][checkIn.stress - 1];
-  return `Energy ${energyLabel.toLowerCase()} · Sleep ${sleepLabel.toLowerCase()} · Stress ${stressLabel.toLowerCase()}`;
+  parts.push(`Energy ${energyLabel.toLowerCase()}`);
+  if (checkIn.sleepQuality != null) {
+    const sleepLabel = ['Poor', 'Fair', 'OK', 'Good', 'Great'][checkIn.sleepQuality - 1];
+    parts.push(`Sleep ${sleepLabel.toLowerCase()}`);
+  }
+  if (checkIn.stress != null) {
+    const stressLabel = ['Calm', 'Mild', 'Moderate', 'High', 'Very high'][checkIn.stress - 1];
+    parts.push(`Stress ${stressLabel.toLowerCase()}`);
+  }
+  return parts.join(' · ');
 }
 
 export function formatSymptomsSummary(checkIn: DailyCheckIn): string {

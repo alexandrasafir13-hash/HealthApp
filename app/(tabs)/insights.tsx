@@ -47,8 +47,7 @@ type SectionKey = 'sleep' | 'recovery' | 'stress' | 'prevention';
 
 
 const INSIGHTS_INFO_TEXT =
-
-  'Insights use your past week of habit completions, symptoms, and daily check-ins. Each one follows cause → effect → action so you understand why, what it means, and what to do.';
+  'Insights use your past week of routine tracking on Today. Your onboarding goals shape recommended actions.';
 
 
 

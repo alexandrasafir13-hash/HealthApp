@@ -53,15 +53,6 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="routine"
-        options={{
-          title: 'Routine',
-          tabBarIcon: ({ color }) => (
-            <SymbolView name={{ ios: 'calendar', android: 'calendar_today', web: 'calendar_today' }} tintColor={color} size={26} />
-          ),
-        }}
-      />
     </Tabs>
   );
 }

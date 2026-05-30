@@ -1,3 +1,9 @@
-export function todayCheckInDraftKey(feeling: number, symptoms: string[]): string {
-  return `${feeling}|${symptoms.join('\u0001')}`;
+import { CheckInPeriod } from '@/lib/checkInPeriod';
+
+export function todayCheckInDraftKey(
+  period: CheckInPeriod,
+  feeling: string,
+  symptoms: string[],
+): string {
+  return `${period}|${feeling}|${symptoms.join('\u0001')}`;
 }

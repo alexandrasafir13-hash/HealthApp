@@ -10,6 +10,7 @@ interface Props {
   error: string | null;
   onRefresh: () => void;
   onEditCheckIn?: () => void;
+  editLabel?: string;
 }
 
 function BulletList({ items }: { items: string[] }) {
@@ -32,13 +33,14 @@ export default function HealthInsightsCard({
   error,
   onRefresh,
   onEditCheckIn,
+  editLabel = "Change today's check-in",
 }: Props) {
   if (!configured) {
     return (
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>For you today</Text>
         <Text style={styles.body}>
-          Add a Gemini API key in `.env` to get personalized insights here. See `.env.example`.
+          Add an OpenAI API key in `.env` to get personalized insights here. See `.env.example`.
         </Text>
         <Text style={styles.disclaimer}>Not medical advice.</Text>
       </View>
@@ -52,7 +54,7 @@ export default function HealthInsightsCard({
       {isLoading && !insight && (
         <View style={styles.loadingRow}>
           <ActivityIndicator color={palette.sage} />
-          <Text style={styles.body}>Looking at your check-in and health data…</Text>
+          <Text style={styles.body}>Looking at your routine and health data…</Text>
         </View>
       )}
 
@@ -87,8 +89,8 @@ export default function HealthInsightsCard({
               onPress={onEditCheckIn}
               disabled={isLoading}
               accessibilityRole="button"
-              accessibilityLabel="Change today's check-in">
-              <Text style={styles.editLink}>Change check-in</Text>
+              accessibilityLabel={editLabel}>
+              <Text style={styles.editLink}>{editLabel}</Text>
             </Pressable>
           )}
         </View>

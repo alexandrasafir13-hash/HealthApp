@@ -1,73 +1,52 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { AppState } from 'react-native';
 
-import { habitCatalog } from '@/data/onboardingOptions';
-import { defaultHabits } from '@/data/mockSources';
 import { mockInsights } from '@/data/mockInsights';
-import {
-  loadCustomHabitsWithLegacyCompletion,
-  saveCustomHabits,
-} from '@/lib/customHabitsStorage';
-import { loadCheckInLog, saveCheckInLogEntry, type CheckInLog } from '@/lib/checkInStorage';
-import { applyWeeklyDataToInsights, buildCheckInForDate } from '@/lib/deriveWeeklyInsights';
-import {
-  HabitCompletionLog,
-  loadHabitCompletions,
-  saveHabitCompletions,
-} from '@/lib/habitCompletionStorage';
-import { metricsFromFeeling } from '@/lib/feelingScale';
-import { todayCheckInDraftKey } from '@/lib/todayCheckInDraft';
+import { loadCheckInLog, type CheckInLog } from '@/lib/checkInStorage';
+import { accountStartDateKey } from '@/lib/dateKeys';
+import { applyWeeklyDataToInsights } from '@/lib/deriveWeeklyInsights';
 import { localDateKey } from '@/lib/localDate';
 import { loadUserProfile, saveUserProfile } from '@/lib/onboardingStorage';
+import { generateRoutineProposals } from '@/lib/generatePersonalRoutine';
 import {
-  accountStartDateKey,
-  applyHabitCompletions,
-  clampDateKey,
-  habitCompletionStats,
-} from '@/lib/routineDates';
-import { BodyInsight, CustomHabit, DailyCheckIn, PreventionHabit } from '@/types/health';
-import { BiologicalSex, DataMethodId, MedicalConditionId, UserProfile } from '@/types/onboarding';
+  DailyRoutineProgress,
+  loadRoutineCompletionLog,
+  RoutineCompletionLog,
+  saveRoutineCompletionLog,
+} from '@/lib/routineCompletionStorage';
+import { normalizePersonalRoutine, withStepIds } from '@/lib/routineSteps';
+import {
+  clearRoutineProposals,
+  loadPersonalRoutine,
+  loadRoutineProposals,
+  savePersonalRoutine,
+  saveRoutineProposals,
+} from '@/lib/routineStorage';
+import { BodyInsight } from '@/types/health';
+import { BiologicalSex, DataMethodId, GoalDetails, MedicalConditionId, UserProfile } from '@/types/onboarding';
+import { PersonalRoutine, RoutineProposalSet, RoutineStep } from '@/types/routine';
+
+export type TodayRoutineStep = RoutineStep & {
+  id: string;
+  completed: boolean;
+};
 
 interface HealthContextValue {
   insights: BodyInsight[];
-  habits: PreventionHabit[];
-  customHabits: CustomHabit[];
   completedActions: Set<string>;
-  todayCheckIn: DailyCheckIn | null;
   checkInLog: CheckInLog;
-  /** Feeling picked on Today (1–5); wins over habit-derived scores for today. */
-  todayFeeling: number | null;
+  routineCompletionLog: RoutineCompletionLog;
+  todayRoutineSteps: TodayRoutineStep[];
+  todayRoutineFinished: boolean;
+  todayRoutineCanFinish: boolean;
   profile: UserProfile | null;
   onboardingComplete: boolean;
   isReady: boolean;
   accountStartDate: string;
-  getHabitsForDate: (dateKey: string) => {
-    habits: PreventionHabit[];
-    customHabits: CustomHabit[];
-    completed: number;
-    total: number;
-  };
-  toggleHabit: (id: string, dateKey?: string) => void;
-  addCustomHabit: (title: string, time: string) => void;
-  toggleCustomHabit: (id: string, dateKey?: string) => void;
-  removeCustomHabit: (id: string) => void;
   completeAction: (insightId: string, actionId: string) => void;
-  todaySymptoms: string[];
-  updateTodayDraft: (
-    checkIn: Partial<Pick<DailyCheckIn, 'symptoms' | 'energy' | 'sleepQuality' | 'stress'>>,
-  ) => void;
-  submitTodayCheckIn: () => Promise<boolean>;
-  todayCheckInSaved: boolean;
-  /** Today screen shows AI response instead of the check-in form. */
+  toggleRoutineStep: (stepId: string) => void;
+  finishTodayRoutine: () => Promise<boolean>;
   todayShowInsights: boolean;
-  editTodayCheckIn: () => void;
-  saveCheckIn: (
-    checkIn: Partial<Pick<DailyCheckIn, 'symptoms' | 'energy' | 'sleepQuality' | 'stress'>>,
-  ) => void;
-  syncRoutineCheckIn: (dateKey?: string) => Promise<DailyCheckIn | null>;
-  hasRoutineCheckInData: (dateKey: string) => boolean;
-  refreshTodayCheckIn: () => Promise<void>;
-  refreshHabitCompletions: () => Promise<void>;
+  editTodayRoutine: () => void;
   completeOnboarding: (input: {
     name: string;
     age: number;
@@ -76,59 +55,35 @@ interface HealthContextValue {
     heightCm: number;
     dataMethods: DataMethodId[];
     habitIds: string[];
+    goalDetails?: GoalDetails;
     medicalConditionIds: MedicalConditionId[];
   }) => Promise<void>;
+  personalRoutine: PersonalRoutine | null;
+  routineProposals: RoutineProposalSet | null;
+  routineLoading: boolean;
+  routineError: string | null;
+  selectPersonalRoutine: (optionId: string) => Promise<void>;
 }
 
 const HealthContext = createContext<HealthContextValue | null>(null);
 
-function habitsFromIds(ids: string[]): PreventionHabit[] {
-  const mergedIds = [...ids];
-  const selected = habitCatalog.filter((h) => mergedIds.includes(h.id));
-  if (selected.length === 0) return defaultHabits;
-  const byId = new Map(selected.map((h) => [h.id, h]));
-  return mergedIds
-    .filter((id) => byId.has(id))
-    .map((id) => {
-      const habit = byId.get(id)!;
-      return {
-        id: habit.id,
-        title: habit.title,
-        time: habit.time,
-        reason: habit.reason,
-        completed: false,
-      };
-    });
+function emptyProgress(): DailyRoutineProgress {
+  return { steps: {} };
 }
 
-function mergeLegacyCompletions(
-  log: HabitCompletionLog,
-  legacyIds: string[],
-  dateKey: string,
-): HabitCompletionLog {
-  if (legacyIds.length === 0) return log;
-  const day = { ...(log[dateKey] ?? {}) };
-  let changed = false;
-  for (const id of legacyIds) {
-    if (!day[id]) {
-      day[id] = true;
-      changed = true;
-    }
-  }
-  return changed ? { ...log, [dateKey]: day } : log;
+function todayProgress(log: RoutineCompletionLog, dateKey = localDateKey()): DailyRoutineProgress {
+  return log[dateKey] ?? emptyProgress();
 }
 
 export function HealthProvider({ children }: { children: React.ReactNode }) {
-  const [habits, setHabits] = useState(defaultHabits);
-  const [customHabits, setCustomHabits] = useState<CustomHabit[]>([]);
-  const [habitCompletions, setHabitCompletions] = useState<HabitCompletionLog>({});
   const [completedActions, setCompletedActions] = useState<Set<string>>(new Set());
   const [checkInLog, setCheckInLog] = useState<CheckInLog>({});
-  const [userSymptoms, setUserSymptoms] = useState<string[]>(['None']);
-  const [manualFeeling, setManualFeeling] = useState<number | null>(null);
-  const [lastSubmittedDraftKey, setLastSubmittedDraftKey] = useState<string | null>(null);
-  const [todayShowInsights, setTodayShowInsights] = useState(false);
+  const [routineCompletionLog, setRoutineCompletionLog] = useState<RoutineCompletionLog>({});
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [personalRoutine, setPersonalRoutine] = useState<PersonalRoutine | null>(null);
+  const [routineProposals, setRoutineProposals] = useState<RoutineProposalSet | null>(null);
+  const [routineLoading, setRoutineLoading] = useState(false);
+  const [routineError, setRoutineError] = useState<string | null>(null);
   const [isReady, setIsReady] = useState(false);
 
   const accountStartDate = useMemo(
@@ -136,40 +91,55 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     [profile?.completedAt],
   );
 
+  const buildRoutineProposalsForProfile = useCallback(async (nextProfile: UserProfile) => {
+    setRoutineLoading(true);
+    setRoutineError(null);
+    try {
+      const proposals = await generateRoutineProposals(nextProfile);
+      await saveRoutineProposals(proposals);
+      setRoutineProposals(proposals);
+    } catch (e) {
+      setRoutineError(e instanceof Error ? e.message : 'Could not build your routines');
+    } finally {
+      setRoutineLoading(false);
+    }
+  }, []);
+
+  const selectPersonalRoutine = useCallback(
+    async (optionId: string) => {
+      const option = routineProposals?.options.find((item) => item.id === optionId);
+      if (!option || !routineProposals) return;
+
+      const routine: PersonalRoutine = {
+        ...withStepIds(option),
+        generatedAt: routineProposals.generatedAt,
+        source: routineProposals.source,
+      };
+
+      await savePersonalRoutine(routine);
+      await clearRoutineProposals();
+      setPersonalRoutine(routine);
+      setRoutineProposals(null);
+      setRoutineError(null);
+    },
+    [routineProposals],
+  );
+
   useEffect(() => {
     let mounted = true;
     Promise.all([
       loadUserProfile(),
-      loadCustomHabitsWithLegacyCompletion(),
       loadCheckInLog(),
-      loadHabitCompletions(),
-    ]).then(([saved, customLoad, savedLog, savedCompletions]) => {
+      loadPersonalRoutine(),
+      loadRoutineProposals(),
+      loadRoutineCompletionLog(),
+    ]).then(([saved, savedLog, savedRoutine, savedProposals, savedRoutineLog]) => {
       if (!mounted) return;
-      const today = localDateKey();
-      const savedCheckIn = savedLog[today] ?? null;
-      const completions = mergeLegacyCompletions(
-        savedCompletions,
-        customLoad.legacyCompletedIds,
-        today,
-      );
-      if (customLoad.legacyCompletedIds.length > 0) {
-        void saveHabitCompletions(completions);
-        void saveCustomHabits(customLoad.habits);
-      }
-      if (saved) {
-        setProfile(saved);
-        setHabits(habitsFromIds(saved.habitIds));
-      }
-      setCustomHabits(customLoad.habits);
-      setHabitCompletions(completions);
+      if (saved) setProfile(saved);
+      if (savedRoutine) setPersonalRoutine(normalizePersonalRoutine(savedRoutine));
+      if (savedProposals) setRoutineProposals(savedProposals);
       setCheckInLog(savedLog);
-      setUserSymptoms(savedCheckIn?.symptoms ?? ['None']);
-      if (savedCheckIn?.energy != null) {
-        setLastSubmittedDraftKey(
-          todayCheckInDraftKey(savedCheckIn.energy, savedCheckIn.symptoms ?? ['None']),
-        );
-        setTodayShowInsights(true);
-      }
+      setRoutineCompletionLog(savedRoutineLog);
       setIsReady(true);
     });
     return () => {
@@ -177,93 +147,82 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const getHabitsForDate = useCallback(
-    (dateKey: string) => {
-      const clamped = clampDateKey(dateKey, accountStartDate, localDateKey());
-      const datedHabits = applyHabitCompletions(habits, habitCompletions, clamped);
-      const datedCustom = applyHabitCompletions(customHabits, habitCompletions, clamped);
-      const ids = [...habits, ...customHabits].map((h) => h.id);
-      const { completed, total } = habitCompletionStats(ids, habitCompletions, clamped);
-      return { habits: datedHabits, customHabits: datedCustom, completed, total };
-    },
-    [habits, customHabits, habitCompletions, accountStartDate],
+  useEffect(() => {
+    if (!isReady || !profile || personalRoutine || routineProposals || routineLoading) return;
+    if (profile.habitIds.length === 0) return;
+    void buildRoutineProposalsForProfile(profile);
+  }, [
+    isReady,
+    profile,
+    personalRoutine,
+    routineProposals,
+    routineLoading,
+    buildRoutineProposalsForProfile,
+  ]);
+
+  const todayKey = localDateKey();
+  const todayRoutineProgress = useMemo(
+    () => todayProgress(routineCompletionLog, todayKey),
+    [routineCompletionLog, todayKey],
   );
 
-  const toggleHabitForDate = useCallback(
-    (id: string, dateKey = localDateKey()) => {
-      const clamped = clampDateKey(dateKey, accountStartDate, localDateKey());
-      setHabitCompletions((prev) => {
-        const day = prev[clamped] ?? {};
-        const nextDay = { ...day, [id]: !day[id] };
-        const next = { ...prev, [clamped]: nextDay };
-        void saveHabitCompletions(next);
-        return next;
+  const todayRoutineSteps = useMemo((): TodayRoutineStep[] => {
+    if (!personalRoutine) return [];
+    const routine = normalizePersonalRoutine(personalRoutine);
+    return routine.steps.map((step, index) => {
+      const id = step.id?.trim() || `${routine.id}-step-${index}`;
+      return {
+        ...step,
+        id,
+        completed: todayRoutineProgress.steps[id] === true,
+      };
+    });
+  }, [personalRoutine, todayRoutineProgress]);
+
+  const todayRoutineFinished = todayRoutineProgress.finishedAt != null;
+  const todayRoutineCanFinish = todayRoutineSteps.some((step) => step.completed);
+  const todayShowInsights = todayRoutineFinished;
+
+  const persistTodayProgress = useCallback(
+    async (progress: DailyRoutineProgress) => {
+      const nextLog = { ...routineCompletionLog, [todayKey]: progress };
+      setRoutineCompletionLog(nextLog);
+      await saveRoutineCompletionLog(nextLog);
+    },
+    [routineCompletionLog, todayKey],
+  );
+
+  const toggleRoutineStep = useCallback(
+    (stepId: string) => {
+      const current = todayProgress(routineCompletionLog, todayKey);
+      const nextCompleted = !current.steps[stepId];
+      const nextSteps = { ...current.steps, [stepId]: nextCompleted };
+      if (!nextCompleted) delete nextSteps[stepId];
+      void persistTodayProgress({
+        steps: nextSteps,
+        ...(current.finishedAt ? { finishedAt: undefined } : {}),
       });
     },
-    [accountStartDate],
+    [routineCompletionLog, todayKey, persistTodayProgress],
   );
 
-  const addCustomHabit = useCallback((title: string, time: string) => {
-    const habit: CustomHabit = {
-      id: `custom-${Date.now()}`,
-      title,
-      time,
-      completed: false,
-    };
-    setCustomHabits((prev) => {
-      const next = [...prev, habit];
-      void saveCustomHabits(next);
-      return next;
+  const finishTodayRoutine = useCallback(async (): Promise<boolean> => {
+    if (!todayRoutineCanFinish) return false;
+    const current = todayProgress(routineCompletionLog, todayKey);
+    await persistTodayProgress({
+      ...current,
+      finishedAt: new Date().toISOString(),
     });
-  }, []);
+    return true;
+  }, [todayRoutineCanFinish, routineCompletionLog, todayKey, persistTodayProgress]);
 
-  const toggleCustomHabit = useCallback(
-    (id: string, dateKey = localDateKey()) => {
-      toggleHabitForDate(id, dateKey);
-    },
-    [toggleHabitForDate],
-  );
-
-  const removeCustomHabit = useCallback((id: string) => {
-    setCustomHabits((prev) => {
-      const next = prev.filter((h) => h.id !== id);
-      void saveCustomHabits(next);
-      return next;
+  const editTodayRoutine = useCallback(() => {
+    const current = todayProgress(routineCompletionLog, todayKey);
+    if (!current.finishedAt) return;
+    void persistTodayProgress({
+      steps: current.steps,
     });
-    setHabitCompletions((prev) => {
-      const next: HabitCompletionLog = {};
-      let changed = false;
-      for (const [dateKey, day] of Object.entries(prev)) {
-        if (id in day) {
-          const { [id]: _, ...rest } = day;
-          next[dateKey] = rest;
-          changed = true;
-        } else {
-          next[dateKey] = day;
-        }
-      }
-      if (changed) void saveHabitCompletions(next);
-      return changed ? next : prev;
-    });
-  }, []);
-
-  const refreshHabitCompletions = useCallback(async () => {
-    const saved = await loadHabitCompletions();
-    setHabitCompletions(saved);
-  }, []);
-
-  const refreshTodayCheckIn = useCallback(async () => {
-    await refreshHabitCompletions();
-  }, [refreshHabitCompletions]);
-
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (nextState) => {
-      if (nextState === 'active') {
-        void refreshHabitCompletions();
-      }
-    });
-    return () => sub.remove();
-  }, [refreshTodayCheckIn, refreshHabitCompletions]);
+  }, [routineCompletionLog, todayKey, persistTodayProgress]);
 
   const completeOnboarding = useCallback(
     async (input: {
@@ -274,6 +233,7 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       heightCm: number;
       dataMethods: DataMethodId[];
       habitIds: string[];
+      goalDetails?: GoalDetails;
       medicalConditionIds: MedicalConditionId[];
     }) => {
       const nextProfile: UserProfile = {
@@ -284,221 +244,77 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
         heightCm: input.heightCm,
         dataMethods: input.dataMethods,
         habitIds: input.habitIds,
+        goalDetails: input.goalDetails ?? {},
         medicalConditionIds: input.medicalConditionIds,
         completedAt: new Date().toISOString(),
       };
       await saveUserProfile(nextProfile);
       setProfile(nextProfile);
-      setHabits(habitsFromIds(input.habitIds));
+      await buildRoutineProposalsForProfile(nextProfile);
     },
-    [],
+    [buildRoutineProposalsForProfile],
   );
-
-  const todayHabits = useMemo(() => getHabitsForDate(localDateKey()), [getHabitsForDate]);
-
-  const buildCheckIn = useCallback(
-    (dateKey: string, log: CheckInLog = checkInLog) => {
-      const clamped = clampDateKey(dateKey, accountStartDate, localDateKey());
-      const isToday = clamped === localDateKey();
-      return buildCheckInForDate(
-        clamped,
-        habits,
-        customHabits,
-        habitCompletions,
-        isToday ? {} : log,
-        isToday ? userSymptoms : undefined,
-      );
-    },
-    [accountStartDate, habits, customHabits, habitCompletions, checkInLog, userSymptoms],
-  );
-
-  const effectiveTodayCheckIn = useMemo((): DailyCheckIn | null => {
-    if (!isReady) return null;
-    const today = localDateKey();
-    const saved = checkInLog[today];
-    if (saved) return saved;
-    return buildCheckInForDate(
-      today,
-      habits,
-      customHabits,
-      habitCompletions,
-      checkInLog,
-      undefined,
-    );
-  }, [isReady, habits, customHabits, habitCompletions, checkInLog]);
-
-  const todayCheckInSaved = useMemo(() => {
-    if (manualFeeling == null || lastSubmittedDraftKey == null) return false;
-    return lastSubmittedDraftKey === todayCheckInDraftKey(manualFeeling, userSymptoms);
-  }, [manualFeeling, userSymptoms, lastSubmittedDraftKey]);
-
-  const updateTodayDraft = useCallback(
-    (input: Partial<Pick<DailyCheckIn, 'symptoms' | 'energy' | 'sleepQuality' | 'stress'>>) => {
-      if (input.energy !== undefined) {
-        setManualFeeling(input.energy);
-      }
-      if (input.symptoms !== undefined) {
-        setUserSymptoms(input.symptoms);
-      }
-    },
-    [],
-  );
-
-  const submitTodayCheckIn = useCallback(async (): Promise<boolean> => {
-    if (manualFeeling == null) return false;
-    const today = localDateKey();
-    const checkIn: DailyCheckIn = {
-      date: today,
-      ...metricsFromFeeling(manualFeeling),
-      symptoms: userSymptoms,
-    };
-    setCheckInLog((prev) => ({ ...prev, [today]: checkIn }));
-    await saveCheckInLogEntry(checkIn);
-    setLastSubmittedDraftKey(todayCheckInDraftKey(manualFeeling, userSymptoms));
-    setTodayShowInsights(true);
-    return true;
-  }, [manualFeeling, userSymptoms]);
-
-  const editTodayCheckIn = useCallback(() => {
-    const today = localDateKey();
-    const saved = checkInLog[today];
-    if (saved?.energy != null) {
-      setManualFeeling(saved.energy);
-      setUserSymptoms(saved.symptoms ?? ['None']);
-    } else {
-      setManualFeeling(null);
-      setUserSymptoms(['None']);
-    }
-    setLastSubmittedDraftKey(null);
-    setTodayShowInsights(false);
-  }, [checkInLog]);
-
-  const saveCheckIn = useCallback(
-    (input: Partial<Pick<DailyCheckIn, 'symptoms' | 'energy' | 'sleepQuality' | 'stress'>>) => {
-      const today = localDateKey();
-      if (input.symptoms !== undefined) {
-        setUserSymptoms(input.symptoms);
-      }
-
-      setCheckInLog((prev) => {
-        const existing = prev[today];
-        const symptoms = input.symptoms ?? existing?.symptoms ?? userSymptoms;
-        const metrics =
-          input.energy !== undefined
-            ? metricsFromFeeling(input.energy)
-            : {
-                energy: existing?.energy ?? 3,
-                sleepQuality: existing?.sleepQuality ?? 3,
-                stress: existing?.stress ?? 3,
-              };
-        const checkIn: DailyCheckIn = { date: today, ...metrics, symptoms };
-        void saveCheckInLogEntry(checkIn);
-        if (input.energy !== undefined) {
-          setLastSubmittedDraftKey(todayCheckInDraftKey(input.energy, symptoms));
-        }
-        return { ...prev, [today]: checkIn };
-      });
-    },
-    [userSymptoms],
-  );
-
-  const syncRoutineCheckIn = useCallback(
-    async (dateKey = localDateKey()) => {
-      const checkIn = buildCheckIn(dateKey);
-      if (!checkIn) return null;
-      setCheckInLog((prev) => ({ ...prev, [checkIn.date]: checkIn }));
-      await saveCheckInLogEntry(checkIn);
-      return checkIn;
-    },
-    [buildCheckIn],
-  );
-
-  const hasRoutineCheckInData = useCallback(
-    (dateKey: string) => buildCheckIn(dateKey) != null,
-    [buildCheckIn],
-  );
-
-  const insightsCheckInLog = useMemo(() => {
-    if (!effectiveTodayCheckIn) return checkInLog;
-    return { ...checkInLog, [effectiveTodayCheckIn.date]: effectiveTodayCheckIn };
-  }, [checkInLog, effectiveTodayCheckIn]);
 
   const insights = useMemo(
     () =>
       applyWeeklyDataToInsights(mockInsights, {
-        habits,
-        customHabits,
-        habitCompletions,
-        checkInLog: insightsCheckInLog,
+        checkInLog,
+        routineCompletionLog,
+        personalRoutine,
         accountStartDate,
+        goalIds: profile?.habitIds ?? [],
       }),
-    [habits, customHabits, habitCompletions, insightsCheckInLog, accountStartDate],
+    [checkInLog, routineCompletionLog, personalRoutine, accountStartDate, profile?.habitIds],
   );
 
   const value = useMemo<HealthContextValue>(
     () => ({
       insights,
-      habits: todayHabits.habits,
-      customHabits: todayHabits.customHabits,
       completedActions,
-      todayCheckIn: effectiveTodayCheckIn,
       checkInLog,
-      todayFeeling: manualFeeling,
-      todaySymptoms: userSymptoms,
-      updateTodayDraft,
-      submitTodayCheckIn,
-      todayCheckInSaved,
+      routineCompletionLog,
+      todayRoutineSteps,
+      todayRoutineFinished,
+      todayRoutineCanFinish,
+      toggleRoutineStep,
+      finishTodayRoutine,
       todayShowInsights,
-      editTodayCheckIn,
+      editTodayRoutine,
       profile,
       onboardingComplete: profile !== null,
       isReady,
       accountStartDate,
-      getHabitsForDate,
-      toggleHabit: toggleHabitForDate,
-      addCustomHabit,
-      toggleCustomHabit,
-      removeCustomHabit,
       completeAction: (insightId, actionId) => {
         setCompletedActions((prev) => new Set(prev).add(`${insightId}:${actionId}`));
       },
-      saveCheckIn,
-      syncRoutineCheckIn,
-      hasRoutineCheckInData,
-      refreshTodayCheckIn,
-      refreshHabitCompletions,
       completeOnboarding,
+      personalRoutine,
+      routineProposals,
+      routineLoading,
+      routineError,
+      selectPersonalRoutine,
     }),
     [
       insights,
-      todayHabits,
-      effectiveTodayCheckIn,
-      checkInLog,
-      manualFeeling,
-      userSymptoms,
-      lastSubmittedDraftKey,
-      todayShowInsights,
-      editTodayCheckIn,
-      updateTodayDraft,
-      submitTodayCheckIn,
-      todayCheckInSaved,
-      todayShowInsights,
-      editTodayCheckIn,
-      saveCheckIn,
       completedActions,
+      checkInLog,
+      routineCompletionLog,
+      todayRoutineSteps,
+      todayRoutineFinished,
+      todayRoutineCanFinish,
+      toggleRoutineStep,
+      finishTodayRoutine,
+      todayShowInsights,
+      editTodayRoutine,
       profile,
       isReady,
       accountStartDate,
-      getHabitsForDate,
-      toggleHabitForDate,
       completeOnboarding,
-      addCustomHabit,
-      toggleCustomHabit,
-      removeCustomHabit,
-      syncRoutineCheckIn,
-      hasRoutineCheckInData,
-      refreshTodayCheckIn,
-      refreshHabitCompletions,
+      personalRoutine,
+      routineProposals,
+      routineLoading,
+      routineError,
+      selectPersonalRoutine,
     ],
   );
 

@@ -1,6 +1,6 @@
-/** Google Gemini API key (dev/prototype — prefer a backend proxy in production). */
-export function getGeminiApiKey(): string | undefined {
-  const key = process.env.EXPO_PUBLIC_GEMINI_API_KEY?.trim();
+/** OpenAI API key (dev/prototype — prefer a backend proxy in production). */
+export function getOpenAiApiKey(): string | undefined {
+  const key = process.env.EXPO_PUBLIC_OPENAI_API_KEY?.trim();
   return key || undefined;
 }
 
@@ -11,12 +11,16 @@ export function getHealthInsightsProxyUrl(): string | undefined {
 }
 
 export function isHealthInsightsConfigured(): boolean {
-  return getGeminiApiKey() != null || getHealthInsightsProxyUrl() != null;
+  return getOpenAiApiKey() != null || getHealthInsightsProxyUrl() != null;
 }
 
 export const HEALTH_INSIGHTS_MODEL =
-  process.env.EXPO_PUBLIC_GEMINI_MODEL?.trim() || 'gemini-2.0-flash';
+  process.env.EXPO_PUBLIC_OPENAI_MODEL?.trim() || 'gpt-4o-mini';
 
 export const HEALTH_INSIGHTS_MAX_OUTPUT_TOKENS = Number(
-  process.env.EXPO_PUBLIC_GEMINI_MAX_OUTPUT_TOKENS ?? 1024,
+  process.env.EXPO_PUBLIC_OPENAI_MAX_OUTPUT_TOKENS ?? 1024,
+);
+
+export const HEALTH_INSIGHTS_TEMPERATURE = Number(
+  process.env.EXPO_PUBLIC_OPENAI_TEMPERATURE ?? 0.6,
 );

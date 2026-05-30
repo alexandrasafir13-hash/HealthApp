@@ -7,6 +7,9 @@ export const PRESET_SYMPTOMS = [
   'Body aches',
 ] as const;
 
+/** Stable fallback — do not inline `['None']` or useEffect deps will churn. */
+export const DEFAULT_SYMPTOMS: readonly string[] = ['None'];
+
 export function parseCustomSymptoms(text: string): string[] {
   return text
     .split(/[,;]+/)
