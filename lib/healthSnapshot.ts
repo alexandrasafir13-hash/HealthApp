@@ -3,7 +3,8 @@ import { BiologicalSex } from '@/types/onboarding';
 export type BmiCategory = 'underweight' | 'healthy' | 'overweight' | 'obese';
 export type WeightBandStatus = 'within' | 'below' | 'above';
 
-export interface HealthSnapshot {
+/** Direct calculations from profile inputs (height, weight, age, sex). */
+export interface ProfileMetrics {
   bmi: number;
   bmiLabel: string;
   bmiCategory: BmiCategory;
@@ -12,12 +13,21 @@ export interface HealthSnapshot {
   weightBandDetail: string;
   healthyWeightMinKg: number;
   healthyWeightMaxKg: number;
-  dailyWaterLiters: number;
   restingCalories: number;
+}
+
+/** General targets derived from profile — guidelines, not raw inputs. */
+export interface HealthRecommendations {
   activeCalorieMin: number;
   activeCalorieMax: number;
+  dailyWaterLiters: number;
   sleepMinHours: number;
   sleepMaxHours: number;
+}
+
+export interface HealthSnapshot {
+  profile: ProfileMetrics;
+  recommendations: HealthRecommendations;
 }
 
 export function computeBmi(weightKg: number, heightCm: number): number {
@@ -116,19 +126,23 @@ export function buildHealthSnapshot(
   const weightBand = weightVsHealthyBand(weightKg, range.min, range.max);
 
   return {
-    bmi: Math.round(bmi * 10) / 10,
-    bmiLabel: getBmiLabel(category),
-    bmiCategory: category,
-    weightKg: Math.round(weightKg),
-    weightBandStatus: weightBand.status,
-    weightBandDetail: weightBand.detail,
-    healthyWeightMinKg: range.min,
-    healthyWeightMaxKg: range.max,
-    dailyWaterLiters: dailyWaterLiters(weightKg),
-    restingCalories: resting,
-    activeCalorieMin: calories.min,
-    activeCalorieMax: calories.max,
-    sleepMinHours: sleep.minHours,
-    sleepMaxHours: sleep.maxHours,
+    profile: {
+      bmi: Math.round(bmi * 10) / 10,
+      bmiLabel: getBmiLabel(category),
+      bmiCategory: category,
+      weightKg: Math.round(weightKg),
+      weightBandStatus: weightBand.status,
+      weightBandDetail: weightBand.detail,
+      healthyWeightMinKg: range.min,
+      healthyWeightMaxKg: range.max,
+      restingCalories: resting,
+    },
+    recommendations: {
+      activeCalorieMin: calories.min,
+      activeCalorieMax: calories.max,
+      dailyWaterLiters: dailyWaterLiters(weightKg),
+      sleepMinHours: sleep.minHours,
+      sleepMaxHours: sleep.maxHours,
+    },
   };
 }

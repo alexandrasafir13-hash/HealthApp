@@ -1,3 +1,4 @@
+import { type ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { metricScaleColors, palette } from '@/constants/theme';
@@ -8,15 +9,14 @@ interface Props {
   name?: string;
 }
 
-function bmiAccent(category: HealthSnapshot['bmiCategory']) {
+function bmiAccent(category: HealthSnapshot['profile']['bmiCategory']) {
   if (category === 'healthy') return metricScaleColors.good;
   if (category === 'obese') return metricScaleColors.action;
   return metricScaleColors.caution;
 }
 
-function weightBandAccent(status: HealthSnapshot['weightBandStatus']) {
+function weightBandAccent(status: HealthSnapshot['profile']['weightBandStatus']) {
   if (status === 'within') return metricScaleColors.good;
-  if (status === 'above') return metricScaleColors.caution;
   return metricScaleColors.caution;
 }
 
@@ -30,69 +30,91 @@ function Stat({ label, value, detail, accent }: { label: string; value: string; 
   );
 }
 
+function Section({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  children: ReactNode;
+}) {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={styles.sectionSubtitle}>{subtitle}</Text>
+      <View style={styles.grid}>{children}</View>
+    </View>
+  );
+}
+
 export default function HealthSnapshotCard({ snapshot, name }: Props) {
   const firstName = name?.trim().split(/\s+/)[0];
-  const accent = bmiAccent(snapshot.bmiCategory);
+  const { profile, recommendations } = snapshot;
 
   return (
-    <View style={styles.card}>
+    <View style={styles.wrapper}>
       <Text style={styles.title}>Your health snapshot</Text>
-      <Text style={styles.subtitle}>
+      <Text style={styles.intro}>
         {firstName
-          ? `${firstName}, here’s a starting point from your profile.`
-          : 'A starting point from your height, weight, and age.'}
+          ? `${firstName}, here’s what we calculated from your profile.`
+          : 'Here’s what we calculated from your profile.'}
       </Text>
 
-      <View style={styles.grid}>
+      <Section
+        title="From your profile"
+        subtitle="Numbers calculated from your height, weight, age, and sex.">
         <Stat
           label="BMI"
-          value={String(snapshot.bmi)}
-          detail={snapshot.bmiLabel}
-          accent={accent}
+          value={String(profile.bmi)}
+          detail={profile.bmiLabel}
+          accent={bmiAccent(profile.bmiCategory)}
         />
         <Stat
           label="Your weight"
-          value={`${snapshot.weightKg} kg`}
-          detail={snapshot.weightBandDetail}
-          accent={weightBandAccent(snapshot.weightBandStatus)}
+          value={`${profile.weightKg} kg`}
+          detail={profile.weightBandDetail}
+          accent={weightBandAccent(profile.weightBandStatus)}
         />
         <Stat
           label="Healthy weight"
-          value={`${snapshot.healthyWeightMinKg}–${snapshot.healthyWeightMaxKg} kg`}
-          detail="Target range for your height"
+          value={`${profile.healthyWeightMinKg}–${profile.healthyWeightMaxKg} kg`}
+          detail="Range for your height"
         />
+        <Stat
+          label="Resting calories"
+          value={`${profile.restingCalories.toLocaleString()} kcal`}
+          detail="Energy your body uses at rest"
+        />
+      </Section>
+
+      <Section
+        title="Recommendations"
+        subtitle="General targets based on your profile — not medical advice.">
         <Stat
           label="Daily calories"
-          value={`~${snapshot.activeCalorieMin.toLocaleString()}–${snapshot.activeCalorieMax.toLocaleString()}`}
-          detail={`With light activity (~${snapshot.restingCalories.toLocaleString()} at rest)`}
+          value={`~${recommendations.activeCalorieMin.toLocaleString()}–${recommendations.activeCalorieMax.toLocaleString()}`}
+          detail="With light activity"
         />
         <Stat
-          label="Water goal"
-          value={`~${snapshot.dailyWaterLiters} L`}
+          label="Water"
+          value={`~${recommendations.dailyWaterLiters} L`}
           detail="Suggested daily intake"
         />
         <Stat
           label="Sleep"
-          value={`${snapshot.sleepMinHours}–${snapshot.sleepMaxHours} h`}
-          detail="Recommended per night for your age"
+          value={`${recommendations.sleepMinHours}–${recommendations.sleepMaxHours} h`}
+          detail="Per night for your age"
         />
-      </View>
-
-      <Text style={styles.footer}>
-        These are estimates — not medical advice. Update your profile if your weight changes.
-      </Text>
+      </Section>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: palette.card,
-    borderRadius: 16,
-    padding: 16,
+  wrapper: {
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: palette.border,
+    gap: 12,
   },
   title: {
     fontSize: 18,
@@ -100,9 +122,28 @@ const styles = StyleSheet.create({
     color: palette.slate,
     marginBottom: 4,
   },
-  subtitle: {
+  intro: {
     fontSize: 14,
     lineHeight: 20,
+    color: palette.slateMuted,
+    marginBottom: 4,
+  },
+  section: {
+    backgroundColor: palette.card,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: palette.border,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: palette.slate,
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    lineHeight: 18,
     color: palette.slateMuted,
     marginBottom: 14,
   },
@@ -138,11 +179,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     color: palette.slateSubtle,
-  },
-  footer: {
-    fontSize: 12,
-    lineHeight: 17,
-    color: palette.slateSubtle,
-    marginTop: 12,
   },
 });
