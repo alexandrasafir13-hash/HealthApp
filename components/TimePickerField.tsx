@@ -1,6 +1,6 @@
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import { palette } from '@/constants/theme';
@@ -32,6 +32,8 @@ export default function TimePickerField({ value, onChange }: Props) {
     onChange(formatTimeAnswer(selected));
   };
 
+  const closePicker = () => setShowPicker(false);
+
   return (
     <View style={styles.wrap}>
       <Pressable
@@ -42,18 +44,23 @@ export default function TimePickerField({ value, onChange }: Props) {
         <Text style={[styles.buttonText, !hasValue && styles.placeholder]}>{label}</Text>
       </Pressable>
 
-      {showPicker && Platform.OS === 'ios' ? (
-        <View style={styles.iosPickerCard}>
-          <DateTimePicker
-            value={pickerDate}
-            mode="time"
-            display="spinner"
-            onChange={handleChange}
-          />
-          <Pressable style={styles.doneButton} onPress={() => setShowPicker(false)}>
-            <Text style={styles.doneText}>Done</Text>
-          </Pressable>
-        </View>
+      {Platform.OS === 'ios' ? (
+        <Modal visible={showPicker} transparent animationType="slide" onRequestClose={closePicker}>
+          <View style={styles.modalRoot}>
+            <Pressable style={styles.modalBackdrop} onPress={closePicker} />
+            <View style={styles.iosSheet}>
+              <DateTimePicker
+                value={pickerDate}
+                mode="time"
+                display="spinner"
+                onChange={handleChange}
+              />
+              <Pressable style={styles.doneButton} onPress={closePicker}>
+                <Text style={styles.doneText}>Done</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
       ) : null}
 
       {showPicker && Platform.OS === 'android' ? (
@@ -91,17 +98,23 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: palette.slateSubtle,
   },
-  iosPickerCard: {
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: palette.border,
-    borderRadius: 12,
-    overflow: 'hidden',
+  modalRoot: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+  },
+  iosSheet: {
     backgroundColor: palette.background,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    overflow: 'hidden',
   },
   doneButton: {
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderTopWidth: 1,
     borderTopColor: palette.border,
     backgroundColor: palette.card,
