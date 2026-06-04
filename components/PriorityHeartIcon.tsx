@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { Heart, Activity } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { priorityHeartAmber } from '@/constants/theme';
@@ -7,16 +7,15 @@ import { priorityHeartAmber } from '@/constants/theme';
 export default function PriorityHeartIcon() {
   return (
     <View style={styles.wrap}>
-      <SymbolView
-        name={{ ios: 'heart.fill', android: 'favorite', web: 'favorite' }}
-        tintColor={priorityHeartAmber}
+      <Heart
+        color={priorityHeartAmber}
+        fill={priorityHeartAmber}
         size={17}
       />
       <View style={styles.waveLine}>
-        <SymbolView
-          name={{ ios: 'waveform.path', android: 'show_chart', web: 'show_chart' }}
-          tintColor={priorityHeartAmber}
-          size={13}
+        <Activity
+          color={priorityHeartAmber}
+          size={11}
         />
       </View>
     </View>
@@ -32,7 +31,7 @@ const styles = StyleSheet.create({
   },
   waveLine: {
     position: 'absolute',
-    bottom: 1,
+    bottom: 2,
     opacity: 0.88,
   },
 });

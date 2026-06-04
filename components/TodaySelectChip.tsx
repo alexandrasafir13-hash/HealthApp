@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
+import { Text } from '@/components/Themed';
 import { palette } from '@/constants/theme';
 
 interface Props {
@@ -30,7 +31,7 @@ export default function TodaySelectChip({
       accessibilityRole="button"
       accessibilityState={{ selected }}
       accessibilityLabel={accessibilityLabel ?? label}>
-      <Text pointerEvents="none" style={[styles.label, selected && styles.labelSelected]}>
+      <Text style={[styles.label, selected && styles.labelSelected, { pointerEvents: 'none' }]}>
         {label}
       </Text>
     </Pressable>

@@ -1,0 +1,25 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "hosting": [
+    {
+      "target": "staging",
+      "public": "dist",
+      "ignore": [
+        "firebase.json",
+        "**/.*"
+      ],
+      "cleanUrls": true
+    },
+    {
+      "target": "production",
+      "public": "dist",
+      "ignore": [
+        "firebase.json",
+        "**/.*"
+      ],
+      "cleanUrls": true
+    }
+  ]
+}

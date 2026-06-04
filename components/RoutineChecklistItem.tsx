@@ -25,10 +25,10 @@ export default function RoutineChecklistItem({
       accessibilityRole="checkbox"
       accessibilityState={{ checked: completed }}
       accessibilityLabel={title}>
-      <View pointerEvents="none" style={[styles.checkbox, completed && styles.checkboxDone]}>
+      <View style={[styles.checkbox, completed && styles.checkboxDone, { pointerEvents: 'none' }]}>
         {completed && <Text style={styles.checkmark}>✓</Text>}
       </View>
-      <View pointerEvents="none" style={styles.content}>
+      <View style={[styles.content, { pointerEvents: 'none' }]}>
         <View style={styles.titleRow}>
           <Text style={[styles.title, completed && styles.titleDone]}>{title}</Text>
           {timeHint != null && timeHint.length > 0 && (

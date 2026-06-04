@@ -43,6 +43,9 @@ body {
   flex-direction: column;
   width: 100%;
 }
+input, textarea, select {
+  outline: none;
+}
 @media (prefers-color-scheme: dark) {
   body {
     background-color: #111827;

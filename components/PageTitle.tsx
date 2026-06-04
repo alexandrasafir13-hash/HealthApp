@@ -2,7 +2,6 @@ import { ReactElement } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
-import TwigIcon from '@/components/TwigIcon';
 import { palette } from '@/constants/theme';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 
@@ -16,15 +15,11 @@ interface Props {
 
 export default function PageTitle({ title, subtitle, friendly, accessory }: Props) {
   const { isTabletUp, isDesktop } = useBreakpoint();
-  const twigSize = isDesktop ? 32 : isTabletUp ? 28 : 24;
 
   return (
     <View style={[styles.header, accessory != null && styles.headerWithAccessory]}>
       <View style={styles.titleBlock}>
         <View style={styles.titleRow}>
-          <View style={styles.twig}>
-            <TwigIcon size={twigSize} />
-          </View>
           <Text
             style={[
               styles.title,
@@ -71,9 +66,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-  },
-  twig: {
-    marginTop: 4,
   },
   title: {
     flex: 1,

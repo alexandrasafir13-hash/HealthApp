@@ -1,4 +1,5 @@
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/Themed';
 
 import PlanReviewCard from '@/components/PlanReviewCard';
 import { palette } from '@/constants/theme';
@@ -26,7 +27,7 @@ export default function PlanSection({
     return (
       <View style={[styles.loadingWrap, choosingMode && styles.loadingWrapFull]}>
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Your 4-week plan</Text>
+          <Text style={styles.sectionTitle}>Your personalized plan</Text>
           <View style={styles.loadingRow}>
             <ActivityIndicator color={palette.sage} />
             <Text style={styles.body}>Building your adaptive plan…</Text>

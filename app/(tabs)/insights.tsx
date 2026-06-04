@@ -1,650 +1,428 @@
-import { SymbolView } from 'expo-symbols';
-
-import { useMemo, useState } from 'react';
-
-import {
-
-  Modal,
-
-  Pressable,
-
-  ScrollView,
-
-  StyleSheet,
-
-  Text as RNText,
-
-  View,
-
-} from 'react-native';
-
-import CollapsibleInsightSection from '@/components/CollapsibleInsightSection';
-
-import InsightCard from '@/components/InsightCard';
+import { useRouter } from 'expo-router';
+import { AlertTriangle, CheckCircle2, Compass, Quote } from 'lucide-react-native';
+import { useMemo } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import PageTitle from '@/components/PageTitle';
-
 import { Text } from '@/components/Themed';
-
-import { categoryColors, flowBlue, palette } from '@/constants/theme';
-
-import { capitalizeSentences } from '@/lib/formatText';
-
-import { categoryNeedsAttention } from '@/lib/insightAttention';
-
+import { palette } from '@/constants/theme';
 import { useHealth } from '@/context/HealthContext';
-
+import { habitCatalog } from '@/data/onboardingOptions';
 import { pageStyles, usePageLayout } from '@/hooks/usePageLayout';
 
-import { useBreakpoint } from '@/hooks/useBreakpoint';
+export default function InsightsScreen() {
+  const router = useRouter();
+  const { profile, planCheckInLog, personalPlan } = useHealth();
+  const { contentContainerStyle, pageStyle } = usePageLayout();
 
-import { BodyInsight, InsightCategory } from '@/types/health';
+  const data = useInsightsData(profile, planCheckInLog, personalPlan);
 
-
-
-type SectionKey = 'sleep' | 'recovery' | 'stress' | 'prevention';
-
-
-
-const INSIGHTS_INFO_TEXT =
-  'Insights use your past week of routine tracking on Today. Your onboarding goals shape recommended actions.';
-
-
-
-const INSIGHT_SECTIONS: { key: SectionKey; title: string; category: InsightCategory }[] = [
-
-  { key: 'sleep', title: 'Sleep', category: 'sleep' },
-
-  { key: 'recovery', title: 'Recovery', category: 'recovery' },
-
-  { key: 'stress', title: 'Stress', category: 'stress' },
-
-  { key: 'prevention', title: 'Prevention', category: 'immunity' },
-
-];
-
-
-
-function InsightCardGrid({
-
-  items,
-
-  isTabletUp,
-
-}: {
-
-  items: BodyInsight[];
-
-  isTabletUp: boolean;
-
-}) {
-
-  const useGrid = isTabletUp && items.length > 1;
-
-
+  const activeConcerns = (profile?.physicalConcernIds ?? [])
+    .filter((id: string) => id.length > 0)
+    .map((id: string) => id.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' '));
 
   return (
+    <ScrollView style={pageStyles.scroll} contentContainerStyle={contentContainerStyle} showsVerticalScrollIndicator={false}>
+      <View style={pageStyle}>
+        <PageTitle title="Your Narrative" subtitle="A cohesive view of your origin, focus, and progress." />
 
-    <View style={[styles.cardGrid, useGrid && styles.cardGridWide]}>
+        <Animated.View entering={FadeInDown.duration(400).delay(100)} style={styles.contentWrapper}>
+          
+          {/* Section 1: The Synthesis (Story) */}
+          {profile?.onboardingUserStory?.fullStory && (
+            <View style={styles.storySection}>
+              <Quote size={32} color={palette.teal} style={styles.quoteIcon} />
+              <Text style={styles.storyText}>{profile.onboardingUserStory.fullStory}</Text>
+            </View>
+          )}
 
-      {items.map((insight) => (
+          {/* Section 2: The Focus (Concerns + Goals woven together) */}
+          <View style={styles.focusSection}>
+            <Text style={styles.proseText}>
+              You began this journey to address{' '}
+              {activeConcerns.length > 0 ? (
+                activeConcerns.map((c, i) => (
+                  <Text key={i}>
+                    <Text style={styles.highlightAmber}>{c}</Text>
+                    {i < activeConcerns.length - 2 ? ', ' : i === activeConcerns.length - 2 ? ' and ' : ''}
+                  </Text>
+                ))
+              ) : (
+                <Text style={styles.highlightAmber}>your wellbeing</Text>
+              )}
+              . To make progress, your current focus is{' '}
+              {data.activeHabits.length > 0 ? (
+                data.activeHabits.map((h, i) => (
+                  <Text key={i}>
+                    <Text style={styles.highlightTeal}>{h.title}</Text>
+                    {i < data.activeHabits.length - 2 ? ', ' : i === data.activeHabits.length - 2 ? ' and ' : ''}
+                  </Text>
+                ))
+              ) : (
+                <Text style={styles.highlightTeal}>building a healthy routine</Text>
+              )}.
+            </Text>
+          </View>
 
-        <InsightCard
+          {/* Section 3: Plan Insights (What we designed) */}
+          {data.planInsights && data.planInsights.length > 0 && (
+            <View style={styles.insightsSection}>
+              <Text style={styles.sectionHeading}>Plan Observations</Text>
+              <View style={styles.insightBlockList}>
+                {data.planInsights.map((insight, idx) => (
+                  <View key={idx} style={styles.cleanInsightRow}>
+                    <View style={styles.bulletDot} />
+                    <Text style={styles.cleanInsightText}>{insight}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
 
-          key={insight.id}
+          {/* Section 4: Behavioral Insights (How it's going) */}
+          <View style={styles.insightsSection}>
+            <Text style={styles.sectionHeading}>Behavioral Learnings</Text>
+            {data.derivedInsights && data.derivedInsights.length > 0 ? (
+              <View style={styles.insightBlockList}>
+                {data.derivedInsights.map((insight) => (
+                  <View key={insight.id} style={styles.cleanInsightRow}>
+                    {insight.type === 'success' ? (
+                      <CheckCircle2 size={20} color={palette.teal} style={{ marginTop: 2 }} />
+                    ) : insight.type === 'warning' ? (
+                      <AlertTriangle size={20} color={palette.coral} style={{ marginTop: 2 }} />
+                    ) : (
+                      <Compass size={20} color={palette.teal} style={{ marginTop: 2 }} />
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.insightItemTitle}>{insight.title}</Text>
+                      <Text style={styles.cleanInsightText}>{insight.text}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.emptyText}>
+                Submit daily check-ins on the Today screen to generate behavioral and routine adaptation insights.
+              </Text>
+            )}
+          </View>
 
-          insight={insight}
-
-          style={useGrid ? styles.cardGridItem : undefined}
-
-        />
-
-      ))}
-
-    </View>
-
+        </Animated.View>
+      </View>
+    </ScrollView>
   );
-
 }
 
+function useInsightsData(profile: any, planCheckInLog: any, personalPlan: any) {
 
+  const activeHabits = useMemo(() => {
+    return (profile?.habitIds ?? []).map((id: string) => {
+      const h = habitCatalog.find((h) => h.id === id);
+      if (h) return { id, title: h.title };
+      if (personalPlan && personalPlan.goalId === id) return { id, title: personalPlan.goalName };
+      return { id, title: id.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') };
+    });
+  }, [profile?.habitIds, personalPlan]);
 
-export default function InsightsScreen() {
+  const derivedInsights = useMemo(() => {
+    const list: Array<{ id: string; title: string; text: string; type: 'success' | 'warning' | 'info' }> = [];
+    const entries = Object.values(planCheckInLog || {});
 
-  const { insights } = useHealth();
+    if (entries.length === 0) return null;
 
-  const { contentContainerStyle, pageStyle, isDesktop } = usePageLayout();
+    const phaseGroups: Record<number, typeof entries> = {};
+    entries.forEach((entry: any) => {
+      const phaseNum = entry.weekNumber;
+      if (!phaseGroups[phaseNum]) phaseGroups[phaseNum] = [];
+      phaseGroups[phaseNum].push(entry);
+    });
 
-  const { isTabletUp } = useBreakpoint();
+    const currentPhaseNum = personalPlan?.activeWeekNumber ?? 1;
+    const currentPhaseEntries = phaseGroups[currentPhaseNum] || [];
+    const prevPhaseNum = currentPhaseNum - 1;
+    const prevPhaseEntries = phaseGroups[prevPhaseNum] || [];
 
+    const activePhaseObj = personalPlan?.phases?.[currentPhaseNum - 1];
+    const durationDays = activePhaseObj?.durationDays ?? 7;
+    const currentConsistency = durationDays > 0
+      ? Math.round((currentPhaseEntries.length / durationDays) * 100)
+      : 0;
 
+    if (prevPhaseNum > 0 && prevPhaseEntries.length > 0) {
+      const prevPhaseObj = personalPlan?.phases?.[prevPhaseNum - 1];
+      const prevDuration = prevPhaseObj?.durationDays ?? 7;
+      const prevConsistency = prevDuration > 0
+        ? Math.round((prevPhaseEntries.length / prevDuration) * 100)
+        : 0;
 
-  const grouped = useMemo(() => {
+      const diff = currentConsistency - prevConsistency;
 
-    const map: Record<InsightCategory, BodyInsight[]> = {
+      let prevEffortSum = 0, prevEffortCount = 0;
+      prevPhaseEntries.forEach((entry: any) => {
+        Object.entries(entry.answers || {}).forEach(([qId, val]) => {
+          if (qId.includes('effort') && typeof val === 'number') {
+            prevEffortSum += val;
+            prevEffortCount++;
+          }
+        });
+      });
+      const prevAvgEffort = prevEffortCount > 0 ? (prevEffortSum / prevEffortCount) : null;
 
-      sleep: [],
+      let currEffortSum = 0, currEffortCount = 0;
+      currentPhaseEntries.forEach((entry: any) => {
+        Object.entries(entry.answers || {}).forEach(([qId, val]) => {
+          if (qId.includes('effort') && typeof val === 'number') {
+            currEffortSum += val;
+            currEffortCount++;
+          }
+        });
+      });
+      const currAvgEffort = currEffortCount > 0 ? (currEffortSum / currEffortCount) : null;
 
-      recovery: [],
+      const adaptedPhaseName = activePhaseObj?.title || `Phase ${currentPhaseNum}`;
+      const prevPhaseName = prevPhaseObj?.title || `Phase ${prevPhaseNum}`;
 
-      immunity: [],
+      if (diff > 0) {
+        list.push({
+          id: 'adaptation-impact-positive',
+          title: 'Adapted Plan Impact',
+          text: `After transitioning from "${prevPhaseName}" to "${adaptedPhaseName}", your daily logging consistency increased by ${diff}% (from ${prevConsistency}% to ${currentConsistency}%). This indicates that the adapted targets and trigger anchors are a better fit for your daily flow.`,
+          type: 'success',
+        });
+      } else if (diff < 0) {
+        list.push({
+          id: 'adaptation-impact-friction',
+          title: 'Plan Adaptation Check',
+          text: `Your daily logging consistency has adjusted from ${prevConsistency}% in "${prevPhaseName}" to ${currentConsistency}% in the current "${adaptedPhaseName}". The new phase introduces additional steps that may be creating slight friction. Simplification or adjusting the anchor cue could help restore momentum.`,
+          type: 'info',
+        });
+      } else {
+        list.push({
+          id: 'adaptation-impact-stable',
+          title: 'Adapted Routine Stability',
+          text: `Your daily consistency has stabilized at ${currentConsistency}% following your plan's transition to "${adaptedPhaseName}". Maintaining this steady pace is a strong indicator of routine integration.`,
+          type: 'success',
+        });
+      }
 
-      stress: [],
-
-      activity: [],
-
-    };
-
-    for (const insight of insights) {
-
-      map[insight.category].push(insight);
-
+      if (prevAvgEffort !== null && currAvgEffort !== null) {
+        const effortDiff = prevAvgEffort - currAvgEffort;
+        if (effortDiff > 0.3) {
+          list.push({
+            id: 'effort-reduction',
+            title: 'Friction Reduction',
+            text: `Following your routine adjustment, your average effort score decreased from ${prevAvgEffort.toFixed(1)}/5 to ${currAvgEffort.toFixed(1)}/5. This ${Math.round((effortDiff / prevAvgEffort) * 100)}% reduction in friction shows that the adapted micro-actions are significantly easier to perform.`,
+            type: 'success',
+          });
+        }
+      }
+    } else {
+      if (currentConsistency > 75) {
+        list.push({
+          id: 'first-phase-momentum',
+          title: 'Strong Routine Momentum',
+          text: `You have successfully logged ${currentPhaseEntries.length} out of ${durationDays} days in your first phase, "${activePhaseObj?.title || 'Phase 1'}". Your consistency rate is ${currentConsistency}%, which is excellent for building a durable routine.`,
+          type: 'success',
+        });
+      } else if (currentConsistency > 40) {
+        list.push({
+          id: 'first-phase-building',
+          title: 'Routine Integration',
+          text: `You have logged ${currentPhaseEntries.length} days in "${activePhaseObj?.title || 'Phase 1'}". Your consistency of ${currentConsistency}% shows steady progress. To reduce logging friction, try placing a physical or visual reminder in your daily path.`,
+          type: 'info',
+        });
+      } else {
+        list.push({
+          id: 'first-phase-friction',
+          title: 'Simplification Window',
+          text: `Your initial logging consistency is ${currentConsistency}%. If you find the current routine difficult to remember or execute, you can use the review at the end of this phase to simplify your actions or change the daily trigger anchors.`,
+          type: 'info',
+        });
+      }
     }
 
-    return map;
+    let highEnergyEffortSum = 0;
+    let highEnergyEffortCount = 0;
+    let lowEnergyEffortSum = 0;
+    let lowEnergyEffortCount = 0;
 
-  }, [insights]);
+    entries.forEach((entry: any) => {
+      const answers = entry.answers || {};
+      let energyVal = answers['energy'] ?? answers['observe-energy'];
+      let effortVal = answers['observe-effort'] ?? answers['effort'];
 
+      const energyNum = typeof energyVal === 'number' ? energyVal : (typeof energyVal === 'string' ? parseInt(energyVal, 10) : null);
+      const effortNum = typeof effortVal === 'number' ? effortVal : (typeof effortVal === 'string' ? parseInt(effortVal, 10) : null);
 
-
-  const [expanded, setExpanded] = useState<Record<SectionKey, boolean>>({
-
-    sleep: false,
-
-    recovery: false,
-
-    stress: false,
-
-    prevention: false,
-
-  });
-
-  const [infoVisible, setInfoVisible] = useState(false);
-
-
-
-  const toggle = (key: SectionKey) => {
-
-    setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
-
-  };
-
-
-
-  return (
-
-    <ScrollView style={pageStyles.scroll} contentContainerStyle={contentContainerStyle}>
-
-      <View style={[pageStyle, isDesktop && styles.pageDesktop]}>
-
-        <PageTitle
-
-          title="Body insights"
-
-          accessory={
-
-            <Pressable
-
-              style={({ pressed }) => [styles.infoButton, pressed && styles.infoButtonPressed]}
-
-              onPress={() => setInfoVisible(true)}
-
-              accessibilityRole="button"
-
-              accessibilityLabel="About body insights">
-
-              <SymbolView
-
-                name={{ ios: 'info.circle', android: 'info', web: 'info' }}
-
-                tintColor={palette.teal}
-
-                size={26}
-
-              />
-
-            </Pressable>
-
+      if (energyNum !== null && Number.isFinite(energyNum)) {
+        if (energyNum >= 4) {
+          if (effortNum !== null && Number.isFinite(effortNum)) {
+            highEnergyEffortSum += effortNum;
+            highEnergyEffortCount++;
           }
-
-        />
-
-
-
-        <Modal
-
-          visible={infoVisible}
-
-          transparent
-
-          animationType="fade"
-
-          onRequestClose={() => setInfoVisible(false)}>
-
-          <Pressable style={styles.modalBackdrop} onPress={() => setInfoVisible(false)}>
-
-            <Pressable
-
-              style={[styles.modalCard, isTabletUp && styles.modalCardWide]}
-
-              onPress={(e) => e.stopPropagation()}>
-
-              <View style={styles.modalHeader}>
-
-                <Text style={styles.modalTitle}>How insights work</Text>
-
-                <Pressable
-
-                  onPress={() => setInfoVisible(false)}
-
-                  hitSlop={12}
-
-                  accessibilityRole="button"
-
-                  accessibilityLabel="Close">
-
-                  <SymbolView
-
-                    name={{ ios: 'xmark.circle.fill', android: 'close', web: 'close' }}
-
-                    tintColor={palette.slateMuted}
-
-                    size={28}
-
-                  />
-
-                </Pressable>
-
-              </View>
-
-              <Text style={styles.modalBody}>{INSIGHTS_INFO_TEXT}</Text>
-
-              <Pressable style={styles.modalButton} onPress={() => setInfoVisible(false)}>
-
-                <Text style={styles.modalButtonText}>Got it</Text>
-
-              </Pressable>
-
-            </Pressable>
-
-          </Pressable>
-
-        </Modal>
-
-
-
-        <View style={[styles.legend, isTabletUp && styles.legendWide]}>
-
-          <LegendItem color={flowBlue} label="Cause — what triggered it" wide={isTabletUp} />
-
-          <LegendItem color={flowBlue} label="Effect — what your body is doing" wide={isTabletUp} />
-
-          <LegendItem color={flowBlue} label="Action — what to do next" wide={isTabletUp} />
-
-        </View>
-
-
-
-        <View style={isDesktop && styles.sectionsDesktop}>
-
-          {INSIGHT_SECTIONS.map((section) => {
-
-            const items = grouped[section.category];
-
-            const color = categoryColors[section.category];
-
-            const needsAttention = categoryNeedsAttention(insights, section.category);
-
-
-
-            return (
-
-              <CollapsibleInsightSection
-
-                key={section.key}
-
-                title={section.title}
-
-                color={color}
-
-                count={items.length}
-
-                hideBadge
-
-                needsAttention={needsAttention}
-
-                expanded={expanded[section.key]}
-
-                onToggle={() => toggle(section.key)}
-
-                compact={isDesktop}>
-
-                {items.length > 0 ? (
-
-                  <InsightCardGrid items={items} isTabletUp={isTabletUp} />
-
-                ) : (
-
-                  <View style={styles.emptySection}>
-
-                    <RNText style={styles.emptyText}>
-
-                      {capitalizeSentences('No active insights in this area right now.')}
-
-                    </RNText>
-
-                  </View>
-
-                )}
-
-              </CollapsibleInsightSection>
-
-            );
-
-          })}
-
-        </View>
-
-      </View>
-
-    </ScrollView>
-
-  );
-
+        } else if (energyNum <= 2) {
+          if (effortNum !== null && Number.isFinite(effortNum)) {
+            lowEnergyEffortSum += effortNum;
+            lowEnergyEffortCount++;
+          }
+        }
+      }
+    });
+
+    if (highEnergyEffortCount > 0 && lowEnergyEffortCount > 0) {
+      const highEnergyAvgEffort = highEnergyEffortSum / highEnergyEffortCount;
+      const lowEnergyAvgEffort = lowEnergyEffortSum / lowEnergyEffortCount;
+      const difference = lowEnergyAvgEffort - highEnergyAvgEffort;
+
+      if (difference > 0.5) {
+        list.push({
+          id: 'energy-friction-correlation',
+          title: 'Energy & Friction Link',
+          text: `On low-energy days, your routine resistance increases to ${lowEnergyAvgEffort.toFixed(1)}/5, compared to only ${highEnergyAvgEffort.toFixed(1)}/5 on high-energy days. This indicates that your routine is highly sensitive to fatigue. Focus on restorative triggers and consider a shorter 'backup' version of your routine when tired.`,
+          type: 'info',
+        });
+      }
+    }
+
+    const timeBuckets: Record<string, number> = { Morning: 0, Afternoon: 0, Evening: 0, Night: 0 };
+    let loggedTimesCount = 0;
+
+    entries.forEach((entry: any) => {
+      Object.entries(entry.answers || {}).forEach(([qId, val]) => {
+        if ((qId.includes('pattern-time') || qId.includes('first-scroll') || qId.includes('time')) && typeof val === 'string' && val.includes(':')) {
+          const hr = parseInt(val.split(':')[0], 10);
+          if (!Number.isNaN(hr)) {
+            loggedTimesCount++;
+            if (hr >= 5 && hr < 12) timeBuckets.Morning++;
+            else if (hr >= 12 && hr < 17) timeBuckets.Afternoon++;
+            else if (hr >= 17 && hr < 21) timeBuckets.Evening++;
+            else timeBuckets.Night++;
+          }
+        }
+      });
+    });
+
+    let peakBucket: string | null = null;
+    let maxCount = 0;
+    Object.entries(timeBuckets).forEach(([b, c]) => { if (c > maxCount) { maxCount = c; peakBucket = b; } });
+
+    if (peakBucket && maxCount > 1) {
+      const pct = Math.round((maxCount / loggedTimesCount) * 100);
+      list.push({
+        id: 'peak-completion-window',
+        title: 'Optimal Routine Window',
+        text: `You execute your routine in the ${peakBucket} ${pct}% of the time. This reveals that the ${peakBucket} hours provide your strongest environmental and mental triggers for consistency.`,
+        type: 'info',
+      });
+    }
+
+    return list;
+  }, [planCheckInLog, personalPlan]);
+
+  const planInsights = useMemo(() => {
+    return personalPlan?.insights || [];
+  }, [personalPlan]);
+
+  return {
+    activeHabits,
+    derivedInsights,
+    planInsights,
+  };
 }
-
-
-
-function LegendItem({
-
-  color,
-
-  label,
-
-  wide,
-
-}: {
-
-  color: string;
-
-  label: string;
-
-  wide?: boolean;
-
-}) {
-
-  return (
-
-    <View style={[styles.legendItem, wide && styles.legendItemWide]}>
-
-      <View style={[styles.legendDot, { backgroundColor: color }]} />
-
-      <Text style={[styles.legendText, wide && styles.legendTextWide]}>{label}</Text>
-
-    </View>
-
-  );
-
-}
-
-
 
 const styles = StyleSheet.create({
-
-  pageDesktop: {
-
-    width: '100%',
-
+  contentWrapper: {
+    paddingHorizontal: 4,
+    paddingTop: 16,
+    paddingBottom: 40,
+    gap: 48,
   },
-
-  infoButton: {
-
-    padding: 4,
-
-    marginTop: 2,
-
+  storySection: {
+    marginBottom: 8,
   },
-
-  infoButtonPressed: {
-
-    opacity: 0.6,
-
+  quoteIcon: {
+    marginBottom: 16,
+    opacity: 0.2,
   },
-
-  modalBackdrop: {
-
-    flex: 1,
-
-    backgroundColor: 'rgba(44, 51, 56, 0.45)',
-
-    justifyContent: 'center',
-
-    alignItems: 'center',
-
-    padding: 24,
-
-  },
-
-  modalCard: {
-
-    width: '100%',
-
-    maxWidth: 360,
-
-    backgroundColor: palette.card,
-
-    borderRadius: 16,
-
-    padding: 20,
-
-    borderWidth: 1,
-
-    borderColor: palette.border,
-
-  },
-
-  modalCardWide: {
-
-    maxWidth: 440,
-
-    padding: 24,
-
-  },
-
-  modalHeader: {
-
-    flexDirection: 'row',
-
-    alignItems: 'center',
-
-    justifyContent: 'space-between',
-
-    marginBottom: 14,
-
-    gap: 12,
-
-  },
-
-  modalTitle: {
-
-    fontSize: 18,
-
-    fontWeight: '700',
-
-    color: palette.slate,
-
-    flex: 1,
-
-  },
-
-  modalBody: {
-
-    fontSize: 15,
-
-    lineHeight: 22,
-
-    color: palette.slateMuted,
-
-    marginBottom: 20,
-
-  },
-
-  modalButton: {
-
-    backgroundColor: palette.teal,
-
-    borderRadius: 12,
-
-    paddingVertical: 12,
-
-    alignItems: 'center',
-
-  },
-
-  modalButtonText: {
-
-    color: '#fff',
-
-    fontSize: 16,
-
+  storyText: {
+    fontSize: 22,
+    lineHeight: 34,
     fontWeight: '600',
-
+    color: palette.slate,
+    letterSpacing: -0.5,
   },
-
-  legend: {
-
+  focusSection: {
     backgroundColor: palette.card,
-
-    borderRadius: 12,
-
-    padding: 14,
-
-    marginBottom: 20,
-
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: palette.tealDark,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.04,
+    shadowRadius: 24,
+    elevation: 3,
     borderWidth: 1,
-
-    borderColor: palette.border,
-
-    gap: 8,
-
+    borderColor: 'rgba(0,0,0,0.03)',
   },
-
-  legendWide: {
-
+  proseText: {
+    fontSize: 18,
+    lineHeight: 32,
+    color: palette.slateMuted,
+    fontWeight: '500',
+  },
+  highlightAmber: {
+    color: '#B45309',
+    fontWeight: '700',
+    backgroundColor: '#FEF3C7',
+  },
+  highlightTeal: {
+    color: palette.tealDark,
+    fontWeight: '700',
+    backgroundColor: '#CCFBF1',
+  },
+  insightsSection: {
+    gap: 20,
+  },
+  sectionHeading: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: palette.slate,
+    letterSpacing: -0.5,
+    marginBottom: 4,
+  },
+  insightBlockList: {
+    gap: 24,
+  },
+  cleanInsightRow: {
     flexDirection: 'row',
-
-    gap: 16,
-
-    paddingVertical: 16,
-
-    paddingHorizontal: 20,
-
-  },
-
-  legendItem: {
-
-    flexDirection: 'row',
-
-    alignItems: 'center',
-
-    gap: 10,
-
-  },
-
-  legendItemWide: {
-
-    flex: 1,
-
     alignItems: 'flex-start',
-
+    gap: 16,
   },
-
-  legendDot: {
-
+  bulletDot: {
     width: 8,
-
     height: 8,
-
     borderRadius: 4,
-
-    marginTop: 2,
-
+    backgroundColor: palette.teal,
+    marginTop: 10,
   },
-
-  legendText: {
-
-    fontSize: 13,
-
+  insightItemTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: palette.slate,
+    marginBottom: 6,
+    letterSpacing: -0.3,
+  },
+  cleanInsightText: {
+    fontSize: 16,
+    lineHeight: 26,
     color: palette.slateMuted,
-
-    flex: 1,
-
+    fontWeight: '500',
   },
-
-  legendTextWide: {
-
-    fontSize: 14,
-
-    lineHeight: 20,
-
-  },
-
-  sectionsDesktop: {
-
-    gap: 4,
-
-  },
-
-  cardGrid: {
-
-    width: '100%',
-
-  },
-
-  cardGridWide: {
-
-    flexDirection: 'row',
-
-    flexWrap: 'wrap',
-
-    justifyContent: 'space-between',
-
-    rowGap: 0,
-
-  },
-
-  cardGridItem: {
-
-    width: '48%',
-
-    marginBottom: 12,
-
-  },
-
-  emptySection: {
-
-    backgroundColor: palette.card,
-
-    borderRadius: 12,
-
-    padding: 16,
-
-    borderWidth: 1,
-
-    borderColor: palette.border,
-
-  },
-
   emptyText: {
-
-    fontSize: 14,
-
+    fontSize: 15,
+    lineHeight: 24,
     color: palette.slateMuted,
-
-    textAlign: 'center',
-
+    fontStyle: 'italic',
   },
-
 });
-
 

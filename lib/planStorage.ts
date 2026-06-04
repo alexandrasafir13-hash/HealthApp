@@ -2,8 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { PersonalPlan, PlanGenerationResult } from '@/types/plan';
 
-const PERSONAL_PLAN_KEY = 'healthy:personal-plan';
-const PENDING_PLAN_KEY = 'healthy:pending-plan';
+const PERSONAL_PLAN_KEY = 'healthee:personal-plan';
+const PENDING_PLAN_KEY = 'healthee:pending-plan';
 
 export async function loadPersonalPlan(): Promise<PersonalPlan | null> {
   const raw = await AsyncStorage.getItem(PERSONAL_PLAN_KEY);

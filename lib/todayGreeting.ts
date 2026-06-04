@@ -7,6 +7,10 @@ export function timeGreeting(date = new Date()): string {
 
 export function todayGreetingLine(name?: string): string {
   const greeting = timeGreeting();
-  const first = name?.trim().split(/\s+/)[0];
-  return first ? `${greeting}, ${first}` : greeting;
+  const trimmed = name?.trim();
+  if (!trimmed || trimmed.toLowerCase() === 'guest') {
+    return greeting;
+  }
+  const first = trimmed.split(/\s+/)[0];
+  return `${greeting}, ${first}`;
 }

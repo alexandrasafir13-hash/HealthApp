@@ -1,16 +1,15 @@
 import { findGoalQuestion, labelForGoalAnswer } from '@/data/onboardingGoalQuestions';
 import { improvementGoalsFromHabitIds } from '@/lib/buildHealthInsightsContext';
-import { habitCatalog, medicalConditionCatalog, sexOptions } from '@/data/onboardingOptions';
-import { rankGoalIds } from '@/lib/fallbackRoutine';
-import { UserProfile } from '@/types/onboarding';
+import { habitCatalog, sexOptions } from '@/data/onboardingOptions';
+import { GoalDetails, UserProfile } from '@/types/onboarding';
 
 export interface PlanGenerationContext {
   userProfile: {
-    name: string;
-    age: number;
-    sex: string;
-    weightKg: number;
-    heightCm: number;
+    name?: string;
+    age?: number;
+    sex?: string;
+    weightKg?: number;
+    heightCm?: number;
   };
   selectedGoal: {
     id: string;
@@ -23,14 +22,8 @@ export interface PlanGenerationContext {
   baselineMetrics: { label: string; value: string | number; unit: string | null }[];
   desiredOutcome: string;
   constraints: string[];
-  medicalConditions: string[];
-  medical_flags: string[];
-}
-
-function labelsForConditions(ids: UserProfile['medicalConditionIds']): string[] {
-  return ids
-    .filter((id) => id !== 'none')
-    .map((id) => medicalConditionCatalog.find((c) => c.id === id)?.title ?? id);
+  physicalConcerns: string[];
+  onboardingMessages?: { role: 'user' | 'assistant'; content: string }[];
 }
 
 function baselineMetricsFromProfile(profile: UserProfile, goalId: string) {
@@ -67,9 +60,17 @@ function onboardingAnswersForGoal(profile: UserProfile, goalId: string) {
 }
 
 function constraintsFromProfile(profile: UserProfile): string[] {
-  const constraints = labelsForConditions(profile.medicalConditionIds);
-  if (profile.age >= 65) constraints.push('Age 65+ — keep changes gentle');
-  if (profile.dataMethods.includes('upload')) constraints.push('User may reference uploaded health documents');
+  const constraints: string[] = [];
+  const concerns = (profile.physicalConcernIds ?? [])
+    .filter((id) => id.length > 0)
+    .map((id) =>
+      id
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ')
+    );
+  constraints.push(...concerns);
+  if (profile.age != null && profile.age >= 65) constraints.push('Age 65+ — keep changes gentle');
   return constraints;
 }
 
@@ -77,15 +78,23 @@ export function buildRoutineGenerationContext(profile: UserProfile): PlanGenerat
   const goalId = rankGoalIds(profile.habitIds, profile.goalDetails)[0] ?? profile.habitIds[0] ?? 'sleep-schedule';
   const habit = habitCatalog.find((h) => h.id === goalId);
   const onboardingAnswers = onboardingAnswersForGoal(profile, goalId);
-  const medicalFlags = labelsForConditions(profile.medicalConditionIds);
+
+  const physicalConcerns = (profile.physicalConcernIds ?? [])
+    .filter((id) => id.length > 0)
+    .map((id) =>
+      id
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ')
+    );
 
   return {
     userProfile: {
       name: profile.name,
       age: profile.age,
-      sex: sexOptions.find((o) => o.id === profile.sex)?.label ?? profile.sex,
-      weightKg: Math.round(profile.weightKg),
-      heightCm: Math.round(profile.heightCm),
+      sex: profile.sex ? (sexOptions.find((o) => o.id === profile.sex)?.label ?? profile.sex) : undefined,
+      weightKg: profile.weightKg != null ? Math.round(profile.weightKg) : undefined,
+      heightCm: profile.heightCm != null ? Math.round(profile.heightCm) : undefined,
     },
     selectedGoal: {
       id: goalId,
@@ -98,10 +107,55 @@ export function buildRoutineGenerationContext(profile: UserProfile): PlanGenerat
     baselineMetrics: baselineMetricsFromProfile(profile, goalId),
     desiredOutcome: habit?.reason ?? `Improve ${habit?.title?.toLowerCase() ?? 'this area'}`,
     constraints: constraintsFromProfile(profile),
-    medicalConditions: medicalFlags,
-    medical_flags: medicalFlags,
+    physicalConcerns,
+    onboardingMessages: profile.onboardingMessages,
   };
 }
 
 /** @deprecated alias */
 export type RoutineGenerationContext = PlanGenerationContext;
+
+const GOAL_PRIORITY = [
+  'sleep-schedule',
+  'screen-time',
+  'hydration',
+  'exercise-routine',
+  'eating-habits',
+] as const;
+
+function scoreGoalId(id: string, details: GoalDetails): number {
+  const answers = details[id] ?? {};
+  let score = GOAL_PRIORITY.indexOf(id as (typeof GOAL_PRIORITY)[number]);
+  if (score < 0) score = GOAL_PRIORITY.length;
+
+  if (id === 'sleep-schedule') {
+    const hours = Number.parseFloat(String(answers['sleep-hours'] ?? ''));
+    if (Number.isFinite(hours) && hours < 7) score -= 3;
+    if (answers['sleep-challenge']) score -= 1;
+  }
+  if (id === 'screen-time') {
+    if (answers['phone-hours'] === 'over-6' || answers['phone-hours'] === '4-6') score -= 2;
+    const uses = answers['phone-uses'];
+    if (Array.isArray(uses) && uses.length >= 3) score -= 1;
+  }
+  if (id === 'hydration') {
+    if (answers['water-intake'] === 'under-4') score -= 2;
+    if (Array.isArray(answers['hydration-barriers']) && answers['hydration-barriers'].length > 0) {
+      score -= 1;
+    }
+  }
+  if (id === 'exercise-routine') {
+    if (answers['activity-level'] === 'mostly-sitting') score -= 2;
+  }
+  if (id === 'eating-habits') {
+    if (answers['home-cooked-meals'] === 'rarely' || answers['home-cooked-meals'] === 'some-days') {
+      score -= 1;
+    }
+  }
+
+  return score;
+}
+
+export function rankGoalIds(habitIds: string[], goalDetails: GoalDetails = {}): string[] {
+  return [...habitIds].sort((a, b) => scoreGoalId(a, goalDetails) - scoreGoalId(b, goalDetails));
+}

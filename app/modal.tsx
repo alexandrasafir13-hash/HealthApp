@@ -11,15 +11,15 @@ export default function ModalScreen() {
   return (
     <ScrollView style={pageStyles.scroll} contentContainerStyle={contentContainerStyle}>
       <View style={pageStyle}>
-      <Text style={styles.title}>About Healthy</Text>
+      <Text style={styles.title}>About Healthee</Text>
       <Text style={styles.lead}>
-        Healthy connects your wearables and daily check-ins to explain what your body is doing—and what to do about it.
+        Healthee connects your health logs and daily check-ins to explain what your body is doing—and what to do about it.
       </Text>
 
       <View style={styles.block} lightColor={palette.sageLight} darkColor="#1F2937">
         <Text style={styles.blockTitle}>Our promise</Text>
         <Text style={styles.body}>
-          Every insight follows a predictable flow: Cause → Effect → Action. No mystery scores—just clear explanations and practical steps.
+          No mystery scores—just clear, personalized explanations and practical steps based on your health data.
         </Text>
       </View>
 
@@ -38,7 +38,7 @@ export default function ModalScreen() {
       </View>
 
       <Text style={styles.note}>
-        This demo uses sample data. In production, connect Apple Health, Oura, WHOOP, or Fitbit and log daily check-ins for personalized insights.
+        This demo uses sample data. In production, upload your health documents and log daily check-ins for personalized insights.
       </Text>
 
       <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />

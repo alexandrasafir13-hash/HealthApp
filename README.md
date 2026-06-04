@@ -1,14 +1,14 @@
-# Healthy
+# Healthee
 
-A mobile app that helps you understand your body, prevent sickness, and maintain health by connecting your data and explaining **cause → effect → action**.
+A mobile app that helps you understand your body, prevent sickness, and maintain health by connecting your data and giving you clear explanations and practical steps.
 
 > *"Here's what's happening in your body, and what to do about it."*
 
 ## Features
 
 - **Today** — Body readiness score, top priority insight, and quick access to your routine
-- **Insights** — Every alert follows Cause → Effect → Action with connected wearable signals
-- **Data** — Link Apple Health, Oura, WHOOP, Fitbit, and manual check-ins (demo toggles)
+- **Insights** — Actionable alerts based on your logs and documents
+- **Data** — Upload health documents and log daily check-ins
 - **Routine** — Predictable daily habits and a structured check-in (energy, sleep, stress, symptoms)
 
 ## Run locally
@@ -41,20 +41,19 @@ For production, prefer `EXPO_PUBLIC_HEALTH_INSIGHTS_API_URL` pointing at your ow
 ```
 app/
   (tabs)/          # Main tab screens
-  insight/[id].tsx # Insight detail with full cause→effect→action
+  insight/[id].tsx # Insight detail with rich summary and interactive actions checklist
 components/        # UI building blocks
 context/           # App state (habits, check-ins, completed actions)
-data/              # Mock insights and data sources
+data/              # Onboarding configurations and options
 types/             # TypeScript models
 ```
 
 ## Next steps (production)
 
-- Integrate Apple Health / Health Connect via `react-native-health` or Expo modules
 - Backend for personalized models and historical trends
 - Push notifications for routine reminders and early sickness signals
 - Clinician-reviewed content library for actions
 
 ## Disclaimer
 
-Healthy explains patterns from health data—it does not provide medical diagnosis. Consult a healthcare professional for persistent or severe symptoms.
+Healthee explains patterns from health data—it does not provide medical diagnosis. Consult a healthcare professional for persistent or severe symptoms.

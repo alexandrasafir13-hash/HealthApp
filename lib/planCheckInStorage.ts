@@ -11,7 +11,7 @@ export type PlanCheckInEntry = {
 
 export type PlanCheckInLog = Record<string, PlanCheckInEntry>;
 
-const PLAN_CHECKINS_KEY = 'healthy:plan-checkins';
+const PLAN_CHECKINS_KEY = 'healthee:plan-checkins';
 
 export async function loadPlanCheckInLog(): Promise<PlanCheckInLog> {
   const raw = await AsyncStorage.getItem(PLAN_CHECKINS_KEY);

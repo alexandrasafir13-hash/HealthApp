@@ -1,4 +1,11 @@
 import { useFonts } from 'expo-font';
+import {
+  Nunito_400Regular,
+  Nunito_500Medium,
+  Nunito_600SemiBold,
+  Nunito_700Bold,
+  Nunito_800ExtraBold,
+} from '@expo-google-fonts/nunito';
 import { DarkTheme, DefaultTheme, ThemeProvider, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
@@ -7,6 +14,7 @@ import 'react-native-reanimated';
 import AppShell from '@/components/AppShell';
 import { useColorScheme } from '@/components/useColorScheme';
 import { HealthProvider } from '@/context/HealthContext';
+import { AuthProvider } from '@/context/AuthContext';
 import { palette } from '@/constants/theme';
 
 export { ErrorBoundary } from 'expo-router';
@@ -17,7 +25,7 @@ export const unstable_settings = {
 
 SplashScreen.preventAutoHideAsync();
 
-const HealthyLightTheme = {
+const HealtheeLightTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
@@ -29,7 +37,7 @@ const HealthyLightTheme = {
   },
 };
 
-const HealthyDarkTheme = {
+const HealtheeDarkTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
@@ -44,6 +52,11 @@ const HealthyDarkTheme = {
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    Nunito_400Regular,
+    Nunito_500Medium,
+    Nunito_600SemiBold,
+    Nunito_700Bold,
+    Nunito_800ExtraBold,
   });
 
   useEffect(() => {
@@ -68,18 +81,20 @@ function RootLayoutNav() {
 
   return (
     <AppShell>
-      <HealthProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? HealthyDarkTheme : HealthyLightTheme}>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="welcome" />
-            <Stack.Screen name="onboarding" />
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="insight/[id]" options={{ headerShown: true, title: 'Body insight' }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'About Healthy' }} />
-          </Stack>
-        </ThemeProvider>
-      </HealthProvider>
+      <AuthProvider>
+        <HealthProvider>
+          <ThemeProvider value={colorScheme === 'dark' ? HealtheeDarkTheme : HealtheeLightTheme}>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="plan-ready" />
+              <Stack.Screen name="onboarding" />
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'About Healthee' }} />
+            </Stack>
+          </ThemeProvider>
+        </HealthProvider>
+      </AuthProvider>
     </AppShell>
   );
 }
+

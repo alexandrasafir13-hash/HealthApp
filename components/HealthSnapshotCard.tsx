@@ -1,7 +1,8 @@
 import { type ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/components/Themed';
 
-import { metricScaleColors, palette } from '@/constants/theme';
+import { metricScaleColors, palette, cardShadow } from '@/constants/theme';
 import { HealthSnapshot } from '@/lib/healthSnapshot';
 
 interface Props {
@@ -90,7 +91,7 @@ export default function HealthSnapshotCard({ snapshot, name }: Props) {
 
       <Section
         title="Recommendations"
-        subtitle="Pick the calorie line that matches a typical day — eating about that much helps keep weight steady. Not medical advice.">
+        subtitle="Pick the calorie line that matches a typical day — eating about that much helps keep weight steady.">
         <Stat
           label="Mostly sitting"
           value={`~${recommendations.maintenanceSedentaryKcal.toLocaleString()} kcal`}
@@ -139,6 +140,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: palette.border,
+    ...cardShadow,
   },
   sectionTitle: {
     fontSize: 16,

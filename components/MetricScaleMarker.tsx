@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, View, ViewStyle } from 'react-native';
+import { Text } from '@/components/Themed';
 
 import { capitalizeSentences } from '@/lib/formatText';
 import { metricScaleColors, palette } from '@/constants/theme';
@@ -371,7 +372,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   trackTapRow: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     flexDirection: 'row',
   },
   trackTapZone: {
@@ -385,7 +386,7 @@ const styles = StyleSheet.create({
     marginLeft: -7,
   },
   zones: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     flexDirection: 'row',
   },
   zone: {
@@ -400,11 +401,6 @@ const styles = StyleSheet.create({
     marginTop: -7,
     marginLeft: -7,
     borderWidth: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
-    elevation: 2,
   },
   markerCompact: {
     width: 12,
@@ -432,9 +428,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
     borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: palette.border,
-    backgroundColor: palette.card,
+    backgroundColor: palette.background,
     alignItems: 'center',
     justifyContent: 'center',
   },

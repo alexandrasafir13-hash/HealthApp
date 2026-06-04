@@ -2,12 +2,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { UserProfile } from '@/types/onboarding';
 
-const PROFILE_KEY = 'healthy:user-profile';
+const PROFILE_KEY = 'healthee:user-profile';
 
 function normalizeProfile(raw: UserProfile): UserProfile {
   return {
     ...raw,
-    medicalConditionIds: raw.medicalConditionIds ?? [],
+    physicalConcernIds: raw.physicalConcernIds ?? [],
     goalDetails: raw.goalDetails ?? {},
   };
 }

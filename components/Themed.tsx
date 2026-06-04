@@ -2,7 +2,7 @@
  * Learn more about Light and Dark modes:
  * https://docs.expo.io/guides/color-schemes/
  */
-import { Text as DefaultText, View as DefaultView } from 'react-native';
+import { Text as DefaultText, View as DefaultView, StyleSheet } from 'react-native';
 
 import { capitalizeSentences } from '@/lib/formatText';
 
@@ -32,13 +32,24 @@ export function useThemeColor(
   }
 }
 
+function getFontFamily(fontWeight: any) {
+  if (fontWeight === '800' || fontWeight === '900') return 'Nunito_800ExtraBold';
+  if (fontWeight === '700' || fontWeight === 'bold') return 'Nunito_700Bold';
+  if (fontWeight === '600') return 'Nunito_600SemiBold';
+  if (fontWeight === '500') return 'Nunito_500Medium';
+  return 'Nunito_400Regular';
+}
+
 export function Text(props: TextProps) {
   const { style, lightColor, darkColor, children, ...otherProps } = props;
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
   const content = typeof children === 'string' ? capitalizeSentences(children) : children;
 
+  const flatStyle = StyleSheet.flatten(style) || {};
+  const fontFamily = flatStyle.fontFamily ? undefined : getFontFamily(flatStyle.fontWeight);
+
   return (
-    <DefaultText style={[{ color }, style]} {...otherProps}>
+    <DefaultText style={[{ color, fontFamily }, style]} {...otherProps}>
       {content}
     </DefaultText>
   );

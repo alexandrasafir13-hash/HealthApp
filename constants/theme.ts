@@ -41,15 +41,6 @@ export const severityColors: Record<string, string> = {
   low: palette.low,
 };
 
-/** Cause → Effect → Action flow markers (badges, bullets, legend) */
-export const flowMarkerColor = '#F5C97A';
-/** Readable orange for Cause / Effect / Action labels on white */
-export const flowMarkerLabelColor = '#C8872E';
-
-/** Cause → Effect → Action markers (dots, labels) */
-export const flowBlueLight = '#B8D9F5';
-export const flowBlue = '#7EB3E8';
-export const flowBlueText = '#3D6B9E';
 
 /** Metric scale: good / not good / take action */
 export const metricScaleColors = {
@@ -62,3 +53,20 @@ export const metricScaleColors = {
   action: '#DC2626',
   actionBg: '#FECACA',
 };
+
+export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 32 };
+export const radii = { sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, pill: 9999 };
+export const typography = { 
+  caption: 10, body: 14, subtitle: 16, title: 20, heading: 24, hero: 34 
+};
+
+/**
+ * Ultra-subtle card shadow — just enough lift to separate white cards from
+ * the off-white #F7FAF9 background without being distracting.
+ * Use on any View that has backgroundColor: palette.card.
+ */
+export const cardShadow = {
+  boxShadow: '0px 1px 4px 0px rgba(44, 51, 56, 0.06)',
+  elevation: 2,
+};
+

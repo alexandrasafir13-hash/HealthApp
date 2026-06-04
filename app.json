@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "Healthy",
-    "slug": "healthy",
-    "description": "Understand your body. Connect health data. Cause → effect → action.",
+    "name": "Healthee",
+    "slug": "healthee",
+    "description": "Understand your body. Connect health data. Get clear explanations and practical steps.",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "healthy",
+    "scheme": "healthee",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true
@@ -38,7 +38,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Healthy to access your photos to upload lab test results."
+          "photosPermission": "Allow Healthee to access your photos to upload lab test results."
         }
       ],
       "@react-native-community/datetimepicker"

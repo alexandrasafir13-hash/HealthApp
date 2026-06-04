@@ -1,7 +1,6 @@
 export type InsightSeverity = 'low' | 'medium' | 'high';
 export type InsightCategory = 'sleep' | 'recovery' | 'immunity' | 'stress' | 'activity';
 
-/** Colored inline phrases for friendlier summary copy */
 export type SummaryTone = 'body' | 'metric' | 'sleep' | 'recovery' | 'immunity' | 'stress' | 'caution';
 
 export interface MetricScaleConfig {
@@ -9,17 +8,11 @@ export interface MetricScaleConfig {
   min?: number;
   max?: number;
   unit?: string;
-  /** Shown in the pill (e.g. "−14%"). Falls back to formatted value + unit */
   display?: string;
-  /** When true, lower values are better (e.g. % drop from baseline) */
   lowerIsBetter?: boolean;
-  /** Higher is better: values >= goodMin → green. Default 7 */
   goodMin?: number;
-  /** Higher is better: values >= cautionMin → orange. Default 5.5 */
   cautionMin?: number;
-  /** Lower is better: values <= goodMax → green. Default 5 */
   goodMax?: number;
-  /** Lower is better: values <= cautionMax → orange. Default 12 */
   cautionMax?: number;
 }
 
@@ -70,7 +63,6 @@ export interface DataSource {
   lastSync?: string;
   metrics: string[];
   kind: DataSourceKind;
-  /** Shown on generic “connect any…” cards */
   description?: string;
 }
 
@@ -83,7 +75,6 @@ export interface DeviceCategoryGroup {
 export type CheckInPeriod = 'morning' | 'afternoon' | 'evening';
 
 export interface PeriodCheckIn {
-  /** User-facing feeling word, e.g. Weak, Drained, Steady, Strong, Energized. */
   feeling: string;
   symptoms: string[];
   submittedAt: string;
@@ -92,12 +83,9 @@ export interface PeriodCheckIn {
 export interface DailyCheckIn {
   date: string;
   energy: number;
-  /** Derived from morning check-in when logged. */
   sleepQuality?: number;
-  /** Derived from evening check-in when logged. */
   stress?: number;
   symptoms: string[];
-  /** Per-period check-ins keyed by local-time window (morning / afternoon / evening). */
   periods?: Partial<Record<CheckInPeriod, PeriodCheckIn>>;
 }
 

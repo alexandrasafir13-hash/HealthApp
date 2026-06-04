@@ -15,12 +15,15 @@ export function isHealthInsightsConfigured(): boolean {
 }
 
 export const HEALTH_INSIGHTS_MODEL =
-  process.env.EXPO_PUBLIC_OPENAI_MODEL?.trim() || 'gpt-4o-mini';
+  process.env.EXPO_PUBLIC_OPENAI_MODEL?.trim() || 'gpt-5.4-nano';
 
 export const HEALTH_INSIGHTS_MAX_OUTPUT_TOKENS = Number(
-  process.env.EXPO_PUBLIC_OPENAI_MAX_OUTPUT_TOKENS ?? 1024,
+  process.env.EXPO_PUBLIC_OPENAI_MAX_OUTPUT_TOKENS ?? 2048,
 );
 
 export const HEALTH_INSIGHTS_TEMPERATURE = Number(
   process.env.EXPO_PUBLIC_OPENAI_TEMPERATURE ?? 0.6,
 );
+
+export const HEALTH_INSIGHTS_REASONING_EFFORT =
+  process.env.EXPO_PUBLIC_OPENAI_REASONING_EFFORT?.trim() || 'medium';

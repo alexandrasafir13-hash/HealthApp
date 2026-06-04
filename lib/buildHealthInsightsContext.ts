@@ -1,4 +1,4 @@
-import { dataMethodOptions, habitCatalog, medicalConditionCatalog, sexOptions } from '@/data/onboardingOptions';
+import { dataMethodOptions, habitCatalog, sexOptions } from '@/data/onboardingOptions';
 import { findGoalQuestion, labelForGoalAnswer } from '@/data/onboardingGoalQuestions';
 import {
   computeBmi,
@@ -17,16 +17,13 @@ export interface ImprovementGoal {
   onboardingAnswers?: { question: string; answer: string }[];
 }
 
-/** Only data the user actually entered or chose — sent to the LLM for tips. */
 export interface HealthInsightsContext {
   whatYouEntered: {
     age: number;
     sex: string;
     weightKg: number;
     heightCm: number;
-    medicalConditions: string[];
     dataMethodsTheySelected: string[];
-    uploadedDocuments: { name: string; kind: string; uploadedAt: string }[];
     personalPlan: {
       title: string;
       goalSummary: string;
@@ -46,13 +43,7 @@ export interface HealthInsightsContext {
 }
 
 function labelForSex(sex: UserProfile['sex']): string {
-  return sexOptions.find((o) => o.id === sex)?.label ?? sex;
-}
-
-function labelsForConditions(ids: UserProfile['medicalConditionIds']): string[] {
-  return ids
-    .filter((id) => id !== 'none')
-    .map((id) => medicalConditionCatalog.find((c) => c.id === id)?.title ?? id);
+  return sexOptions.find((o) => o.id === sex)?.label ?? sex ?? 'Not specified';
 }
 
 export function improvementGoalsFromHabitIds(
@@ -103,28 +94,23 @@ function labelsForDataMethods(ids: UserProfile['dataMethods']): string[] {
   return ids.map((id) => dataMethodOptions.find((m) => m.id === id)?.title ?? id);
 }
 
-function uploadedDocumentSummaries(uploads: TestResultUpload[]) {
-  return uploads.map((doc) => ({
-    name: doc.name,
-    kind: doc.kind,
-    uploadedAt: doc.uploadedAt,
-  }));
-}
-
 export function buildHealthInsightsContext(input: {
   profile: UserProfile;
   personalPlan: PersonalPlan | null;
-  uploadedDocuments: TestResultUpload[];
 }): HealthInsightsContext {
-  const { profile, personalPlan, uploadedDocuments } = input;
+  const { profile, personalPlan } = input;
   const activeWeek = personalPlan ? getActivePlanWeek(personalPlan) : null;
 
   const planForLlm = personalPlan
     ? {
         title: planDisplayTitle(personalPlan),
         goalSummary: personalPlan.goalSummary,
-        baselineSummary: personalPlan.baselineSummary,
-        primaryMetric: personalPlan.primaryMetric,
+        baselineSummary: personalPlan.baselineSummary ?? '',
+        primaryMetric: {
+          label: personalPlan.primaryOutcome?.label || 'Progress',
+          unit: personalPlan.primaryOutcome?.unit || null,
+          baselineValue: personalPlan.primaryOutcome?.currentValue ?? null,
+        },
         activeWeekFocus: activeWeek?.focus ?? null,
         activeWeekTarget: activeWeek?.weeklyTarget ?? null,
       }
@@ -132,20 +118,17 @@ export function buildHealthInsightsContext(input: {
 
   return {
     whatYouEntered: {
-      age: profile.age,
+      age: profile.age ?? 0,
       sex: labelForSex(profile.sex),
-      weightKg: Math.round(profile.weightKg),
-      heightCm: Math.round(profile.heightCm),
-      medicalConditions: labelsForConditions(profile.medicalConditionIds),
+      weightKg: profile.weightKg != null ? Math.round(profile.weightKg) : 0,
+      heightCm: profile.heightCm != null ? Math.round(profile.heightCm) : 0,
       dataMethodsTheySelected: labelsForDataMethods(profile.dataMethods),
-      uploadedDocuments: uploadedDocumentSummaries(uploadedDocuments),
       personalPlan: planForLlm,
     },
     wantsToImprove: improvementGoalsFromHabitIds(profile.habitIds, profile.goalDetails),
-    optionalDerivedFromEnteredMeasurements: optionalBmiContext(
-      profile.weightKg,
-      profile.heightCm,
-    ),
+    ...(profile.weightKg != null && profile.heightCm != null
+      ? { optionalDerivedFromEnteredMeasurements: optionalBmiContext(profile.weightKg, profile.heightCm) }
+      : {}),
   };
 }
 

@@ -1,0 +1,19 @@
+{
+  "projects": {
+    "staging": "healthee-ca93d",
+    "production": "healthee-ca93d"
+  },
+  "targets": {
+    "healthee-ca93d": {
+      "hosting": {
+        "staging": [
+          "healthee-ca93d"
+        ],
+        "production": [
+          "behealthy"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

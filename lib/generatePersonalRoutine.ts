@@ -1,138 +1,155 @@
-import { habitCatalog } from '@/data/onboardingOptions';
 import { buildRoutineGenerationContext, PlanGenerationContext } from '@/lib/buildRoutineContext';
-import { buildFallbackAdaptivePlan } from '@/lib/fallbackPlan';
+
 import {
   getHealthInsightsProxyUrl,
   getOpenAiApiKey,
   HEALTH_INSIGHTS_MAX_OUTPUT_TOKENS,
   HEALTH_INSIGHTS_MODEL,
-  HEALTH_INSIGHTS_TEMPERATURE,
-  isHealthInsightsConfigured,
+  HEALTH_INSIGHTS_TEMPERATURE
 } from '@/lib/healthInsightsConfig';
-import { normalizeDailyCheckInQuestion } from '@/lib/checkInQuestion';
 import { parseModelJson } from '@/lib/parseModelJson';
 import { UserProfile } from '@/types/onboarding';
 import {
   AdaptivePlan,
-  AdjustmentAction,
-  AdjustmentCondition,
-  AdjustmentRule,
+  CheckInAnswerType,
   DailyCheckInQuestion,
-  PLAN_WEEK_COUNT,
+  NewAdaptationRule,
+  PlanAction,
   PlanGenerationResult,
+  PlanPhase,
+  PlanReviewRule,
+  PlanSignal,
   PlanWeek,
-  PrimaryMetric,
-  WeekStatus,
+  PrimaryOutcome,
 } from '@/types/plan';
 
 const PLAN_MAX_OUTPUT_TOKENS = Math.max(HEALTH_INSIGHTS_MAX_OUTPUT_TOKENS, 4096);
 
-const LLM_ANSWER_TYPES = ['number', 'scale_1_5', 'single_choice', 'time'] as const;
-
-const ADJUSTMENT_CONDITIONS: AdjustmentCondition[] = ['avg_below', 'avg_above', 'skipped_days_gte'];
-
-const ADJUSTMENT_ACTIONS: AdjustmentAction[] = [
-  'reduce_duration',
-  'shift_cue',
-  'simplify_action',
-  'increase_duration',
-  'add_reminder',
-];
-
-const METRIC_VALUE_SCHEMA = {
-  anyOf: [{ type: 'number' }, { type: 'string' }, { type: 'null' }],
-};
-
-const METRIC_SCHEMA = {
-  type: 'object',
-  properties: {
-    label: { type: 'string' },
-    value: METRIC_VALUE_SCHEMA,
-    unit: { type: ['string', 'null'] },
-  },
-  required: ['label', 'value', 'unit'],
-  additionalProperties: false,
-};
-
-const DAILY_CHECKIN_QUESTION_SCHEMA = {
+const PLAN_ACTION_SCHEMA = {
   type: 'object',
   properties: {
     id: { type: 'string' },
     label: { type: 'string' },
-    type: { type: 'string', enum: LLM_ANSWER_TYPES },
+    trigger: { type: ['string', 'null'] },
+    action: { type: 'string' },
+    duration: { type: ['string', 'null'] },
+    required: { type: 'boolean' },
+  },
+  required: ['id', 'label', 'trigger', 'action', 'duration', 'required'],
+  additionalProperties: false,
+};
+
+const PLAN_SIGNAL_SCHEMA = {
+  type: 'object',
+  properties: {
+    id: { type: 'string' },
+    label: { type: 'string' },
+    computedFromQuestionId: { type: 'string' },
+    direction: { type: 'string', enum: ['higher_is_better', 'lower_is_better', 'stable_is_better'] },
+  },
+  required: ['id', 'label', 'computedFromQuestionId', 'direction'],
+  additionalProperties: false,
+};
+
+const PLAN_REVIEW_RULE_SCHEMA = {
+  type: 'object',
+  properties: {
+    reviewAfterDays: { type: 'number' },
+    progressLooksGoodWhen: { type: 'string' },
+    progressLooksMixedWhen: { type: 'string' },
+    progressLooksPoorWhen: { type: 'string' },
+  },
+  required: ['reviewAfterDays', 'progressLooksGoodWhen', 'progressLooksMixedWhen', 'progressLooksPoorWhen'],
+  additionalProperties: false,
+};
+
+const PLAN_CHECKIN_QUESTION_SCHEMA = {
+  type: 'object',
+  properties: {
+    id: { type: 'string' },
+    label: { type: 'string' },
+    type: { type: 'string', enum: ['number', 'scale_1_5', 'single_choice', 'time', 'boolean'] },
     unit: { type: ['string', 'null'] },
     options: {
-      anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'null' }],
+      anyOf: [
+        { type: 'array', items: { type: 'string' } },
+        { type: 'null' }
+      ]
     },
   },
   required: ['id', 'label', 'type', 'unit', 'options'],
   additionalProperties: false,
 };
 
-const WEEK_ONE_SCHEMA = {
+const PLAN_PHASE_SCHEMA = {
   type: 'object',
   properties: {
-    week: { type: 'number' },
-    status: { type: 'string', enum: ['active'] },
-    focus: { type: 'string' },
-    weeklyTarget: { type: 'string' },
-    whyThisWeek: { type: 'string' },
-    planSteps: {
+    id: { type: 'string' },
+    title: { type: 'string' },
+    purpose: { type: 'string' },
+    durationDays: { type: 'number' },
+    entryCondition: { type: 'string' },
+    exitCondition: { type: 'string' },
+    dailyUserWork: { type: 'string' },
+    actions: {
       type: 'array',
-      items: { type: 'string' },
-      minItems: 3,
-      maxItems: 3,
+      items: PLAN_ACTION_SCHEMA,
     },
-    dailyCheckInQuestions: {
+    checkInQuestions: {
       type: 'array',
-      items: DAILY_CHECKIN_QUESTION_SCHEMA,
-      minItems: 4,
-      maxItems: 4,
+      items: PLAN_CHECKIN_QUESTION_SCHEMA,
     },
-    reviewSignals: {
+    signals: {
       type: 'array',
-      items: { type: 'string' },
-      minItems: 1,
-      maxItems: 3,
+      items: PLAN_SIGNAL_SCHEMA,
     },
+    reviewRule: PLAN_REVIEW_RULE_SCHEMA,
   },
   required: [
-    'week',
-    'status',
-    'focus',
-    'weeklyTarget',
-    'whyThisWeek',
-    'planSteps',
-    'dailyCheckInQuestions',
-    'reviewSignals',
+    'id',
+    'title',
+    'purpose',
+    'durationDays',
+    'entryCondition',
+    'exitCondition',
+    'dailyUserWork',
+    'actions',
+    'checkInQuestions',
+    'signals',
+    'reviewRule',
   ],
   additionalProperties: false,
 };
 
-const WEEK_PROVISIONAL_SCHEMA = {
+const NEW_ADAPTATION_RULE_SCHEMA = {
   type: 'object',
   properties: {
-    week: { type: 'number' },
-    status: { type: 'string', enum: ['provisional'] },
-    focus: { type: 'string' },
-    likelyTarget: { type: 'string' },
-    preview: { type: 'string' },
-    dependsOn: { type: 'string' },
+    id: { type: 'string' },
+    signalId: { type: 'string' },
+    condition: {
+      type: 'string',
+      enum: ['avg_below', 'avg_above', 'completion_below', 'skipped_days_gte', 'value_stable'],
+    },
+    threshold: { type: 'number' },
+    action: {
+      type: 'string',
+      enum: ['continue', 'simplify', 'reduce', 'increase', 'change_trigger', 'add_support', 'repeat_phase'],
+    },
+    instruction: { type: 'string' },
   },
-  required: ['week', 'status', 'focus', 'likelyTarget', 'preview', 'dependsOn'],
+  required: ['id', 'signalId', 'condition', 'threshold', 'action', 'instruction'],
   additionalProperties: false,
 };
 
-const ADAPTATION_RULE_SCHEMA = {
+const PLAN_PRIMARY_OUTCOME_SCHEMA = {
   type: 'object',
   properties: {
-    signal_id: { type: 'string' },
-    condition: { type: 'string', enum: ADJUSTMENT_CONDITIONS },
-    threshold: { type: 'number' },
-    adjustment: { type: 'string', enum: ADJUSTMENT_ACTIONS },
-    instruction: { type: 'string' },
+    label: { type: 'string' },
+    currentValue: { anyOf: [{ type: 'number' }, { type: 'string' }, { type: 'null' }] },
+    desiredValue: { anyOf: [{ type: 'number' }, { type: 'string' }, { type: 'null' }] },
+    unit: { type: ['string', 'null'] },
   },
-  required: ['signal_id', 'condition', 'threshold', 'adjustment', 'instruction'],
+  required: ['label', 'currentValue', 'desiredValue', 'unit'],
   additionalProperties: false,
 };
 
@@ -143,33 +160,39 @@ const PLAN_RESPONSE_SCHEMA = {
       type: 'object',
       properties: {
         id: { type: 'string' },
-        goalId: { type: 'string' },
         goalName: { type: 'string' },
         goalSummary: { type: 'string' },
-        baseline: METRIC_SCHEMA,
-        target: METRIC_SCHEMA,
-        weeks: {
+        reasoningSummary: { type: 'string' },
+        horizonDays: { type: 'number' },
+        primaryOutcome: PLAN_PRIMARY_OUTCOME_SCHEMA,
+        phases: {
           type: 'array',
-          items: { anyOf: [WEEK_ONE_SCHEMA, WEEK_PROVISIONAL_SCHEMA] },
-          minItems: PLAN_WEEK_COUNT,
-          maxItems: PLAN_WEEK_COUNT,
+          items: PLAN_PHASE_SCHEMA,
         },
         adaptationRules: {
           type: 'array',
-          items: ADAPTATION_RULE_SCHEMA,
-          minItems: 3,
-          maxItems: 3,
+          items: NEW_ADAPTATION_RULE_SCHEMA,
+        },
+        safetyNotes: {
+          type: 'array',
+          items: { type: 'string' },
+        },
+        insights: {
+          type: 'array',
+          items: { type: 'string' },
         },
       },
       required: [
         'id',
-        'goalId',
         'goalName',
         'goalSummary',
-        'baseline',
-        'target',
-        'weeks',
+        'reasoningSummary',
+        'horizonDays',
+        'primaryOutcome',
+        'phases',
         'adaptationRules',
+        'safetyNotes',
+        'insights',
       ],
       additionalProperties: false,
     },
@@ -178,350 +201,299 @@ const PLAN_RESPONSE_SCHEMA = {
   additionalProperties: false,
 };
 
-const SYSTEM_PROMPT = `You are a habit plan generator for a wellness app.
-Your only job is to fill a fixed 4-week plan schema with user-specific content.
-You do not invent frameworks. You do not give wellness advice. You fill the template.
+const SYSTEM_PROMPT = `You are a personal OKR designer for a health and lifestyle app.
+Your job is to turn the user's onboarding answers and user story into a practical path.
 
----
+The user story is the source of truth.
 
-FRAMEWORK (immutable — never change this structure):
+Create:
+* several Insights based on the onboarding data
+* one clear Objective
+* 2 to 4 measurable Key Results
+* a phased path
+* concrete actions
+* structured check-ins
+* measurable review rules
 
-Week 1 — Understand: observation only, no behavior change yet.
-  The user watches their current pattern. Nothing is asked of them except noticing.
-  planSteps describe what to OBSERVE, not what to DO differently.
+Use OKR and product-planning logic internally only.
+Do NOT mention OKRs, agile, scrum, sprints, epics, stories, initiatives, backlogs, or tasks in user-facing text.
+DO NOT exceed 45 days maximum for the path.
+DO NOT exceed 10 days maximum for each phase.
+THIS IS NOT A HABBIT BUILDER. DON'T TURN THIS INTO ONE.
 
-Week 2 — Start small: minimum viable version of the target behavior, once per day.
-  Anchored to an existing routine from context_anchors.
-  Duration: 2–5 minutes maximum. No exceptions.
+Think in this order:
+1. Understand the user story: context, problem, outcome.
+2. Define the Objective.
+3. Define concrete Key Results.
+5. Split the path into useful phases.
+6. Add actions, check-ins, signals, and review rules.
 
-Week 3 — Build consistency: same behavior, protect the streak.
-  Add one obstacle plan. Focus is "never miss twice", not performance.
+Key Results must come from the user story.
+They should measure concrete progress, such as but not limited to:
+* action completion
+* frequency
+* duration
+* consistency
+* blocker frequency
+* difficulty
+* follow-through
 
-Week 4 — Test automaticity: reduce reliance on reminders.
-  Did the cue start firing without the app prompt? That's the signal.
+DO NOT use generic health signals unless they fit the stated goal.
+e.g. DO NOT track cravings for a reading goal or sleep for a hydration goal unless the user story makes that relevant.
 
----
+Actions rule:
+Actions MUST follow a logical, historical, or schedule pattern.
+Actions MUST NOT be randomly placed.
 
-PLAN STEPS FORMAT (Week 1 only, exactly 3 steps):
-Each step must follow: "[existing trigger from their life] → [specific observation action] → [takes X seconds/minutes]"
-Example: "After you sit down for dinner → notice what you reach for first → takes 10 seconds"
-No motivational language. No "try to" or "remember to". Concrete trigger + action + duration only.
+Biometrics rule:
+Use biometrics when provided to calibrate safety, difficulty, pacing, realism, and accessibility.
+Do not mention biometrics in user-facing text unless extremely needed for safety or clarity.
+Do not calculate or mention BMI.
 
-CHECK-IN QUESTION TYPE RULES:
-- Did they complete a specific behavior → single_choice, options: ["Yes", "Partially", "No"]
-- Subjective effort, mood, or difficulty → scale_1_5
-- A countable quantity (minutes, glasses, hours) → number + unit
-- A time of day → time
-- Never use short_text — it cannot be aggregated
+Safety rules:
+Do not suggest fasting, severe restriction, supplements, medication, intense exercise, extreme targets, or punishment-based actions.
+Do not diagnose or make clinical/medical claims.
+Respect physical concerns, time limits, emotional constraints, accessibility constraints, food constraints, and movement constraints.
+If the goal is risky, make the path conservative and add a neutral safety note.
+Use biometrics internally, but focus the path on safe behaviors, consistency, manageable effort, and feeling more in control.
 
-ADAPTATION RULES FORMAT (exactly 3):
-Each rule must reference a real check-in question id, a measurable condition, and a named adjustment.
+Writing rules:
+* Use simple language.
+* Use “you” and “your”.
+* Never write “the user” in prose fields.
+* Avoid motivational filler.
+* Avoid vague advice.
+* Avoid clinical/medical language.
+* Keep “reasoningSummary” to one sentence.
+
+Primary outcome:
+Choose the clearest measurable Key Result.
+It must be relevant to the user story.
+Prefer behavior-based outcomes over body-related outcomes.
+
+Actions:
+Each action must say what to do, when to do it, how long it takes if relevant, and whether it is required.
+
+Bad actions:
+* “Be mindful.”
+* “Eat healthier.”
+* “Move more.”
+* “Read more.”
+
+Good actions:
+* “Read for 10 minutes after breakfast.”
+* “Take a 10-minute walk after lunch.”
+* “Put your phone outside the bedroom before you start winding down.”
+
+Check-ins:
+Every check-in question MUST create usable data.
+Every check-in question MUST help the user asses, understand, or move towards their objective.
+Every check-in question MUST NOT ask daily questions about non-daily occuring events.
+e.g. a daily question about a weekly occuring event.
+Every check-in question MUST be about daily routines that help user achieve broader phase outcome.
+
+Allowed types:
+* “number”
+* “scale_1_5”
+* “single_choice”
+* “time”
+* “boolean”
+
+Signals:
+Each signal must be computed from one check-in question.
+Each signal must use:
+
+* “higher_is_better”
+* “lower_is_better”
+* “stable_is_better”
+
+Safety notes:
+Use “safetyNotes” only when relevant.
+If there are no safety concerns, return [].
+
+Return valid JSON only.
+Match this schema exactly.
+Do not add fields.
+Do not remove fields.
+
 {
-  "signal_id": "<id from dailyCheckInQuestions>",
-  "condition": "avg_below" | "avg_above" | "skipped_days_gte",
-  "threshold": number,
-  "adjustment": "reduce_duration" | "shift_cue" | "simplify_action" | "increase_duration" | "add_reminder",
-  "instruction": string  // max 80 chars, plain English, what to change in week 2
-}
-
-WEEKS 2–4 PREVIEW TONE:
-Write as honest prediction, not prescription. "You'll likely..." not "You will...".
-dependsOn must name a specific reviewSignal from Week 1, not a generic statement.
-
----
-
-SAFETY (hard constraints, never violate):
-- No mention of weight, BMI, calories, body size, or appearance
-- No fasting, restriction, or "eat less" framing
-- No supplement or medication suggestions
-- No intense exercise — if movement is the goal, start with walking or stretching only
-- Adapt around every item in medical_flags — if unsure, make the plan gentler
-- If constraints include time scarcity, Week 1 steps must be under 2 minutes each
-
----
-
-OUTPUT: JSON only. No prose. No markdown. No explanation.
-
-SCHEMA:
+"plan": {
+"id": "plan-1",
+"goalName": string,
+"goalSummary": string,
+"reasoningSummary": string,
+"horizonDays": number,
+"primaryOutcome": {
+"label": string,
+"currentValue": number | string | null,
+"desiredValue": number | string | null,
+"unit": string | null
+},
+"phases": [
 {
-  "plan": {
-    "id": "plan-1",
-    "goalId": string,
-    "goalName": string,
-    "goalSummary": string,              // max 120 chars — what changes and why it matters to this user
-    "baseline": {
-      "label": string,
-      "value": number | string | null,
-      "unit": string | null
-    },
-    "target": {
-      "label": string,
-      "value": number | string | null,
-      "unit": string | null
-    },
-    "weeks": [
-      {
-        "week": 1,
-        "status": "active",
-        "focus": string,                // max 60 chars
-        "weeklyTarget": string,         // max 90 chars — what success looks like this week
-        "whyThisWeek": string,          // max 120 chars — why observation before action
-        "planSteps": string[],          // exactly 3, trigger→action→duration format
-        "dailyCheckInQuestions": [
-          {
-            "id": string,
-            "label": string,            // max 70 chars
-            "type": "number" | "scale_1_5" | "single_choice" | "time",
-            "unit": string | null,
-            "options": string[] | null  // only for single_choice
-          }
-        ],                              // exactly 4 questions
-        "reviewSignals": string[]       // max 3, each is a named observable signal
-      },
-      {
-        "week": 2,
-        "status": "provisional",
-        "focus": string,
-        "likelyTarget": string,
-        "preview": string,              // max 120 chars, honest prediction
-        "dependsOn": string             // max 100 chars, must name a Week 1 reviewSignal
-      },
-      {
-        "week": 3,
-        "status": "provisional",
-        "focus": string,
-        "likelyTarget": string,
-        "preview": string,
-        "dependsOn": string
-      },
-      {
-        "week": 4,
-        "status": "provisional",
-        "focus": string,
-        "likelyTarget": string,
-        "preview": string,
-        "dependsOn": string
-      }
-    ],
-    "adaptationRules": [
-      {
-        "signal_id": string,
-        "condition": "avg_below" | "avg_above" | "skipped_days_gte",
-        "threshold": number,
-        "adjustment": "reduce_duration" | "shift_cue" | "simplify_action" | "increase_duration" | "add_reminder",
-        "instruction": string
-      }
-    ]                                   // exactly 3 rules
-  }
-}`;
-
-function formatMetricSummary(
-  prefix: string,
-  raw: Record<string, unknown> | null | undefined,
-): string {
-  if (!raw) return '';
-  const label = String(raw.label ?? '').trim();
-  if (!label) return '';
-  const valueRaw = raw.value;
-  const valueText = valueRaw == null ? 'not set yet' : String(valueRaw);
-  const unit = raw.unit == null ? null : String(raw.unit).trim() || null;
-  return `${prefix}: ${label} — ${valueText}${unit ? ` ${unit}` : ''}`;
+"id": string,
+"title": string,
+"purpose": string,
+"durationDays": number,
+"entryCondition": string,
+"exitCondition": string,
+"dailyUserWork": string,
+"actions": [
+{
+"id": string,
+"label": string,
+"trigger": string | null,
+"action": string,
+"duration": string | null,
+"required": boolean
 }
-
-function parsePrimaryMetric(raw: unknown): PrimaryMetric {
-  if (!raw || typeof raw !== 'object') throw new Error('Plan missing baseline');
-  const obj = raw as Record<string, unknown>;
-  const label = String(obj.label ?? '').trim();
-  if (!label) throw new Error('Plan missing baseline.label');
-  const unitRaw = obj.unit;
-  const unit = unitRaw == null ? null : String(unitRaw).trim() || null;
-  const baselineRaw = obj.baselineValue ?? obj.value;
-  const baselineValue =
-    baselineRaw == null
-      ? null
-      : typeof baselineRaw === 'number' || typeof baselineRaw === 'string'
-        ? baselineRaw
-        : null;
-  return { label, unit, baselineValue };
+],
+"checkInQuestions": [
+{
+"id": string,
+"label": string,
+"type": "number" | "scale_1_5" | "single_choice" | "time" | "boolean",
+"unit": string | null,
+"options": string[] | null
 }
-
-function parsePlanSummaries(planRaw: Record<string, unknown>): {
-  baselineSummary: string;
-  desiredOutcome: string;
-  primaryMetric: PrimaryMetric;
-} {
-  const baselineRaw = planRaw.baseline as Record<string, unknown> | undefined;
-  const targetRaw = planRaw.target as Record<string, unknown> | undefined;
-
-  const baselineSummary =
-    String(planRaw.baselineSummary ?? '').trim() ||
-    formatMetricSummary('Baseline', baselineRaw) ||
-    String((planRaw.startingPoint as { summary?: string } | undefined)?.summary ?? '').trim();
-
-  const desiredOutcome =
-    String(planRaw.desiredOutcome ?? '').trim() || formatMetricSummary('Target', targetRaw);
-
-  const primaryMetric = planRaw.primaryMetric
-    ? parsePrimaryMetric(planRaw.primaryMetric)
-    : parsePrimaryMetric(baselineRaw);
-
-  if (!baselineSummary || !desiredOutcome) {
-    throw new Error('Plan missing baseline or target summary');
-  }
-
-  return { baselineSummary, desiredOutcome, primaryMetric };
+],
+"signals": [
+{
+"id": string,
+"label": string,
+"computedFromQuestionId": string,
+"direction": "higher_is_better" | "lower_is_better" | "stable_is_better"
 }
-
-function parseCheckInQuestion(raw: unknown): DailyCheckInQuestion | null {
-  return normalizeDailyCheckInQuestion(raw);
+],
+"reviewRule": {
+"reviewAfterDays": number,
+"progressLooksGoodWhen": string,
+"progressLooksMixedWhen": string,
+"progressLooksPoorWhen": string
 }
-
-function parseWeek(raw: unknown): PlanWeek | null {
-  if (!raw || typeof raw !== 'object') return null;
-  const obj = raw as Record<string, unknown>;
-  const weekNumber = Number(obj.weekNumber ?? obj.week);
-  const status = String(obj.status ?? '').trim() as WeekStatus;
-  const focus = String(obj.focus ?? '').trim();
-  const weeklyTarget = String(obj.weeklyTarget ?? obj.target ?? obj.likelyTarget ?? '').trim();
-  const whyThisWeek = String(obj.whyThisWeek ?? '').trim() || null;
-  const planSteps = Array.isArray(obj.planSteps)
-    ? obj.planSteps
-        .filter((step): step is string => typeof step === 'string' && step.trim().length > 0)
-        .slice(0, 3)
-    : [];
-  const preview = String(obj.planForTheWeek ?? obj.weeklyStrategy ?? obj.preview ?? '').trim();
-  const dependsOn = String(obj.dependsOn ?? '').trim();
-  const mergedPreview = preview && dependsOn ? `${preview} ${dependsOn}` : preview || dependsOn;
-  const planForTheWeek =
-    planSteps.length > 0
-      ? planSteps.map((step, index) => `${index + 1}. ${step}`).join('\n')
-      : whyThisWeek || mergedPreview;
-
-  if (
-    !Number.isFinite(weekNumber) ||
-    (status !== 'active' && status !== 'provisional') ||
-    !focus ||
-    !weeklyTarget ||
-    !planForTheWeek
-  ) {
-    return null;
-  }
-
-  const dailyCheckInQuestions = Array.isArray(obj.dailyCheckInQuestions)
-    ? obj.dailyCheckInQuestions
-        .map(parseCheckInQuestion)
-        .filter((item): item is DailyCheckInQuestion => item != null)
-    : [];
-
-  const reviewRaw = obj.weeklyReviewSignals ?? obj.endOfWeekReviewSignals ?? obj.reviewSignals;
-  const weeklyReviewSignals = Array.isArray(reviewRaw)
-    ? reviewRaw
-        .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-        .map((item) => item.trim())
-    : [];
-
-  if (weekNumber === 1) {
-    if (status !== 'active') return null;
-    if (planSteps.length !== 3 || dailyCheckInQuestions.length !== 4 || weeklyReviewSignals.length < 1) {
-      return null;
-    }
-  }
-
-  return {
-    weekNumber,
-    status,
-    focus,
-    weeklyTarget,
-    whyThisWeek,
-    planSteps,
-    planForTheWeek,
-    experiments: [],
-    dailyCheckInQuestions: weekNumber === 1 ? dailyCheckInQuestions : [],
-    weeklyReviewSignals: weekNumber === 1 ? weeklyReviewSignals : [],
-  };
 }
-
-function parseAdjustmentRule(raw: unknown): AdjustmentRule | null {
-  if (!raw || typeof raw !== 'object') return null;
-  const obj = raw as Record<string, unknown>;
-
-  const signalId = String(obj.signal_id ?? obj.signalId ?? obj.signal ?? obj.when ?? '').trim();
-  const instruction = String(obj.instruction ?? obj.nextWeekAdjustment ?? obj.then ?? '').trim();
-  const condition = String(obj.condition ?? '').trim() as AdjustmentCondition;
-  const threshold = Number(obj.threshold);
-  const adjustment = String(obj.adjustment ?? '').trim() as AdjustmentAction;
-
-  if (signalId && instruction && ADJUSTMENT_CONDITIONS.includes(condition) && Number.isFinite(threshold) && ADJUSTMENT_ACTIONS.includes(adjustment)) {
-    return { signalId, condition, threshold, adjustment, instruction };
-  }
-
-  if (signalId && instruction) {
-    return {
-      signalId,
-      condition: 'avg_below',
-      threshold: 3,
-      adjustment: 'simplify_action',
-      instruction: instruction.slice(0, 80),
-    };
-  }
-
-  return null;
+],
+"safetyNotes": string[],
+"insights": string[]
 }
+}
+`;
 
 function normalizeAdaptivePlan(raw: unknown, profile: UserProfile): AdaptivePlan {
   if (!raw || typeof raw !== 'object') throw new Error('Invalid plan response');
   const obj = raw as Record<string, unknown>;
   const planRaw = (obj.plan ?? obj) as Record<string, unknown>;
 
-  const goalId = String(planRaw.goalId ?? '').trim();
-  if (!profile.habitIds.includes(goalId)) {
-    throw new Error('Plan picked an invalid goal');
-  }
-
+  const id = String(planRaw.id ?? 'plan-1').trim() || 'plan-1';
   const goalName = String(planRaw.goalName ?? '').trim();
   const goalSummary = String(planRaw.goalSummary ?? '').trim();
-  const id = String(planRaw.id ?? 'plan-1').trim() || 'plan-1';
+  const reasoningSummary = String(planRaw.reasoningSummary ?? '').trim();
+  const horizonDays = Number(planRaw.horizonDays ?? 28);
+  const goalId = profile.habitIds[0] || 'habit-1';
 
   if (!goalName || !goalSummary) {
     throw new Error('Plan missing summary fields');
   }
 
-  const { baselineSummary, desiredOutcome, primaryMetric } = parsePlanSummaries(planRaw);
+  // Parse primaryOutcome
+  const poRaw = planRaw.primaryOutcome as Record<string, any> | undefined;
+  if (!poRaw || !poRaw.label) {
+    throw new Error('Plan missing primary outcome');
+  }
+  const primaryOutcome: PrimaryOutcome = {
+    label: String(poRaw.label),
+    currentValue: poRaw.currentValue ?? null,
+    desiredValue: poRaw.desiredValue ?? null,
+    unit: poRaw.unit ?? null,
+  };
 
-  const weeks = Array.isArray(planRaw.weeks)
-    ? planRaw.weeks
-        .map(parseWeek)
-        .filter((item): item is PlanWeek => item != null)
-        .sort((a, b) => a.weekNumber - b.weekNumber)
-    : [];
-
-  if (weeks.length !== PLAN_WEEK_COUNT) {
-    throw new Error('Plan must include exactly 4 weeks');
+  // Parse phases
+  const phasesRaw = planRaw.phases;
+  if (!Array.isArray(phasesRaw) || phasesRaw.length === 0) {
+    throw new Error('Plan must contain at least one phase');
   }
 
-  const week1 = weeks.find((week) => week.weekNumber === 1);
-  if (!week1 || week1.status !== 'active') {
-    throw new Error('Week 1 must be active');
-  }
+  const phases: PlanPhase[] = phasesRaw.map((pRaw: any, idx: number) => {
+    const actionsRaw = pRaw.actions;
+    const actions: PlanAction[] = Array.isArray(actionsRaw) ? actionsRaw.map((act: any) => ({
+      id: String(act.id || `action-${idx + 1}-${Math.random().toString(36).substr(2, 4)}`),
+      label: String(act.label || act.action || ''),
+      trigger: act.trigger || null,
+      action: String(act.action || act.label || ''),
+      duration: act.duration || null,
+      required: act.required !== false,
+    })) : [];
 
-  const rulesRaw = planRaw.adaptationRules ?? planRaw.adjustmentRules;
-  const adjustmentRules = Array.isArray(rulesRaw)
-    ? rulesRaw.map(parseAdjustmentRule).filter((item): item is AdjustmentRule => item != null)
-    : [];
+    const checkInQuestionsRaw = pRaw.checkInQuestions;
+    const checkInQuestions: DailyCheckInQuestion[] = Array.isArray(checkInQuestionsRaw) ? checkInQuestionsRaw.map((q: any) => {
+      const answerType = String(q.type || q.answerType || 'single_choice') as CheckInAnswerType;
+      return {
+        id: String(q.id),
+        question: String(q.label || q.question || ''),
+        answerType,
+        required: true,
+        options: Array.isArray(q.options) ? q.options.map(String) : null,
+        unit: q.unit || null,
+      };
+    }) : [];
 
-  if (adjustmentRules.length < 1) throw new Error('Plan missing adaptation rules');
+    const signalsRaw = pRaw.signals;
+    const signals: PlanSignal[] = Array.isArray(signalsRaw) ? signalsRaw.map((sig: any) => ({
+      id: String(sig.id),
+      label: String(sig.label),
+      computedFromQuestionId: String(sig.computedFromQuestionId),
+      direction: String(sig.direction || 'higher_is_better') as any,
+    })) : [];
 
-  const habit = habitCatalog.find((h) => h.id === goalId);
+    const rrRaw = pRaw.reviewRule as Record<string, any> | undefined;
+    const reviewRule: PlanReviewRule = {
+      reviewAfterDays: Number(rrRaw?.reviewAfterDays ?? pRaw.durationDays ?? 7),
+      progressLooksGoodWhen: String(rrRaw?.progressLooksGoodWhen ?? ''),
+      progressLooksMixedWhen: String(rrRaw?.progressLooksMixedWhen ?? ''),
+      progressLooksPoorWhen: String(rrRaw?.progressLooksPoorWhen ?? ''),
+    };
+
+    return {
+      id: String(pRaw.id || `phase-${idx + 1}`),
+      title: String(pRaw.title || `Phase ${idx + 1}`),
+      purpose: String(pRaw.purpose || ''),
+      durationDays: Number(pRaw.durationDays || 7),
+      entryCondition: String(pRaw.entryCondition || ''),
+      exitCondition: String(pRaw.exitCondition || ''),
+      dailyUserWork: String(pRaw.dailyUserWork || ''),
+      actions,
+      checkInQuestions,
+      signals,
+      reviewRule,
+    };
+  });
+
+  // Parse adaptationRules
+  const rulesRaw = planRaw.adaptationRules;
+  const adaptationRules: NewAdaptationRule[] = Array.isArray(rulesRaw) ? rulesRaw.map((r: any, idx: number) => ({
+    id: String(r.id || `rule-${idx + 1}`),
+    signalId: String(r.signalId || r.signal_id || ''),
+    condition: String(r.condition || 'avg_below') as any,
+    threshold: Number(r.threshold ?? 3),
+    action: String(r.action || 'simplify') as any,
+    instruction: String(r.instruction || ''),
+  })) : [];
+
+  const safetyNotes = Array.isArray(planRaw.safetyNotes) ? planRaw.safetyNotes.map(String) : [];
+  const insights = Array.isArray(planRaw.insights) ? planRaw.insights.map(String) : [];
+
   return {
     id,
     goalId,
-    goalName: goalName || habit?.title || goalId,
+    goalName,
     goalSummary,
-    baselineSummary,
-    desiredOutcome,
-    primaryMetric,
-    weeks,
-    adjustmentRules,
+    reasoningSummary,
+    horizonDays,
+    primaryOutcome,
+    phases,
+    adaptationRules,
+    safetyNotes,
+    insights,
   };
 }
 
@@ -606,25 +578,377 @@ async function fetchViaOpenAi(
 export async function generateAdaptivePlan(profile: UserProfile): Promise<PlanGenerationResult> {
   const context = buildRoutineGenerationContext(profile);
 
-  if (isHealthInsightsConfigured()) {
-    try {
-      if (getOpenAiApiKey()) {
-        const plan = await fetchViaOpenAi(context, profile);
-        return { plan, generatedAt: new Date().toISOString(), source: 'llm' };
-      }
-      if (getHealthInsightsProxyUrl()) {
-        const plan = await fetchViaProxy(context, profile);
-        return { plan, generatedAt: new Date().toISOString(), source: 'llm' };
-      }
-    } catch {
-      // fall through to local template
-    }
+  if (getOpenAiApiKey()) {
+    const plan = await fetchViaOpenAi(context, profile);
+    return { plan, generatedAt: new Date().toISOString(), source: 'llm' };
+  }
+  if (getHealthInsightsProxyUrl()) {
+    const plan = await fetchViaProxy(context, profile);
+    return { plan, generatedAt: new Date().toISOString(), source: 'llm' };
   }
 
-  return buildFallbackAdaptivePlan(profile.habitIds, profile.goalDetails ?? {});
+  throw new Error('Health insights model/proxy is not configured.');
 }
 
-/** @deprecated Use generateAdaptivePlan */
-export async function generateRoutineProposals(profile: UserProfile) {
-  return generateAdaptivePlan(profile);
+
+const PHASE_ADAPTATION_SYSTEM_PROMPT = `You are a goal-attainment assistant that helps people make practical progress toward personal goals.
+Your job is to review a completed phase and decide what should happen next.
+
+You will receive:
+
+* the user's onboarding context
+* the full current plan
+* the completed phase
+* the user's recorded check-in history for that phase
+* the next planned phase, if one exists
+
+Do not follow a fixed weekly framework.
+Do not force the next phase to match the original plan.
+Do not assume the user should always advance.
+Do not assume the user failed because they missed check-ins.
+Do not invent new goals.
+
+You may decide to:
+
+* advance to the next phase
+* repeat the current phase
+* simplify the next phase
+* increase difficulty
+* change the trigger
+* change the tracking
+* add support
+* insert a new phase
+* end the plan if the goal is already reached
+
+Your decision must be based on the recorded data.
+
+First, evaluate how the completed phase went.
+Then decide the next best step.
+Then return the next active phase the app should show.
+
+The next phase must be concrete, measurable, safe, and renderable by the app.
+
+Safety rules:
+
+* Do not mention weight, BMI, calories, body size, or appearance.
+* Do not suggest fasting, restriction, supplements, medication, or intense exercise.
+* Do not provide diagnosis or clinical/medical claims.
+* Respect all time limits, emotional constraints, and accessibility constraints.
+* If the recorded data suggests risk, overload, or distress, make the next phase easier and recommend professional support in neutral language.
+
+Writing rules:
+
+* Use simple language.
+* Use concrete actions.
+* Avoid motivational filler.
+* Avoid vague advice.
+* Do not ask open-ended text questions unless structured data is not possible.
+* All prose fields are shown directly to the person using the app.
+* Write all prose fields with "you" and "your".
+* Never write "the user" in prose fields.
+* Never describe the person from the outside.
+
+Return JSON only.
+
+Schema:
+
+{
+"phaseReview": {
+"completedPhaseId": string,
+"summary": string,
+"progressStatus": "good" | "mixed" | "poor" | "unclear",
+"dataQuality": "enough_data" | "limited_data" | "not_enough_data",
+"detectedSignals": [
+{
+"signalId": string,
+"label": string,
+"value": number | string | null,
+"interpretation": string
 }
+],
+"mainReason": string
+},
+"decision": {
+"action": "advance" | "repeat_phase" | "simplify_next_phase" | "increase_next_phase" | "change_trigger" | "change_tracking" | "insert_phase" | "end_plan",
+"reason": string
+},
+"nextPhase": {
+"id": string,
+"title": string,
+"purpose": string,
+"durationDays": number,
+"entryCondition": string,
+"exitCondition": string,
+"dailyUserWork": string,
+"actions": [
+{
+"id": string,
+"label": string,
+"trigger": string | null,
+"action": string,
+"duration": string | null,
+"required": boolean
+}
+],
+"checkInQuestions": [
+{
+"id": string,
+"label": string,
+"type": "number" | "scale_1_5" | "single_choice" | "time" | "boolean",
+"unit": string | null,
+"options": string[] | null
+}
+],
+"signals": [
+{
+"id": string,
+"label": string,
+"computedFromQuestionId": string,
+"direction": "higher_is_better" | "lower_is_better" | "stable_is_better"
+}
+],
+"reviewRule": {
+"reviewAfterDays": number,
+"progressLooksGoodWhen": string,
+"progressLooksMixedWhen": string,
+"progressLooksPoorWhen": string
+}
+},
+"planUpdate": {
+"shouldUpdatePlan": boolean,
+"updatedGoalSummary": string | null,
+"removedFuturePhaseIds": string[],
+"insertedAfterPhaseId": string | null
+},
+"safetyNotes": string[]
+}
+
+Before returning the JSON, silently check that:
+
+* The review uses the recorded check-in data.
+* The decision matches the review.
+* The next phase fits the user's goal and current progress.
+* The next phase is not a generic habit-building step unless that is actually appropriate.
+* The check-in questions produce structured data.
+* Every signal references a real check-in question id.
+* The app can render the next phase without extra explanation.
+`;
+
+const PHASE_REVIEW_SIGNAL_SCHEMA = {
+  type: 'object',
+  properties: {
+    signalId: { type: 'string' },
+    label: { type: 'string' },
+    value: { anyOf: [{ type: 'number' }, { type: 'string' }, { type: 'null' }] },
+    interpretation: { type: 'string' },
+  },
+  required: ['signalId', 'label', 'value', 'interpretation'],
+  additionalProperties: false,
+};
+
+const PHASE_REVIEW_SCHEMA = {
+  type: 'object',
+  properties: {
+    completedPhaseId: { type: 'string' },
+    summary: { type: 'string' },
+    progressStatus: { type: 'string', enum: ['good', 'mixed', 'poor', 'unclear'] },
+    dataQuality: { type: 'string', enum: ['enough_data', 'limited_data', 'not_enough_data'] },
+    detectedSignals: {
+      type: 'array',
+      items: PHASE_REVIEW_SIGNAL_SCHEMA,
+    },
+    mainReason: { type: 'string' },
+  },
+  required: ['completedPhaseId', 'summary', 'progressStatus', 'dataQuality', 'detectedSignals', 'mainReason'],
+  additionalProperties: false,
+};
+
+const PHASE_DECISION_SCHEMA = {
+  type: 'object',
+  properties: {
+    action: {
+      type: 'string',
+      enum: ['advance', 'repeat_phase', 'simplify_next_phase', 'increase_next_phase', 'change_trigger', 'change_tracking', 'insert_phase', 'end_plan'],
+    },
+    reason: { type: 'string' },
+  },
+  required: ['action', 'reason'],
+  additionalProperties: false,
+};
+
+const PLAN_UPDATE_SCHEMA = {
+  type: 'object',
+  properties: {
+    shouldUpdatePlan: { type: 'boolean' },
+    updatedGoalSummary: { type: ['string', 'null'] },
+    removedFuturePhaseIds: {
+      type: 'array',
+      items: { type: 'string' },
+    },
+    insertedAfterPhaseId: { type: ['string', 'null'] },
+  },
+  required: ['shouldUpdatePlan', 'updatedGoalSummary', 'removedFuturePhaseIds', 'insertedAfterPhaseId'],
+  additionalProperties: false,
+};
+
+const PHASE_ADAPTATION_RESPONSE_SCHEMA = {
+  type: 'object',
+  properties: {
+    phaseReview: PHASE_REVIEW_SCHEMA,
+    decision: PHASE_DECISION_SCHEMA,
+    nextPhase: PLAN_PHASE_SCHEMA,
+    planUpdate: PLAN_UPDATE_SCHEMA,
+    safetyNotes: {
+      type: 'array',
+      items: { type: 'string' },
+    },
+  },
+  required: ['phaseReview', 'decision', 'nextPhase', 'planUpdate', 'safetyNotes'],
+  additionalProperties: false,
+};
+
+async function fetchWeekAdaptationViaOpenAi(
+  profile: UserProfile,
+  plan: AdaptivePlan,
+  weekNumber: number,
+  checkInEntries: any[]
+): Promise<PlanWeek> {
+  const apiKey = getOpenAiApiKey();
+  if (!apiKey) throw new Error('OpenAI API key not configured');
+
+  const context = {
+    userProfile: {
+      name: profile.name,
+      age: profile.age,
+      sex: profile.sex,
+      habitIds: profile.habitIds,
+      goalDetails: profile.goalDetails,
+    },
+    currentPlan: plan,
+    completedPhaseId: plan.phases?.[weekNumber - 2]?.id || 'phase-1',
+    completedPhase: plan.phases?.[weekNumber - 2] || plan.phases?.[0],
+    checkInHistoryForPhase: checkInEntries,
+    nextPlannedPhase: plan.phases?.[weekNumber - 1] || null,
+  };
+
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: HEALTH_INSIGHTS_MODEL,
+      messages: [
+        { role: 'system', content: PHASE_ADAPTATION_SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: JSON.stringify(context, null, 2),
+        },
+      ],
+      temperature: HEALTH_INSIGHTS_TEMPERATURE,
+      max_completion_tokens: PLAN_MAX_OUTPUT_TOKENS,
+      response_format: {
+        type: 'json_schema',
+        json_schema: {
+          name: 'adapted_phase',
+          strict: true,
+          schema: PHASE_ADAPTATION_RESPONSE_SCHEMA,
+        },
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`OpenAI adaptation request failed (${res.status})`);
+  }
+
+  const data = await res.json();
+  const text = data.choices?.[0]?.message?.content?.trim();
+  if (!text) throw new Error('Empty model response');
+
+  const parsed = parseModelJson(text) as any;
+  const nextPhaseRaw = parsed.nextPhase;
+  if (!nextPhaseRaw) throw new Error('Invalid adapted phase returned by model');
+
+  const actionsRaw = nextPhaseRaw.actions;
+  const actions: PlanAction[] = Array.isArray(actionsRaw) ? actionsRaw.map((act: any, idx: number) => ({
+    id: String(act.id || `action-${weekNumber}-${idx + 1}`),
+    label: String(act.label || act.action || ''),
+    trigger: act.trigger || null,
+    action: String(act.action || act.label || ''),
+    duration: act.duration || null,
+    required: act.required !== false,
+  })) : [];
+
+  const checkInQuestionsRaw = nextPhaseRaw.checkInQuestions;
+  const checkInQuestions: DailyCheckInQuestion[] = Array.isArray(checkInQuestionsRaw) ? checkInQuestionsRaw.map((q: any) => {
+    const answerType = String(q.type || q.answerType || 'single_choice') as CheckInAnswerType;
+    return {
+      id: String(q.id),
+      question: String(q.label || q.question || ''),
+      answerType,
+      required: true,
+      options: Array.isArray(q.options) ? q.options.map(String) : null,
+      unit: q.unit || null,
+    };
+  }) : [];
+
+  const signalsRaw = nextPhaseRaw.signals;
+  const signals: PlanSignal[] = Array.isArray(signalsRaw) ? signalsRaw.map((sig: any) => ({
+    id: String(sig.id),
+    label: String(sig.label),
+    computedFromQuestionId: String(sig.computedFromQuestionId),
+    direction: String(sig.direction || 'higher_is_better') as any,
+  })) : [];
+
+  const rrRaw = nextPhaseRaw.reviewRule as Record<string, any> | undefined;
+  const reviewRule: PlanReviewRule = {
+    reviewAfterDays: Number(rrRaw?.reviewAfterDays ?? nextPhaseRaw.durationDays ?? 7),
+    progressLooksGoodWhen: String(rrRaw?.progressLooksGoodWhen ?? ''),
+    progressLooksMixedWhen: String(rrRaw?.progressLooksMixedWhen ?? ''),
+    progressLooksPoorWhen: String(rrRaw?.progressLooksPoorWhen ?? ''),
+  };
+
+  const parsedPhase: PlanPhase = {
+    id: String(nextPhaseRaw.id || `phase-${weekNumber}`),
+    title: String(nextPhaseRaw.title || `Phase ${weekNumber}`),
+    purpose: String(nextPhaseRaw.purpose || ''),
+    durationDays: Number(nextPhaseRaw.durationDays || 7),
+    entryCondition: String(nextPhaseRaw.entryCondition || ''),
+    exitCondition: String(nextPhaseRaw.exitCondition || ''),
+    dailyUserWork: String(nextPhaseRaw.dailyUserWork || ''),
+    actions,
+    checkInQuestions,
+    signals,
+    reviewRule,
+  };
+
+  const parsedWeek: PlanWeek = {
+    weekNumber,
+    status: 'active',
+    focus: parsedPhase.title,
+    weeklyTarget: parsedPhase.purpose,
+    whyThisWeek: parsedPhase.purpose,
+    planSteps: parsedPhase.actions.map(a => `${a.trigger ? `${a.trigger} → ` : ''}${a.action}${a.duration ? ` → ${a.duration}` : ''}`),
+    planForTheWeek: parsedPhase.dailyUserWork,
+    experiments: [],
+    dailyCheckInQuestions: parsedPhase.checkInQuestions,
+    weeklyReviewSignals: parsedPhase.signals.map(s => s.label),
+  };
+
+  return parsedWeek;
+}
+
+export async function adaptProvisionalWeek(
+  profile: UserProfile,
+  plan: AdaptivePlan,
+  weekNumber: number,
+  checkInEntries: any[]
+): Promise<PlanWeek> {
+  if (getOpenAiApiKey()) {
+    return await fetchWeekAdaptationViaOpenAi(profile, plan, weekNumber, checkInEntries);
+  }
+  throw new Error('Health insights model is not configured.');
+}
+
