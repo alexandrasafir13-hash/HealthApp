@@ -36,3 +36,7 @@ export async function savePendingPlan(result: PlanGenerationResult): Promise<voi
 export async function clearPendingPlan(): Promise<void> {
   await AsyncStorage.removeItem(PENDING_PLAN_KEY);
 }
+
+export async function clearPersonalPlan(): Promise<void> {
+  await AsyncStorage.removeItem(PERSONAL_PLAN_KEY);
+}

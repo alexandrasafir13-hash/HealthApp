@@ -21,6 +21,10 @@ export async function saveCheckInLog(log: CheckInLog): Promise<void> {
   await AsyncStorage.setItem(CHECK_IN_LOG_KEY, JSON.stringify(log));
 }
 
+export async function clearCheckInLog(): Promise<void> {
+  await AsyncStorage.removeItem(CHECK_IN_LOG_KEY);
+}
+
 export async function saveCheckInLogEntry(checkIn: DailyCheckIn): Promise<void> {
   const log = await loadCheckInLog();
   log[checkIn.date] = checkIn;

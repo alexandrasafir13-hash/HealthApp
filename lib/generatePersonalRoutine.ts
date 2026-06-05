@@ -4,7 +4,8 @@ import {
   getHealthInsightsProxyUrl,
   getOpenAiApiKey,
   HEALTH_INSIGHTS_MAX_OUTPUT_TOKENS,
-  HEALTH_INSIGHTS_MODEL,
+  TASK_MODEL,
+  TASK_REASONING_EFFORT,
   HEALTH_INSIGHTS_TEMPERATURE
 } from '@/lib/healthInsightsConfig';
 import { parseModelJson } from '@/lib/parseModelJson';
@@ -203,6 +204,7 @@ const PLAN_RESPONSE_SCHEMA = {
 
 const SYSTEM_PROMPT = `You are a personal OKR designer for a health and lifestyle app.
 Your job is to turn the user's onboarding answers and user story into a practical path.
+Write user-facing text in the same language the user used in their request and profile context. If the language is unclear, use English.
 
 The user story is the source of truth.
 
@@ -389,7 +391,7 @@ function normalizeAdaptivePlan(raw: unknown, profile: UserProfile): AdaptivePlan
   const goalSummary = String(planRaw.goalSummary ?? '').trim();
   const reasoningSummary = String(planRaw.reasoningSummary ?? '').trim();
   const horizonDays = Number(planRaw.horizonDays ?? 28);
-  const goalId = profile.habitIds[0] || 'habit-1';
+  const goalId = (profile as any).habitIds?.[0] || 'habit-1';
 
   if (!goalName || !goalSummary) {
     throw new Error('Plan missing summary fields');
@@ -534,7 +536,7 @@ async function fetchViaOpenAi(
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: HEALTH_INSIGHTS_MODEL,
+      model: TASK_MODEL,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         {
@@ -542,6 +544,7 @@ async function fetchViaOpenAi(
           content: JSON.stringify(context, null, 2),
         },
       ],
+      reasoning_effort: TASK_REASONING_EFFORT,
       temperature: HEALTH_INSIGHTS_TEMPERATURE,
       max_completion_tokens: PLAN_MAX_OUTPUT_TOKENS,
       response_format: {
@@ -593,6 +596,7 @@ export async function generateAdaptivePlan(profile: UserProfile): Promise<PlanGe
 
 const PHASE_ADAPTATION_SYSTEM_PROMPT = `You are a goal-attainment assistant that helps people make practical progress toward personal goals.
 Your job is to review a completed phase and decide what should happen next.
+Write user-facing text in the same language the user used in their request and profile context. If the language is unclear, use English.
 
 You will receive:
 
@@ -821,8 +825,8 @@ async function fetchWeekAdaptationViaOpenAi(
       name: profile.name,
       age: profile.age,
       sex: profile.sex,
-      habitIds: profile.habitIds,
-      goalDetails: profile.goalDetails,
+      habitIds: (profile as any).habitIds,
+      goalDetails: (profile as any).goalDetails,
     },
     currentPlan: plan,
     completedPhaseId: plan.phases?.[weekNumber - 2]?.id || 'phase-1',
@@ -838,7 +842,7 @@ async function fetchWeekAdaptationViaOpenAi(
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: HEALTH_INSIGHTS_MODEL,
+      model: TASK_MODEL,
       messages: [
         { role: 'system', content: PHASE_ADAPTATION_SYSTEM_PROMPT },
         {
@@ -846,6 +850,7 @@ async function fetchWeekAdaptationViaOpenAi(
           content: JSON.stringify(context, null, 2),
         },
       ],
+      reasoning_effort: TASK_REASONING_EFFORT,
       temperature: HEALTH_INSIGHTS_TEMPERATURE,
       max_completion_tokens: PLAN_MAX_OUTPUT_TOKENS,
       response_format: {
@@ -951,4 +956,3 @@ export async function adaptProvisionalWeek(
   }
   throw new Error('Health insights model is not configured.');
 }
-

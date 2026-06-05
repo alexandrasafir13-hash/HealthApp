@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Be Healthy — Investor Deck 2026</title>
+  <meta name="description" content="Be Healthy investor pitch deck 2026. AI-powered personal health workspace for self-management." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+
+    /* ── Tokens ─────────────────────────────────────────────── */
+    :root {
+      --white:   #ffffff;
+      --off:     #f7f6f3;
+      --stone:   #f0ede8;
+      --mist:    #e8e4de;
+      --smoke:   #c8c2b8;
+      --mid:     #8a8278;
+      --ink:     #2b2820;
+      --ink-lt:  #4a453d;
+
+      --sage:    #4a7c59;
+      --sage-lt: #6a9b79;
+      --sage-bg: #eef4f0;
+      --sage-ln: #c8ddd0;
+
+      --blue:    #2d5fa0;
+      --blue-lt: #4a7ec0;
+      --blue-bg: #eef3fa;
+
+      --warm:    #c2600a;
+      --warm-bg: #fdf0e6;
+
+      --serif:  'DM Serif Display', Georgia, serif;
+      --sans:   'DM Sans', system-ui, sans-serif;
+
+      --r:      12px;
+      --r-sm:   6px;
+    }
+
+    /* ── Reset ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      scroll-snap-type: y mandatory;
+      overflow-y: scroll;
+      scroll-behavior: smooth;
+      font-size: 16px;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--white);
+      color: var(--ink);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Slide shell ────────────────────────────────────────── */
+    .slide {
+      width: 100%;
+      min-height: 100vh;
+      scroll-snap-align: start;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 3rem;
+      overflow: hidden;
+    }
+
+    .slide__inner {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 1040px;
+    }
+
+    /* ── Slide backgrounds ──────────────────────────────────── */
+    .bg--white  { background: var(--white); }
+    .bg--off    { background: var(--off); }
+    .bg--stone  { background: var(--stone); }
+    .bg--sage   { background: var(--sage); }
+    .bg--ink    { background: var(--ink); }
+
+    /* ── Typography ─────────────────────────────────────────── */
+    .eyebrow {
+      font-family: var(--sans);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--sage);
+      margin-bottom: 1rem;
+    }
+
+    .eyebrow--white { color: rgba(255,255,255,0.55); }
+
+    h1, .h1 {
+      font-family: var(--serif);
+      font-size: clamp(2.75rem, 5.5vw, 4.5rem);
+      font-weight: 400;
+      line-height: 1.08;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+    }
+
+    h2, .h2 {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      font-weight: 400;
+      line-height: 1.12;
+      color: var(--ink);
+    }
+
+    h3, .h3 {
+      font-family: var(--sans);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 0.35rem;
+    }
+
+    .lead {
+      font-size: clamp(1rem, 1.6vw, 1.175rem);
+      color: var(--ink-lt);
+      font-weight: 300;
+      line-height: 1.65;
+      max-width: 640px;
+    }
+
+    .small {
+      font-size: 0.8rem;
+      color: var(--mid);
+      line-height: 1.5;
+    }
+
+    .italic { font-style: italic; }
+    .serif  { font-family: var(--serif); }
+
+    /* on dark slides */
+    .text--white        { color: var(--white); }
+    .text--white-muted  { color: rgba(255,255,255,0.6); }
+    .text--white-faint  { color: rgba(255,255,255,0.35); }
+
+    /* ── Nav dots ───────────────────────────────────────────── */
+    #nav {
+      position: fixed;
+      right: 1.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 200;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--smoke);
+      cursor: pointer;
+      border: none;
+      padding: 0;
+      transition: background 0.25s, transform 0.25s;
+    }
+
+    .dot.active {
+      background: var(--sage);
+      transform: scale(1.6);
+    }
+
+    /* ── Progress ───────────────────────────────────────────── */
+    #progress {
+      position: fixed;
+      top: 0; left: 0;
+      height: 2px;
+      background: var(--sage);
+      z-index: 300;
+      width: 0;
+      transition: width 0.15s linear;
+    }
+
+    /* ── Counter ────────────────────────────────────────────── */
+    #counter {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      font-size: 0.7rem;
+      color: var(--smoke);
+      z-index: 200;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Dividers ───────────────────────────────────────────── */
+    .rule {
+      width: 32px;
+      height: 2px;
+      background: var(--sage);
+      margin-bottom: 1.75rem;
+    }
+
+    .rule--white { background: rgba(255,255,255,0.35); }
+
+    hr.thin {
+      border: none;
+      border-top: 1px solid var(--mist);
+      margin: 1.5rem 0;
+    }
+
+    hr.thin--white { border-top-color: rgba(255,255,255,0.12); }
+
+    /* ── Fade-in ────────────────────────────────────────────── */
+    .up {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.55s ease, transform 0.55s ease;
+    }
+
+    .up.show { opacity: 1; transform: none; }
+
+    .up.d1 { transition-delay: 0.07s; }
+    .up.d2 { transition-delay: 0.14s; }
+    .up.d3 { transition-delay: 0.21s; }
+    .up.d4 { transition-delay: 0.28s; }
+    .up.d5 { transition-delay: 0.35s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .up { opacity: 1; transform: none; transition: none; }
+    }
+
+    /* ══════════════════════════════════════════════════════════ */
+    /* SLIDE 1 — COVER                                           */
+    /* ══════════════════════════════════════════════════════════ */
+
+    #s1 {
+      background: var(--off);
+      min-height: 100vh;
+    }
+
+    .cover-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: end;
+    }
+
+    @media (max-width: 680px) {
+      .cover-layout { grid-template-columns: 1fr; gap: 2.5rem; }
+    }
+
+    .cover-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--sage);
+      margin-bottom: 1.5rem;
+    }
+
+    .cover-kicker span {
+      display: inline-block;
+      width: 16px;
+      height: 1px;
+      background: var(--sage);
+    }
+
+    .cover-meta {
+      padding-top: 3rem;
+      border-top: 1px solid var(--mist);
+    }
+
+    .cover-meta-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--mid);
+    }
+
+    .tag-chip {
+      display: inline-block;
+      padding: 0.28rem 0.75rem;
+      border-radius: 2rem;
+      border: 1px solid var(--sage-ln);
+      background: var(--sage-bg);
+      color: var(--sage);
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    /* ══════════════════════════════════════════════════════════ */
+    /* SLIDE 2 — PROBLEM                                         */
+    /* ══════════════════════════════════════════════════════════ */
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 680px) { .two-col { grid-template-columns: 1fr; gap: 2rem; } }
+
+    .prob-items { display: flex; flex-direction: column; gap: 0; }
+
+    .prob-item {
+      padding: 1.25rem 0;
+      border-bottom: 1px solid var(--mist);
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .prob-item:first-child { border-top: 1px solid var(--mist); }
+
+    .prob-num {
+      font-family: var(--serif);
+      font-size: 1.25rem;
+      color: var(--smoke);
+      min-width: 28px;
+      margin-top: 2px;
+    }
+
+    /* ══════════════════════════════════════════════════════════ */
+    /* SLIDE 3 — SOLUTION                                        */
+    /* ══════════════════════════════════════════════════════════ */
+
+    .product-frame {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border: 1px solid var(--mist);
+      border-radius: var(--r);
+      overflow: hidden;
+      background: var(--white);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.05);
+    }
+
+    .pf-bar {
+      grid-column: 1 / -1;
+      background: var(--stone);
+      padding: 0.65rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--mist);
+    }
+
+    .pf-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+    }
+
+    .pf-left {
+      padding: 1.25rem 1.5rem;
+      border-right: 1px solid var(--mist);
+    }
+
+    .pf-right {
+      padding: 1.25rem 1.5rem;
+      background: var(--off);
+    }
+
+    .pf-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--smoke);
+      margin-bottom: 0.75rem;
+    }
+
+    .msg {
+      padding: 0.55rem 0.85rem;
+      border-radius: 0.75rem;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      margin-bottom: 0.5rem;
+      max-width: 85%;
+    }
+
+    .msg-u {
+      background: var(--sage-bg);
+      border: 1px solid var(--sage-ln);
+      color: var(--ink);
+      margin-left: auto;
+    }
+
+    .msg-a {
+      background: var(--white);
+      border: 1px solid var(--mist);
+      color: var(--ink-lt);
+    }
+
+    .artifact {
+      background: var(--white);
+      border: 1px solid var(--mist);
+      border-radius: var(--r-sm);
+      padding: 0.9rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .artifact-head {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--sage);
+      margin-bottom: 0.4rem;
+    }
+
+    .artifact-line {
+      font-size: 0.72rem;
+      color: var(--mid);
+      padding: 0.15rem 0;
+    }
+
+    /* ══════════════════════════════════════════════════════════ */
+    /* SLIDE 4 — STATS / WHY NOW                                 */
+    /* ══════════════════════════════════════════════════════════ */
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-top: 2.5rem;
+    }
+
+    @media (max-width: 680px) { .stat-grid { grid-template-columns: 1fr 1fr; } }
+
+    .stat-block {
+      border-top: 2px solid var(--sage);
+      padding-top: 1rem;
+    }
+
+    .stat-num {
+      font-family: var(--serif);
+      font-size: clamp(2.25rem, 4vw, 3rem);
+      line-height: 1;
+      color: var(--ink);
+      margin-bottom: 0.4rem;
+    }
+
+    .stat-desc {
+      font-size: 0.8rem;
+      color: var(--mid);
+      line-height: 1.5;
+    }
+
+    /* ══════════════════════════════════════════════════════════ */
+    /* SLIDE 5 — HOW IT WORKS                                    */
+    /* ══════════════════════════════════════════════════════════ */
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      margin-top: 2.5rem;
+      border: 1px solid var(--mist);
+      border-radius: var(--r);
+      overflow: hidden;
+    }
+
+    @media (max-width: 680px) { .steps { grid-template-columns: 1fr 1fr; } }
+
+    .step {
+      padding: 1.75rem 1.5rem;
+      border-right: 1px solid var(--mist);
+      transition: background 0.2s;
+    }
+
+    .step:last-child { border-right: none; }
+    .step:hover { background: var(--sage-bg); }
+
+    .step-n {
+      font-family: var(--serif);
+      font-size: 1.75rem;
+      color: var(--sage-ln);
+      line-height: 1;
+      margin-bottom: 1rem;
+    }
+
+    .step-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 0.4rem;
+    }
+
+    .step-body {
+      font-size: 0.78rem;
+      color: var(--mid);
+      line-height: 1.55;
+    }
+
+    /* Positioning table */
+    .pos-table {
+      width: 100%;
+      margin-top: 2rem;
+      border-collapse: collapse;
+    }
+
+    .pos-table thead th {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--smoke);
+      text-align: left;
+      padding: 0 0 0.75rem;
+      border-bottom: 1px solid var(--mist);
+    }
+
+    .pos-table tbody td {
+      padding: 0.7rem 0;
+      border-bottom: 1px solid var(--mist);
+      font-size: 0.85rem;
+      vertical-align: top;
+    }
+
+    .pos-table tbody tr:last-child td { border-bottom: none; }
+
+    .pos-use { color: var(--sage); font-weight: 500; }
+    .pos-avoid { color: var(--smoke); text-decoration: line-through; }
+
+    /* ══════════════════════════════════════════════════════════ */
+    /* SLIDE 6 — MARKET                                          */
+    /* ══════════════════════════════════════════════════════════ */
+
+    .market-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 2rem;
+    }
+
+    .market-table th {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--smoke);
+      text-align: left;
+      padding: 0 0 0.75rem;
+      border-bottom: 1px solid var(--mist);
+    }
+
+    .market-table td {
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--mist);
+      vertical-align: middle;
+    }
+
+    .market-table tr:last-child td { border-bottom: none; }
+
+    .mkt-layer { font-weight: 600; font-size: 0.95rem; }
+    .mkt-num { font-family: var(--serif); font-size: 1.4rem; color: var(--sage); }
+    .mkt-arr { font-family: var(--serif); font-size: 1.4rem; color: var(--ink); }
+
+    /* Bar chart */
+    .bar-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .bar-bg {
+      flex: 1;
+      height: 6px;
+      background: var(--mist);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: var(--sage);
+      border-radius: 3px;
+      transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ══════════════════════════════════════════════════════════ */
+    /* SLIDE 7 — COMPETITION                                     */
+    /* ══════════════════════════════════════════════════════════ */
+
+    .comp-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 2rem;
+    }
+
+    .comp-table th {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--smoke);
+      text-align: left;
+      padding: 0 0.75rem 0.75rem;
+      border-bottom: 1px solid var(--mist);
+    }
+
+    .comp-table th:first-child { padding-left: 0; }
+
+    .comp-table td {
+      padding: 0.9rem 0.75rem;
+      border-bottom: 1px solid var(--mist);
+      font-size: 0.82rem;
+      color: var(--ink-lt);
+      vertical-align: top;
+    }
+
+    .comp-table td:first-child { padding-left: 0; font-weight: 600; color: var(--ink); }
+    .comp-table tr:last-child td { border-bottom: none; }
+
+    .comp-table tr.ours td { background: var(--sage-bg); }
+    .comp-table tr.ours td:first-child {
+      color: var(--sage);
+      border-left: 2px solid var(--sage);
+      padding-left: calc(0.75rem - 2px);
+    }
+
+    .comp-table .gap { color: var(--smoke); font-size: 0.78rem; }
+    .comp-table .advantage { color: var(--sage); font-size: 0.78rem; }
+
+    /* ══════════════════════════════════════════════════════════ */
+    /* SLIDE 8 — BUSINESS MODEL                                  */
+    /* ══════════════════════════════════════════════════════════ */
+
+    .bm-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3.5rem;
+      margin-top: 2.5rem;
+    }
+
+    @media (max-width: 680px) { .bm-grid { grid-template-columns: 1fr; gap: 2rem; } }
+
+    .phase-list { display: flex; flex-direction: column; gap: 0; }
+
+    .phase-item {
+      display: flex;
+      gap: 1.25rem;
+      padding: 1.25rem 0;
+      border-bottom: 1px solid var(--mist);
+      align-items: flex-start;
+    }
+
+    .phase-item:first-child { border-top: 1px solid var(--mist); }
+
+    .phase-marker {
+      min-width: 60px;
+      padding: 0.2rem 0.6rem;
+      border-radius: var(--r-sm);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .p-now  { background: var(--sage-bg); color: var(--sage); border: 1px solid var(--sage-ln); }
+    .p-next { background: var(--blue-bg); color: var(--blue); border: 1px solid #c0d3ed; }
+    .p-later{ background: var(--warm-bg); color: var(--warm); border: 1px solid #f0cda8; }
+
+    .rev-items { display: flex; flex-direction: column; gap: 0; }
+
+    .rev-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 0.9rem 0;
+      border-bottom: 1px solid var(--mist);
+      gap: 1rem;
+    }
+
+    .rev-item:first-child { border-top: 1px solid var(--mist); }
+
+    .rev-label { font-size: 0.875rem; font-weight: 500; }
+    .rev-when  { font-size: 0.72rem; color: var(--mid); white-space: nowrap; }
+
+    /* ══════════════════════════════════════════════════════════ */
+    /* SLIDE 9 — TRUST & SAFETY (dark)                           */
+    /* ══════════════════════════════════════════════════════════ */
+
+    #s9 { background: var(--ink); }
+
+    .risk-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3.5rem;
+      margin-top: 2.5rem;
+    }
+
+    @media (max-width: 680px) { .risk-grid { grid-template-columns: 1fr; gap: 2rem; } }
+
+    .risk-items { display: flex; flex-direction: column; gap: 0; }
+
+    .risk-item {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      align-items: flex-start;
+    }
+
+    .risk-item:first-child { border-top: 1px solid rgba(255,255,255,0.08); }
+
+    .risk-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      margin-top: 6px;
+      min-width: 6px;
+    }
+
+    .r-green  { background: #5da87a; }
+    .r-yellow { background: #c9a227; }
+
+    .risk-title { font-size: 0.875rem; font-weight: 500; color: rgba(255,255,255,0.9); margin-bottom: 0.2rem; }
+    .risk-body  { font-size: 0.78rem; color: rgba(255,255,255,0.4); line-height: 1.55; }
+
+    .reg-card {
+      padding: 1.25rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .reg-card:first-child { border-top: 1px solid rgba(255,255,255,0.08); }
+
+    .reg-title { font-size: 0.8rem; font-weight: 600; color: rgba(255,255,255,0.7); margin-bottom: 0.4rem; }
+    .reg-body  { font-size: 0.78rem; color: rgba(255,255,255,0.4); line-height: 1.55; }
+
+    /* ══════════════════════════════════════════════════════════ */
+    /* SLIDE 10 — ROADMAP                                        */
+    /* ══════════════════════════════════════════════════════════ */
+
+    .roadmap-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      margin-top: 2.5rem;
+      border: 1px solid var(--mist);
+      border-radius: var(--r);
+      overflow: hidden;
+    }
+
+    @media (max-width: 760px) { .roadmap-grid { grid-template-columns: 1fr 1fr; } }
+
+    .rm-col {
+      padding: 1.75rem 1.5rem;
+      border-right: 1px solid var(--mist);
+    }
+
+    .rm-col:last-child { border-right: none; }
+
+    .rm-phase {
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--sage);
+      margin-bottom: 0.25rem;
+    }
+
+    .rm-title {
+      font-family: var(--serif);
+      font-size: 1.2rem;
+      color: var(--ink);
+      margin-bottom: 0.15rem;
+    }
+
+    .rm-time {
+      font-size: 0.72rem;
+      color: var(--mid);
+      margin-bottom: 1.25rem;
+    }
+
+    .rm-item {
+      font-size: 0.78rem;
+      color: var(--ink-lt);
+      padding: 0.3rem 0;
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .rm-item::before {
+      content: '–';
+      color: var(--smoke);
+    }
+
+    /* ══════════════════════════════════════════════════════════ */
+    /* SLIDE 11 — THE ASK                                        */
+    /* ══════════════════════════════════════════════════════════ */
+
+    .ask-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      margin-top: 2.5rem;
+    }
+
+    @media (max-width: 680px) { .ask-grid { grid-template-columns: 1fr; gap: 2rem; } }
+
+    .use-items { display: flex; flex-direction: column; gap: 0; }
+
+    .use-item {
+      display: flex;
+      gap: 1.25rem;
+      padding: 1.25rem 0;
+      border-bottom: 1px solid var(--mist);
+      align-items: flex-start;
+    }
+
+    .use-item:first-child { border-top: 1px solid var(--mist); }
+
+    .use-icon {
+      width: 36px; height: 36px; min-width: 36px;
+      border: 1px solid var(--mist);
+      border-radius: var(--r-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      background: var(--white);
+    }
+
+    .thesis-items { display: flex; flex-direction: column; gap: 0; }
+
+    .thesis-item {
+      padding: 1.25rem 0;
+      border-bottom: 1px solid var(--mist);
+    }
+
+    .thesis-item:first-child { border-top: 1px solid var(--mist); }
+
+    .thesis-kw { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sage); margin-bottom: 0.2rem; }
+    .thesis-body { font-size: 0.85rem; color: var(--ink-lt); line-height: 1.55; }
+
+    /* ══════════════════════════════════════════════════════════ */
+    /* SLIDE 12 — CLOSE (sage)                                   */
+    /* ══════════════════════════════════════════════════════════ */
+
+    #s12 { background: var(--sage); }
+
+    .close-inner {
+      max-width: 680px;
+    }
+
+    .close-quote {
+      font-family: var(--serif);
+      font-size: clamp(1.6rem, 3.5vw, 2.6rem);
+      font-weight: 400;
+      font-style: italic;
+      color: rgba(255,255,255,0.9);
+      line-height: 1.3;
+      margin: 2rem 0;
+    }
+
+    .contact-line {
+      font-size: 0.875rem;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .contact-email {
+      color: rgba(255,255,255,0.9);
+      font-weight: 500;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(255,255,255,0.3);
+      padding-bottom: 1px;
+      transition: border-color 0.2s;
+    }
+
+    .contact-email:hover { border-color: rgba(255,255,255,0.8); }
+
+  </style>
+</head>
+<body>
+
+<div id="progress" role="progressbar" aria-label="Deck progress"></div>
+
+<nav id="nav" aria-label="Slide navigation"><!-- filled by JS --></nav>
+
+<div id="counter" aria-live="polite"></div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 1. COVER                                                    -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide bg--off" id="s1" data-slide="1" data-label="Cover">
+  <div class="slide__inner">
+    <div class="cover-layout">
+      <div>
+        <p class="cover-kicker up"><span></span> Investor Deck · 2026</p>
+        <h1 class="up d1">Be Healthy</h1>
+        <p class="lead up d2" style="margin-top:1.25rem;">
+          An AI-powered personal health workspace for people managing recurring conditions — turning scattered data into saveable, reusable action plans.
+        </p>
+        <div style="margin-top:2rem; display:flex; gap:0.5rem; flex-wrap:wrap;" class="up d3">
+          <span class="tag-chip">Seed Stage</span>
+          <span class="tag-chip">Digital Health</span>
+          <span class="tag-chip">Self-Management Copilot</span>
+        </div>
+      </div>
+      <div class="up d2">
+        <div style="background:var(--white); border:1px solid var(--mist); border-radius:var(--r); padding:2rem;">
+          <p class="eyebrow" style="margin-bottom:1.25rem;">One-line pitch</p>
+          <p style="font-family:var(--serif); font-size:1.4rem; line-height:1.4; color:var(--ink);">
+            "The personal health context layer between generic AI chat and formal healthcare."
+          </p>
+          <hr class="thin" style="margin:1.5rem 0;" />
+          <p class="eyebrow" style="margin-bottom:0.75rem;">What we are not</p>
+          <p class="small">Not an AI doctor. Not a symptom checker. Not a clinical decision-maker.<br/>We are a <strong>self-management copilot.</strong></p>
+        </div>
+        <div class="cover-meta up d4">
+          <div class="cover-meta-row">
+            <span>Confidential · For discussion purposes only</span>
+            <span>Not an offer of securities</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 2. PROBLEM                                                  -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide bg--white" id="s2" data-slide="2" data-label="Problem">
+  <div class="slide__inner">
+    <p class="eyebrow up">The Problem</p>
+    <div class="two-col">
+      <div>
+        <div class="rule up d1"></div>
+        <h2 class="up d1">Health data is everywhere. Usable guidance is nowhere.</h2>
+        <p class="lead up d2" style="margin-top:1.25rem; font-size:1rem;">
+          Millions of people manage symptoms, lab results, food choices, routines, and records across completely disconnected tools — with no way to turn any of it into clear next steps.
+        </p>
+      </div>
+      <div class="prob-items up d2">
+        <div class="prob-item">
+          <span class="prob-num">01</span>
+          <div>
+            <h3>Fragmented context</h3>
+            <p class="small">Patient portals, PDFs, food trackers, notes apps — all siloed. No tool unifies them into a coherent picture.</p>
+          </div>
+        </div>
+        <div class="prob-item">
+          <span class="prob-num">02</span>
+          <div>
+            <h3>Generic AI fails health</h3>
+            <p class="small">ChatGPT has no memory of your body. No context of your records. No ability to save plans and follow through.</p>
+          </div>
+        </div>
+        <div class="prob-item">
+          <span class="prob-num">03</span>
+          <div>
+            <h3>Trust and privacy unresolved</h3>
+            <p class="small">77% of AI-health users are concerned about privacy. The opening exists for a purpose-built, privacy-first product.</p>
+          </div>
+        </div>
+        <div class="prob-item">
+          <span class="prob-num">04</span>
+          <div>
+            <h3>Point solutions are too narrow</h3>
+            <p class="small">Symptom checkers, meal planners, and med reminders each solve one slice. No one owns the full workflow.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 3. SOLUTION                                                 -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide bg--off" id="s3" data-slide="3" data-label="Solution">
+  <div class="slide__inner">
+    <p class="eyebrow up">The Solution</p>
+    <div class="two-col" style="margin-bottom:2rem;">
+      <div>
+        <div class="rule up d1"></div>
+        <h2 class="up d1">A personal health workspace. Not just a chatbot.</h2>
+      </div>
+      <div class="up d2">
+        <p class="lead" style="font-size:1rem;">
+          Chat on the left. A generated, saveable artifact on the right. Every conversation becomes a plan, explanation, or routine — one that gets smarter as you add context.
+        </p>
+        <p class="small" style="margin-top:0.75rem;">
+          The chat is the interface. <strong>The moat is the context graph</strong> — profile, documents, extracted providers, and eventually mobile health signals.
+        </p>
+      </div>
+    </div>
+
+    <div class="product-frame up d3" role="img" aria-label="Split-pane health workspace: chat interface on the left, saved artifacts on the right">
+      <div class="pf-bar">
+        <div class="pf-dot" style="background:#e5605a;"></div>
+        <div class="pf-dot" style="background:#f0b429;"></div>
+        <div class="pf-dot" style="background:#57c754;"></div>
+        <span style="font-size:0.7rem; color:var(--smoke); margin-left:0.5rem;">Be Healthy · Health Workspace</span>
+      </div>
+      <div class="pf-left">
+        <p class="pf-label">Chat with context</p>
+        <div class="msg msg-u">My TSH came back at 4.2. What does this mean for my energy?</div>
+        <div class="msg msg-a">Based on your profile and uploaded labs, your TSH is at the upper end of normal. Here's a plain-language summary and 3 questions to prepare for your next appointment...</div>
+        <div class="msg msg-u">Can you build me a thyroid-friendly meal plan for the week?</div>
+        <div class="msg msg-a" style="opacity:0.6; font-style:italic;">Generating meal plan → saving to artifacts…</div>
+      </div>
+      <div class="pf-right">
+        <p class="pf-label">Saved artifacts</p>
+        <div class="artifact">
+          <div class="artifact-head">Lab Summary — June 2026</div>
+          <div class="artifact-line">TSH 4.2 — upper normal, monitor</div>
+          <div class="artifact-line">3 questions prepared for next visit</div>
+          <div class="artifact-line">Δ vs. Feb result: +0.4</div>
+        </div>
+        <div class="artifact">
+          <div class="artifact-head">7-Day Thyroid-Friendly Meal Plan</div>
+          <div class="artifact-line">Iodine + selenium focused</div>
+          <div class="artifact-line">Avoids raw goitrogens</div>
+          <div class="artifact-line">Saved · Reopened 3× in past week</div>
+        </div>
+        <p class="small" style="margin-top:0.75rem;">Context depth: profile + 3 docs + 2 prior sessions</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 4. WHY NOW                                                  -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide bg--white" id="s4" data-slide="4" data-label="Why Now">
+  <div class="slide__inner">
+    <p class="eyebrow up">Why Now</p>
+    <div class="two-col">
+      <div>
+        <div class="rule up d1"></div>
+        <h2 class="up d1">Consumers are already here. Trust is the gap to close.</h2>
+        <p class="lead up d2" style="margin-top:1.25rem; font-size:1rem;">
+          People are adopting AI for health faster than institutions are adapting. The winner will be the product that combines context, structure, and privacy that generic AI cannot offer.
+        </p>
+      </div>
+      <div>
+        <div class="stat-grid up d2" style="margin-top:0;">
+          <div class="stat-block">
+            <div class="stat-num">32%</div>
+            <div class="stat-desc">of U.S. adults used AI for health info in the past year <em>(KFF)</em></div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-num">81%</div>
+            <div class="stat-desc">took at least one action after the interaction <em>(Rock Health)</em></div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-num">65%</div>
+            <div class="stat-desc">of Americans accessed online health records in 2024 <em>(ONC)</em></div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-num">41%</div>
+            <div class="stat-desc">have already uploaded personal medical data into an AI tool <em>(KFF)</em></div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-num">77%</div>
+            <div class="stat-desc">are concerned about privacy — the opening for a purpose-built product <em>(KFF)</em></div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-num">64%</div>
+            <div class="stat-desc">engage with AI health tools weekly or more <em>(Rock Health)</em></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 5. HOW IT WORKS                                            -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide bg--stone" id="s5" data-slide="5" data-label="How It Works">
+  <div class="slide__inner">
+    <p class="eyebrow up">How It Works</p>
+    <div class="two-col" style="margin-bottom:2rem;">
+      <div>
+        <div class="rule up d1"></div>
+        <h2 class="up d1">Context in. Artifacts out. Better every session.</h2>
+      </div>
+      <div class="up d2">
+        <p class="lead" style="font-size:1rem;">A bounded, governed architecture — not open-ended AI. Three defined skills, a six-question intake, and a preview panel that converts conversation into persistent, reusable outputs.</p>
+      </div>
+    </div>
+
+    <div class="steps up d3">
+      <div class="step">
+        <div class="step-n">01</div>
+        <div class="step-title">Build Context</div>
+        <div class="step-body">6-question intake, profile, document uploads, and eventually mobile health signals</div>
+      </div>
+      <div class="step">
+        <div class="step-n">02</div>
+        <div class="step-title">Skill Router</div>
+        <div class="step-body">Request qualified and routed to one of 3 bounded skills — movement, meals, or medical-data explanation</div>
+      </div>
+      <div class="step">
+        <div class="step-n">03</div>
+        <div class="step-title">Generate Artifact</div>
+        <div class="step-body">Personalized output appears in the preview panel — a plan, explanation, or routine</div>
+      </div>
+      <div class="step">
+        <div class="step-n">04</div>
+        <div class="step-title">Save &amp; Return</div>
+        <div class="step-body">Artifacts persist. Users revisit, edit, compare, share. Revisit rate is the north-star KPI.</div>
+      </div>
+    </div>
+
+    <table class="pos-table up d4" aria-label="Positioning guide">
+      <thead>
+        <tr>
+          <th>Use this framing</th>
+          <th>Avoid this framing</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="pos-use">Personal health workspace</td>
+          <td class="pos-avoid">AI doctor</td>
+        </tr>
+        <tr>
+          <td class="pos-use">Self-management copilot</td>
+          <td class="pos-avoid">Diagnostic engine</td>
+        </tr>
+        <tr>
+          <td class="pos-use">Wellness-first, clinically conservative</td>
+          <td class="pos-avoid">Replacing care teams</td>
+        </tr>
+        <tr>
+          <td class="pos-use">Document-to-understanding workflow</td>
+          <td class="pos-avoid">Medical truth oracle</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 6. MARKET                                                   -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide bg--white" id="s6" data-slide="6" data-label="Market">
+  <div class="slide__inner">
+    <p class="eyebrow up">Market Opportunity</p>
+    <div class="two-col" style="margin-bottom:0;">
+      <div>
+        <div class="rule up d1"></div>
+        <h2 class="up d1">A focused wedge with significant upside.</h2>
+        <p class="lead up d2" style="margin-top:1.25rem; font-size:1rem;">
+          We start with one narrow wedge — recurring-condition self-managers who are already digital, already using AI, and already uploading health data.
+        </p>
+        <p class="small up d3" style="margin-top:1rem;">
+          Bottom-up U.S. sizing using CDC, ONC, KFF, and Census data. EU expansion is upside, sized country by country after first launch market. Illustrative — not a forecast.
+        </p>
+        <div style="margin-top:1.5rem;" class="up d4">
+          <p class="small"><strong>Wedge options:</strong> cardiometabolic · thyroid/hormonal · GI · women's health</p>
+          <p class="small" style="margin-top:0.5rem;"><strong>Comp pricing signal:</strong> MyFitnessPal $99/yr · Noom $209/yr — consumers already pay for structured health planning.</p>
+        </div>
+      </div>
+      <div class="up d2">
+        <table class="market-table" aria-label="Market sizing">
+          <thead>
+            <tr>
+              <th>Layer</th>
+              <th>Population</th>
+              <th>Illus. ARR</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="mkt-layer">TAM</div>
+                <div class="small">AI-health U.S. adults</div>
+                <div class="bar-wrap" style="margin-top:0.5rem;">
+                  <div class="bar-bg"><div class="bar-fill" style="width:100%;"></div></div>
+                </div>
+              </td>
+              <td><span class="mkt-num">85.4M</span></td>
+              <td class="small">—</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="mkt-layer">SAM</div>
+                <div class="small">Chronic + digital + AI-ready</div>
+                <div class="bar-wrap" style="margin-top:0.5rem;">
+                  <div class="bar-bg"><div class="bar-fill" style="width:39%;"></div></div>
+                </div>
+              </td>
+              <td><span class="mkt-num">33.3M</span></td>
+              <td class="small">—</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="mkt-layer">SOM</div>
+                <div class="small">3–5 yr reachable (0.5–1.5%)</div>
+                <div class="bar-wrap" style="margin-top:0.5rem;">
+                  <div class="bar-bg"><div class="bar-fill" style="width:5%;"></div></div>
+                </div>
+              </td>
+              <td><span class="mkt-num">167K–500K</span></td>
+              <td><span class="mkt-arr">$24–72M</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="small" style="margin-top:0.75rem;">$144/yr ARPU · EU not included · Replace inputs with real cohort data</p>
+
+        <div style="margin-top:1.5rem; padding:1.25rem; background:var(--off); border-radius:var(--r); border:1px solid var(--mist);">
+          <p class="small"><strong>Rock Health Q1 2026:</strong> $4.0B raised across 110 deals. 59% concentrated in 12 megadeals. Investors want focused, defensible companies — not broad platforms.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 7. COMPETITION                                             -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide bg--off" id="s7" data-slide="7" data-label="Competition">
+  <div class="slide__inner">
+    <p class="eyebrow up">Competitive Landscape</p>
+    <div class="two-col" style="margin-bottom:2rem;">
+      <div>
+        <div class="rule up d1"></div>
+        <h2 class="up d1">Point solutions solve slices. We own the layer.</h2>
+      </div>
+      <div class="up d2">
+        <p class="lead" style="font-size:1rem;">We're not trying to beat each category leader in their lane. The opportunity is the cross-category context layer and artifact workflow that none of them offer.</p>
+      </div>
+    </div>
+
+    <table class="comp-table up d3" aria-label="Competitor comparison">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Focus</th>
+          <th>Gap we target</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="ours">
+          <td>Be Healthy ✦</td>
+          <td class="advantage">Split-pane artifact workflow · document ingestion · bounded skills · longitudinal context graph</td>
+          <td class="advantage">The only product combining context, structure, and reusable outputs in one workflow</td>
+        </tr>
+        <tr>
+          <td>Ada</td>
+          <td>AI symptom assessment & care navigation</td>
+          <td class="gap">No persistent user context or saveable multi-skill artifacts</td>
+        </tr>
+        <tr>
+          <td>Healthily</td>
+          <td>Medically validated navigation (Class IIa EU device)</td>
+          <td class="gap">Enterprise navigation-oriented, not a personal health workspace</td>
+        </tr>
+        <tr>
+          <td>K Health</td>
+          <td>Integrated primary care, clinical AI</td>
+          <td class="gap">Care delivery infrastructure — not self-serve artifact-centric</td>
+        </tr>
+        <tr>
+          <td>MyFitnessPal</td>
+          <td>Nutrition tracking, $99.99/yr</td>
+          <td class="gap">No medical document interpretation or cross-domain health context</td>
+        </tr>
+        <tr>
+          <td>Noom</td>
+          <td>Behavior-change weight management, $209/yr</td>
+          <td class="gap">Single use case. No longitudinal health context beyond weight</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 8. BUSINESS MODEL                                           -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide bg--white" id="s8" data-slide="8" data-label="Business Model">
+  <div class="slide__inner">
+    <p class="eyebrow up">Business Model</p>
+    <div class="two-col" style="margin-bottom:0;">
+      <div>
+        <div class="rule up d1"></div>
+        <h2 class="up d1">Consumer-first. B2B2C upside.</h2>
+        <p class="lead up d2" style="margin-top:1.25rem; font-size:1rem;">Current maturity is MVP. The right launch is consumer-first with disciplined wedge selection — not provider-first or payer-first.</p>
+
+        <div class="phase-list up d3" style="margin-top:1.75rem;">
+          <div class="phase-item">
+            <span class="phase-marker p-now">Now</span>
+            <div>
+              <h3 style="margin-bottom:0.2rem;">DTC freemium → paid subscription</h3>
+              <p class="small">Free chat intake, paid saved artifacts, history, premium plans, document organization</p>
+            </div>
+          </div>
+          <div class="phase-item">
+            <span class="phase-marker p-next">Next</span>
+            <div>
+              <h3 style="margin-bottom:0.2rem;">Condition-specific B2B2C pilots</h3>
+              <p class="small">Digital clinics, cash-pay providers, employer wellness programs. PMPM licensing.</p>
+            </div>
+          </div>
+          <div class="phase-item">
+            <span class="phase-marker p-later">Later</span>
+            <div>
+              <h3 style="margin-bottom:0.2rem;">Provider / EHR integration</h3>
+              <p class="small">SMART on FHIR, appointments, medications, care-management. Requires compliance maturity.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="up d2">
+        <p class="eyebrow" style="margin-bottom:1rem;">Revenue levers</p>
+        <div class="rev-items">
+          <div class="rev-item"><span class="rev-label">Freemium → Paid Subscription</span><span class="rev-when">Now</span></div>
+          <div class="rev-item"><span class="rev-label">Tiered Consumer Plans</span><span class="rev-when">After retention proof</span></div>
+          <div class="rev-item"><span class="rev-label">B2B2C PMPM Licensing</span><span class="rev-when">After wedge fit</span></div>
+          <div class="rev-item"><span class="rev-label">White-labeled Artifact Engine</span><span class="rev-when">Later</span></div>
+          <div class="rev-item" style="opacity:0.5;"><span class="rev-label">Reimbursement-linked workflows</span><span class="rev-when">Much later</span></div>
+        </div>
+
+        <p class="eyebrow" style="margin-top:2rem; margin-bottom:1rem;">Key KPIs</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem 1.5rem;">
+          <p class="small">Artifact save rate</p>
+          <p class="small">Artifact revisit @ D30</p>
+          <p class="small">Free-to-paid conversion</p>
+          <p class="small">D90 retention</p>
+          <p class="small">Unsafe output rate</p>
+          <p class="small">Context depth / user</p>
+        </div>
+        <p class="small" style="margin-top:1rem; padding:1rem; background:var(--sage-bg); border-radius:var(--r-sm); border:1px solid var(--sage-ln);">
+          If users return to saved artifacts, the preview-panel thesis is working. <strong>That is the north-star metric.</strong>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 9. TRUST, SAFETY & REGULATORY (dark)                       -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="s9" data-slide="9" data-label="Trust &amp; Safety">
+  <div class="slide__inner">
+    <p class="eyebrow eyebrow--white up">Trust, Safety &amp; Compliance</p>
+    <div class="two-col" style="margin-bottom:0;">
+      <div>
+        <div class="rule rule--white up d1"></div>
+        <h2 class="text--white up d1">Compliance is part of the product.</h2>
+        <p class="up d2" style="font-size:1rem; color:rgba(255,255,255,0.55); line-height:1.65; margin-top:1.25rem; max-width:420px;">
+          Claims create obligations. The strategy is: wellness-first, clinically conservative, compliance-aware, and progressively validated.
+        </p>
+      </div>
+      <div>
+        <div class="risk-grid up d2" style="margin-top:0;">
+          <div>
+            <p class="eyebrow eyebrow--white" style="margin-bottom:1rem;">Risk mitigations — now</p>
+            <div class="risk-items">
+              <div class="risk-item">
+                <div class="risk-dot r-green"></div>
+                <div>
+                  <div class="risk-title">Wellness-first positioning</div>
+                  <div class="risk-body">FDA enforcement discretion for self-management software without specific treatment suggestions</div>
+                </div>
+              </div>
+              <div class="risk-item">
+                <div class="risk-dot r-green"></div>
+                <div>
+                  <div class="risk-title">Bounded skill architecture</div>
+                  <div class="risk-body">3 defined skills prevent diagnostic drift. Consistent with WHO and NIST guidance.</div>
+                </div>
+              </div>
+              <div class="risk-item">
+                <div class="risk-dot r-green"></div>
+                <div>
+                  <div class="risk-title">Privacy-by-design</div>
+                  <div class="risk-body">Explicit consent, GDPR-aligned, minimal mobile permissions (HealthKit / Health Connect)</div>
+                </div>
+              </div>
+              <div class="risk-item">
+                <div class="risk-dot r-yellow"></div>
+                <div>
+                  <div class="risk-title">Safety layer &amp; escalation logic</div>
+                  <div class="risk-body">Hard-coded crisis pathways, red-flag escalation, confidence-aware UI, refusal policies</div>
+                </div>
+              </div>
+              <div class="risk-item">
+                <div class="risk-dot r-yellow"></div>
+                <div>
+                  <div class="risk-title">Auditability</div>
+                  <div class="risk-body">Log prompt version, model version, source context, output category per generation</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p class="eyebrow eyebrow--white" style="margin-bottom:1rem;">Regulatory landscape</p>
+            <div>
+              <div class="reg-card">
+                <div class="reg-title">🇺🇸 United States</div>
+                <div class="reg-body">FDA enforcement discretion for lower-risk self-management software. FTC Health Breach Notification Rule applies. GoodRx enforcement = real risk for ad-based health data use.</div>
+              </div>
+              <div class="reg-card">
+                <div class="reg-title">🇪🇺 European Union</div>
+                <div class="reg-body">AI Act in force Aug 2024, broadly applicable Aug 2026. MDR/IVDR classification by intended purpose. EHDS in force March 2025. GDPR: health data is special category.</div>
+              </div>
+              <div class="reg-card" style="border-bottom:none;">
+                <div class="reg-title" style="color:rgba(255,255,255,0.5);">Medical-data interpretation skill stays educational</div>
+                <div class="reg-body">Lab explanation in plain language · question prep for clinical visits · care navigation when red flags appear — never diagnosis.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 10. ROADMAP                                                 -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide bg--off" id="s10" data-slide="10" data-label="Roadmap">
+  <div class="slide__inner">
+    <p class="eyebrow up">Roadmap</p>
+    <div class="two-col" style="margin-bottom:2rem;">
+      <div>
+        <div class="rule up d1"></div>
+        <h2 class="up d1">Disciplined sequencing. Proof before scale.</h2>
+      </div>
+      <div class="up d2">
+        <p class="lead" style="font-size:1rem;">The roadmap matches the product's actual maturity — not an assumed clinical readiness. Each phase unlocks the next only when retention data supports it.</p>
+      </div>
+    </div>
+
+    <div class="roadmap-grid up d3">
+      <div class="rm-col">
+        <div class="rm-phase">Phase 1</div>
+        <div class="rm-title">Foundation</div>
+        <div class="rm-time">Now → Q3 2026</div>
+        <div class="rm-item">Narrow wedge selection & messaging</div>
+        <div class="rm-item">Safety architecture & audit logging</div>
+        <div class="rm-item">MVP instrumentation & cohort analytics</div>
+        <div class="rm-item">20–30 user concierge pilot</div>
+      </div>
+      <div class="rm-col">
+        <div class="rm-phase">Phase 2</div>
+        <div class="rm-title">Consumer</div>
+        <div class="rm-time">Q3 → Q4 2026</div>
+        <div class="rm-item">Document ingestion hardening</div>
+        <div class="rm-item">Saved artifact library & revisit UX</div>
+        <div class="rm-item">Paid subscription test</div>
+        <div class="rm-item">Context depth A/B test</div>
+      </div>
+      <div class="rm-col">
+        <div class="rm-phase">Phase 3</div>
+        <div class="rm-title">Mobile</div>
+        <div class="rm-time">Q1 → Q2 2027</div>
+        <div class="rm-item">iOS HealthKit read-only beta</div>
+        <div class="rm-item">Android Health Connect beta</div>
+        <div class="rm-item">Mobile artifact workflow</div>
+        <div class="rm-item">Medication module prototype</div>
+      </div>
+      <div class="rm-col">
+        <div class="rm-phase">Phase 4</div>
+        <div class="rm-title">Expansion</div>
+        <div class="rm-time">H2 2027</div>
+        <div class="rm-item">Appointment workflow prototype</div>
+        <div class="rm-item">First B2B2C pilot</div>
+        <div class="rm-item">SMART on FHIR discovery</div>
+        <div class="rm-item">Regulatory decision point</div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; margin-top:2rem; border-top:1px solid var(--mist); padding-top:1.5rem;" class="up d4">
+      <div>
+        <p class="eyebrow" style="margin-bottom:0.35rem;">North-star KPI</p>
+        <p style="font-size:0.875rem; font-weight:500;">Artifact revisit rate @ D30</p>
+        <p class="small" style="margin-top:0.2rem;">If users return to saved outputs, the moat is real.</p>
+      </div>
+      <div>
+        <p class="eyebrow" style="margin-bottom:0.35rem;">Retention hypothesis</p>
+        <p style="font-size:0.875rem; font-weight:500;">Context depth → better output → higher retention</p>
+        <p class="small" style="margin-top:0.2rem;">Prove this A/B loop in Phase 2.</p>
+      </div>
+      <div>
+        <p class="eyebrow" style="margin-bottom:0.35rem;">Safety gate</p>
+        <p style="font-size:0.875rem; font-weight:500;">Red-team pass before every growth push</p>
+        <p class="small" style="margin-top:0.2rem;">Easier before growth than after.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 11. THE ASK                                                 -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide bg--white" id="s11" data-slide="11" data-label="The Ask">
+  <div class="slide__inner">
+    <p class="eyebrow up">The Ask</p>
+    <div class="two-col" style="margin-bottom:0;">
+      <div>
+        <div class="rule up d1"></div>
+        <h2 class="up d1">What this round unlocks.</h2>
+        <p class="lead up d2" style="margin-top:1.25rem; font-size:1rem;">
+          Seed capital to validate the core artifact-and-context thesis with a focused cohort — before expanding to mobile, B2B2C, and broader clinical integrations.
+        </p>
+
+        <div class="use-items up d3" style="margin-top:1.75rem;">
+          <div class="use-item">
+            <div class="use-icon">🔬</div>
+            <div>
+              <h3>Validate the wedge</h3>
+              <p class="small">20–30 user concierge pilot with one recurring-condition profile. Prove artifact reuse and the core "job to be done."</p>
+            </div>
+          </div>
+          <div class="use-item">
+            <div class="use-icon">📱</div>
+            <div>
+              <h3>Launch mobile (read-only first)</h3>
+              <p class="small">iOS HealthKit + Android Health Connect. Minimal permissions. Purpose-limited from day one.</p>
+            </div>
+          </div>
+          <div class="use-item">
+            <div class="use-icon">💳</div>
+            <div>
+              <h3>Prove paid conversion</h3>
+              <p class="small">Activation, artifact retention, free-to-paid conversion, and safety metrics before the Series A story.</p>
+            </div>
+          </div>
+          <div class="use-item">
+            <div class="use-icon">🛡</div>
+            <div>
+              <h3>Harden safety infrastructure</h3>
+              <p class="small">Audit logging, red-team protocols, escalation logic, and provenance before growth acceleration.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="up d2">
+        <p class="eyebrow" style="margin-bottom:1.25rem;">Why Be Healthy wins</p>
+        <div class="thesis-items">
+          <div class="thesis-item">
+            <div class="thesis-kw">The Context Graph</div>
+            <div class="thesis-body">Profile + documents + extracted providers + future mobile signals = compounding personalization that generic AI cannot replicate</div>
+          </div>
+          <div class="thesis-item">
+            <div class="thesis-kw">The Artifact Layer</div>
+            <div class="thesis-body">Reusable plans, explanations, and routines are harder to replace than answers. That is the retention moat.</div>
+          </div>
+          <div class="thesis-item">
+            <div class="thesis-kw">The Bounded Architecture</div>
+            <div class="thesis-body">Three well-defined skills create the right operating envelope — trustworthy, defensible, and compliant</div>
+          </div>
+          <div class="thesis-item">
+            <div class="thesis-kw">The Market Timing</div>
+            <div class="thesis-body">Consumers are already here. Trust is the gap. A focused, privacy-first, artifact-centric product is positioned to win it.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 12. CLOSE                                                   -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="s12" data-slide="12" data-label="Close">
+  <div class="slide__inner">
+    <div class="close-inner">
+      <p class="eyebrow eyebrow--white up">Be Healthy · 2026</p>
+      <div class="rule rule--white up d1"></div>
+      <p class="close-quote up d2">
+        "The step between fragmented health data and usable action."
+      </p>
+      <p class="up d3" style="font-size:1rem; color:rgba(255,255,255,0.6); line-height:1.65; max-width:560px;">
+        If we prove one narrow wedge, show that users repeatedly return to saved outputs, and demonstrate disciplined privacy and safety controls — that is a credible seed-stage story.
+      </p>
+      <hr class="thin--white up d4" style="border-top:1px solid rgba(255,255,255,0.15); margin:2rem 0;" />
+      <p class="contact-line up d4">
+        Get in touch: <a href="mailto:hello@behealthy.app" class="contact-email" id="cta-email">hello@behealthy.app</a>
+      </p>
+      <p class="up d5" style="font-size:0.7rem; color:rgba(255,255,255,0.25); margin-top:2.5rem;">
+        Confidential · For discussion purposes only · Not an offer of securities
+      </p>
+    </div>
+  </div>
+</section>
+
+<script>
+  // ── Nav & progress ──────────────────────────────────────────
+  const slides   = [...document.querySelectorAll('.slide[data-slide]')];
+  const navEl    = document.getElementById('nav');
+  const progEl   = document.getElementById('progress');
+  const countEl  = document.getElementById('counter');
+  const total    = slides.length;
+
+  slides.forEach((s, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'dot';
+    btn.setAttribute('aria-label', `Slide ${i + 1}: ${s.dataset.label}`);
+    btn.addEventListener('click', () => s.scrollIntoView({ behavior: 'smooth' }));
+    navEl.appendChild(btn);
+  });
+
+  const dots = [...navEl.querySelectorAll('.dot')];
+
+  function setActive(i) {
+    dots.forEach((d, j) => d.classList.toggle('active', j === i));
+    progEl.style.width = (i / (total - 1) * 100) + '%';
+    countEl.textContent = `${i + 1} / ${total}`;
+  }
+
+  // ── Intersection: active slide ──────────────────────────────
+  let current = 0;
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        current = +e.target.dataset.slide - 1;
+        setActive(current);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  slides.forEach(s => io.observe(s));
+
+  // ── Intersection: fade-in ───────────────────────────────────
+  const upEls = document.querySelectorAll('.up');
+  const upIo  = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('show');
+        upIo.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+  upEls.forEach(el => upIo.observe(el));
+
+  // ── Keyboard ────────────────────────────────────────────────
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+      e.preventDefault();
+      slides[Math.min(current + 1, total - 1)]?.scrollIntoView({ behavior: 'smooth' });
+    }
+    if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+      e.preventDefault();
+      slides[Math.max(current - 1, 0)]?.scrollIntoView({ behavior: 'smooth' });
+    }
+    if (e.key === 'f' || e.key === 'F') {
+      document.fullscreenElement
+        ? document.exitFullscreen()
+        : document.documentElement.requestFullscreen();
+    }
+  });
+
+  setActive(0);
+</script>
+</body>
+</html>

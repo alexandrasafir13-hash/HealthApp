@@ -161,15 +161,6 @@ export function questionUnitLabel(question: DailyCheckInQuestion): string | null
   return question.unit?.trim() || null;
 }
 
-function formatMetricSummary(
-  prefix: string,
-  raw: { label?: string; value?: unknown; unit?: string | null } | null | undefined,
-): string {
-  if (!raw?.label?.trim()) return '';
-  const valueText = raw.value == null ? 'not set yet' : String(raw.value);
-  const unit = raw.unit?.trim();
-  return `${prefix}: ${raw.label.trim()} — ${valueText}${unit ? ` ${unit}` : ''}`;
-}
 
 export function getDaysDifference(dateStr1: string | undefined | null, dateStr2: string | undefined | null): number {
   try {

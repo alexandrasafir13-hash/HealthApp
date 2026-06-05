@@ -33,7 +33,7 @@ export function useThemeColor(
 }
 
 function getFontFamily(fontWeight: any) {
-  if (fontWeight === '800' || fontWeight === '900') return 'Nunito_800ExtraBold';
+  if (fontWeight === '800' || fontWeight === '900') return 'Nunito_700Bold';
   if (fontWeight === '700' || fontWeight === 'bold') return 'Nunito_700Bold';
   if (fontWeight === '600') return 'Nunito_600SemiBold';
   if (fontWeight === '500') return 'Nunito_500Medium';

@@ -1,9 +1,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-import { loadCheckInLog, type CheckInLog } from '@/lib/checkInStorage';
+import { clearCheckInLog, loadCheckInLog, type CheckInLog } from '@/lib/checkInStorage';
 import { accountStartDateKey } from '@/lib/dateKeys';
-import { generateAdaptivePlan, adaptProvisionalWeek } from '@/lib/generatePersonalRoutine';
-import { localDateKey, getSimulatedOffset, setSimulatedOffset } from '@/lib/localDate';
+import { adaptProvisionalWeek } from '@/lib/generatePersonalRoutine';
+import { localDateKey, setSimulatedOffset } from '@/lib/localDate';
 import { loadUserProfile, saveUserProfile, clearUserProfile } from '@/lib/onboardingStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/context/AuthContext';
@@ -12,17 +12,22 @@ import {
   loadPlanCheckInLog,
   PlanCheckInAnswer,
   PlanCheckInLog,
+  clearPlanCheckInLog,
+  savePlanCheckInLog,
   savePlanCheckInEntry,
 } from '@/lib/planCheckInStorage';
 import {
   clearPendingPlan,
+  clearPersonalPlan,
   loadPendingPlan,
   loadPersonalPlan,
-  savePendingPlan,
   savePersonalPlan,
 } from '@/lib/planStorage';
+import { clearSessions, clearCaseArtifacts } from '@/lib/chatStorage';
+import { clearDocuments } from '@/lib/documentStorage';
+import { clearProviders } from '@/lib/providerStorage';
 
-import { BiologicalSex, DataMethodId, GoalDetails, UserProfile } from '@/types/onboarding';
+import { UserProfile } from '@/types/onboarding';
 import {
   DailyCheckInQuestion,
   PersonalPlan,
@@ -49,7 +54,6 @@ interface HealthContextValue {
   todayCheckInCanSubmit: boolean;
   todayCheckInSaved: boolean;
   profile: UserProfile | null;
-  onboardingComplete: boolean;
   isReady: boolean;
   /** True while a Firestore cloud restore is in-flight. Index waits on this before routing. */
   isRestoring: boolean;
@@ -58,19 +62,6 @@ interface HealthContextValue {
   updateCheckInAnswer: (questionId: string, value: PlanCheckInAnswer) => void;
   submitPlanCheckIn: () => Promise<boolean>;
   acceptPlan: () => Promise<void>;
-  completeOnboarding: (input: {
-    name?: string;
-    age?: number;
-    sex?: BiologicalSex;
-    weightKg?: number;
-    heightCm?: number;
-    dataMethods: DataMethodId[];
-    habitIds: string[];
-    goalDetails?: GoalDetails;
-    physicalConcernIds?: string[];
-    onboardingMessages?: { role: 'user' | 'assistant'; content: string }[];
-    onboardingUserStory?: { asA: string; iWantTo: string; soThat: string; fullStory: string };
-  }) => Promise<void>;
   updateProfile: (updatedFields: Partial<UserProfile>) => Promise<void>;
   resetAllData: () => Promise<void>;
   simulatedOffsetDays: number;
@@ -128,6 +119,13 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
         if (restored) {
           if (restored.profile) setProfile(restored.profile);
           if (restored.personalPlan) setPersonalPlan(restored.personalPlan);
+          if (restored.pendingPlan) setPendingPlan(restored.pendingPlan);
+          if (restored.checkInLog) setCheckInLog(restored.checkInLog);
+          if (restored.planCheckInLog) {
+            setPlanCheckInLog(restored.planCheckInLog);
+            const savedToday = restored.planCheckInLog[localDateKey()];
+            setTodayCheckInDraft(savedToday?.answers ?? {});
+          }
         }
       })
       .catch((err) => {
@@ -141,34 +139,18 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
   // Backup to Firestore on changes — only after restore is done and only if there's a profile worth saving
   useEffect(() => {
     if (isAuthenticated && user && isReady && !isRestoring && hasRestoredRef.current && profile) {
-      backupUserData(user.uid, profile, personalPlan).catch((err) => {
+      backupUserData(user.uid, profile, personalPlan, checkInLog, planCheckInLog).catch((err) => {
         console.error('Error backing up to Firestore:', err);
       });
     }
-  }, [profile, personalPlan, isAuthenticated, user, isReady, isRestoring]);
+  }, [profile, personalPlan, pendingPlan, checkInLog, planCheckInLog, isAuthenticated, user, isReady, isRestoring]);
 
   const accountStartDate = useMemo(
     () => accountStartDateKey(profile?.completedAt),
     [profile?.completedAt],
   );
 
-  const buildPlanForProfile = useCallback(async (nextProfile: UserProfile) => {
-    setPlanLoading(true);
-    setPlanError(null);
-    try {
-      const result = await generateAdaptivePlan(nextProfile);
-      const normalized = {
-        ...result,
-        plan: normalizeStoredPlan(result.plan),
-      };
-      await savePendingPlan(normalized);
-      setPendingPlan(normalized);
-    } catch (e) {
-      setPlanError(e instanceof Error ? e.message : 'Could not build your plan');
-    } finally {
-      setPlanLoading(false);
-    }
-  }, []);
+
 
   const acceptPlan = useCallback(async () => {
     if (!pendingPlan) return;
@@ -247,11 +229,7 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  useEffect(() => {
-    if (!isReady || !profile || personalPlan || pendingPlan || planLoading) return;
-    if (profile.habitIds.length === 0) return;
-    void buildPlanForProfile(profile);
-  }, [isReady, profile, personalPlan, pendingPlan, planLoading, buildPlanForProfile]);
+
 
   const derivedPersonalPlan = useMemo<PersonalPlan | null>(() => {
     if (!personalPlan) return null;
@@ -362,41 +340,6 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
     await savePlanCheckInEntry(entry);
     return true;
   }, [personalPlan, activeWeek, todayCheckInCanSubmit, todayCheckInDraft]);
-
-  const completeOnboarding = useCallback(
-    async (input: {
-      name?: string;
-      age?: number;
-      sex?: BiologicalSex;
-      weightKg?: number;
-      heightCm?: number;
-      dataMethods: DataMethodId[];
-      habitIds: string[];
-      goalDetails?: GoalDetails;
-      physicalConcernIds?: string[];
-      onboardingMessages?: { role: 'user' | 'assistant'; content: string }[];
-      onboardingUserStory?: { asA: string; iWantTo: string; soThat: string; fullStory: string };
-    }) => {
-      const nextProfile: UserProfile = {
-        name: input.name?.trim() || user?.displayName || undefined,
-        age: input.age,
-        sex: input.sex,
-        weightKg: input.weightKg,
-        heightCm: input.heightCm,
-        dataMethods: input.dataMethods,
-        habitIds: input.habitIds,
-        goalDetails: input.goalDetails ?? {},
-        physicalConcernIds: input.physicalConcernIds ?? [],
-        onboardingMessages: input.onboardingMessages,
-        onboardingUserStory: input.onboardingUserStory,
-        completedAt: new Date().toISOString(),
-      };
-      await saveUserProfile(nextProfile);
-      setProfile(nextProfile);
-      await buildPlanForProfile(nextProfile);
-    },
-    [buildPlanForProfile, user],
-  );
 
   const updateProfile = useCallback(
     async (updatedFields: Partial<UserProfile>) => {
@@ -542,9 +485,13 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
   const resetAllData = useCallback(async () => {
     await clearUserProfile();
     await clearPendingPlan();
-    await AsyncStorage.removeItem('healthee:personal-plan');
-    await AsyncStorage.removeItem('healthee:check-in-log');
-    await AsyncStorage.removeItem('healthee:plan-check-in-log');
+    await clearPersonalPlan();
+    await clearCheckInLog();
+    await clearPlanCheckInLog();
+    await clearSessions();
+    await clearCaseArtifacts();
+    await clearDocuments();
+    await clearProviders();
     await AsyncStorage.removeItem('healthee:simulated-offset-days');
     await setSimulatedOffset(0);
     setSimulatedOffsetDaysState(0);
@@ -578,14 +525,12 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       submitPlanCheckIn,
       acceptPlan,
       profile,
-      onboardingComplete: profile !== null,
       isReady,
       isRestoring,
       accountStartDate,
       completeAction: (insightId, actionId) => {
         setCompletedActions((prev) => new Set(prev).add(`${insightId}:${actionId}`));
       },
-      completeOnboarding,
       updateProfile,
       resetAllData,
       simulatedOffsetDays,
@@ -614,7 +559,6 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       isReady,
       isRestoring,
       accountStartDate,
-      completeOnboarding,
       updateProfile,
       resetAllData,
       simulatedOffsetDays,

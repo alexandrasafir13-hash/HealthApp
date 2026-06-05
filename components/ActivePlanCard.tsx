@@ -19,11 +19,11 @@ export default function ActivePlanCard({
   activeWeekNumber = 1,
   showIntro = true,
 }: Props) {
-  const { isTabletUp } = usePageLayout();
+  usePageLayout();
   const phases = plan.phases ?? [];
   const [selectedPhase, setSelectedPhase] = useState<{ phase: PlanPhase; index: number } | null>(null);
   const [tooltipMessage, setTooltipMessage] = useState<string | null>(null);
-
+  
   return (
     <>
       <View style={styles.card}>
@@ -34,7 +34,7 @@ export default function ActivePlanCard({
               <Text style={styles.summary}>{plan.goalSummary}</Text>
               {plan.reasoningSummary ? (
                 <Text style={{ fontSize: 13, color: palette.slateSubtle, marginTop: 4, fontStyle: 'italic' }}>
-                  Why this path: {plan.reasoningSummary}
+                  {`Why this path:`} {plan.reasoningSummary}
                 </Text>
               ) : null}
             </View>
@@ -66,14 +66,14 @@ export default function ActivePlanCard({
                         .slice(activeWeekNumber - 1, index)
                         .reduce((sum, p) => sum + p.durationDays, 0);
                       setTooltipMessage(
-                        `Details available after ${remaining} more daily check-ins.`,
+                        `Details will be available after ${remaining} more daily check-ins.`
                       );
                     } : () => setSelectedPhase({ phase, index })}>
 
                     {/* Phase number + duration */}
                     <View style={styles.weekHeaderRow}>
                       <Text style={[styles.weekLabel, isActive && styles.weekLabelActive]}>
-                        PHASE {index + 1} ({phase.durationDays} DAYS)
+                        FAZA {index + 1} ({phase.durationDays} ZILE)
                       </Text>
                       {isActive && (
                         <View style={styles.activeDot} />
@@ -110,7 +110,7 @@ export default function ActivePlanCard({
               <View style={styles.modalHeaderContainer}>
                 <View style={styles.modalHeaderRowTop}>
                   <Text style={styles.modalWeekLabel}>
-                    PHASE {selectedPhase.index + 1} · {selectedPhase.phase.durationDays} DAYS
+                    FAZA {selectedPhase.index + 1} · {selectedPhase.phase.durationDays} ZILE
                   </Text>
                   <Pressable style={styles.closeButton} onPress={() => setSelectedPhase(null)}>
                     <X size={20} color={palette.slateSubtle} />
@@ -128,10 +128,10 @@ export default function ActivePlanCard({
               >
                 {/* Entry condition */}
                 <View style={styles.modalSection}>
-                  <Text style={styles.modalSectionTitle}>Entry condition</Text>
+                  <Text style={styles.modalSectionTitle}>{`Entry condition`}</Text>
                   <View style={styles.modalConditionBar}>
                     <Text style={styles.modalConditionText}>
-                      {selectedPhase.phase.entryCondition || 'Start of phase'}
+                      {selectedPhase.phase.entryCondition || `Phase start`}
                     </Text>
                   </View>
                 </View>
@@ -139,7 +139,7 @@ export default function ActivePlanCard({
                 {/* Actions */}
                 {selectedPhase.phase.actions.length > 0 && (
                   <View style={styles.modalSection}>
-                    <Text style={styles.modalSectionTitle}>Daily actions</Text>
+                    <Text style={styles.modalSectionTitle}>{`Daily actions`}</Text>
                     <View style={styles.modalStepsList}>
                       {selectedPhase.phase.actions.map((act, idx) => (
                         <View key={act.id} style={styles.modalStepItem}>
@@ -166,10 +166,10 @@ export default function ActivePlanCard({
 
                 {/* Exit condition */}
                 <View style={styles.modalSection}>
-                  <Text style={styles.modalSectionTitle}>Exit condition</Text>
+                  <Text style={styles.modalSectionTitle}>{`Exit condition`}</Text>
                   <View style={styles.modalConditionBar}>
                     <Text style={styles.modalConditionText}>
-                      {selectedPhase.phase.exitCondition || 'End of phase'}
+                      {selectedPhase.phase.exitCondition || `Phase end`}
                     </Text>
                   </View>
                 </View>
@@ -177,7 +177,7 @@ export default function ActivePlanCard({
                 {/* Signals */}
                 {selectedPhase.phase.signals.length > 0 && (
                   <View style={styles.modalSection}>
-                    <Text style={styles.modalSectionTitle}>Signals tracked</Text>
+                    <Text style={styles.modalSectionTitle}>{`Tracked signals`}</Text>
                     {selectedPhase.phase.signals.map((sig) => (
                       <View key={sig.id} style={styles.modalSignalRow}>
                         <View style={styles.modalSignalDot} />
@@ -204,7 +204,7 @@ export default function ActivePlanCard({
             <View style={styles.tooltipSheet}>
               <Text style={styles.tooltipText}>{tooltipMessage}</Text>
               <Pressable style={styles.tooltipButton} onPress={() => setTooltipMessage(null)}>
-                <Text style={styles.tooltipButtonText}>Got it</Text>
+              <Text style={styles.tooltipButtonText}>{`Got it`}</Text>
               </Pressable>
             </View>
           </View>
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: typography.title + 2,
-    fontWeight: '800',
+    fontWeight: '700',
     color: palette.slate,
     letterSpacing: -0.3,
   },
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: typography.heading,
-    fontWeight: '800',
+    fontWeight: '700',
     color: palette.slate,
     lineHeight: 30,
     letterSpacing: -0.3,

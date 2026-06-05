@@ -4,18 +4,21 @@ import {
   Nunito_500Medium,
   Nunito_600SemiBold,
   Nunito_700Bold,
-  Nunito_800ExtraBold,
 } from '@expo-google-fonts/nunito';
 import { DarkTheme, DefaultTheme, ThemeProvider, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
+
 import AppShell from '@/components/AppShell';
 import { useColorScheme } from '@/components/useColorScheme';
 import { HealthProvider } from '@/context/HealthContext';
 import { AuthProvider } from '@/context/AuthContext';
+import { ChatProvider } from '@/context/ChatContext';
+import { DocumentProvider } from '@/context/DocumentContext';
 import { palette } from '@/constants/theme';
+import GlobalSearch from '@/components/GlobalSearch';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -51,12 +54,10 @@ const HealtheeDarkTheme = {
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     Nunito_400Regular,
     Nunito_500Medium,
     Nunito_600SemiBold,
     Nunito_700Bold,
-    Nunito_800ExtraBold,
   });
 
   useEffect(() => {
@@ -83,18 +84,20 @@ function RootLayoutNav() {
     <AppShell>
       <AuthProvider>
         <HealthProvider>
-          <ThemeProvider value={colorScheme === 'dark' ? HealtheeDarkTheme : HealtheeLightTheme}>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="index" />
-              <Stack.Screen name="plan-ready" />
-              <Stack.Screen name="onboarding" />
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'About Healthee' }} />
-            </Stack>
-          </ThemeProvider>
+          <ChatProvider>
+            <DocumentProvider>
+              <ThemeProvider value={colorScheme === 'dark' ? HealtheeDarkTheme : HealtheeLightTheme}>
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="index" />
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'About Healthee' }} />
+                </Stack>
+                <GlobalSearch />
+              </ThemeProvider>
+            </DocumentProvider>
+          </ChatProvider>
         </HealthProvider>
       </AuthProvider>
     </AppShell>
   );
 }
-

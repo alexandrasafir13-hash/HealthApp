@@ -4,7 +4,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { useHealth } from '@/context/HealthContext';
 
 export default function Index() {
-  const { isReady, onboardingComplete, isRestoring } = useHealth();
+  const { isReady, isRestoring } = useHealth();
 
   // Wait for local storage to load and any cloud restore to complete before routing
   if (!isReady || isRestoring) {
@@ -13,10 +13,6 @@ export default function Index() {
         <ActivityIndicator size="large" />
       </View>
     );
-  }
-
-  if (!onboardingComplete) {
-    return <Redirect href="/onboarding" />;
   }
 
   return <Redirect href="/(tabs)" />;

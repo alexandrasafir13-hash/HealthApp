@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router';
 import { AlertTriangle, CheckCircle2, Compass, Quote } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -12,10 +11,9 @@ import { habitCatalog } from '@/data/onboardingOptions';
 import { pageStyles, usePageLayout } from '@/hooks/usePageLayout';
 
 export default function InsightsScreen() {
-  const router = useRouter();
   const { profile, planCheckInLog, personalPlan } = useHealth();
   const { contentContainerStyle, pageStyle } = usePageLayout();
-
+  
   const data = useInsightsData(profile, planCheckInLog, personalPlan);
 
   const activeConcerns = (profile?.physicalConcernIds ?? [])
@@ -25,9 +23,9 @@ export default function InsightsScreen() {
   return (
     <ScrollView style={pageStyles.scroll} contentContainerStyle={contentContainerStyle} showsVerticalScrollIndicator={false}>
       <View style={pageStyle}>
-        <PageTitle title="Your Narrative" subtitle="A cohesive view of your origin, focus, and progress." />
+        <PageTitle title={`Your Narrative`} subtitle={`A coherent view over your context, focus and progress.`} />
 
-        <Animated.View entering={FadeInDown.duration(400).delay(100)} style={styles.contentWrapper}>
+        <Animated.View entering={FadeInDown.duration(250).delay(50)} style={styles.contentWrapper}>
           
           {/* Section 1: The Synthesis (Story) */}
           {profile?.onboardingUserStory?.fullStory && (
@@ -39,28 +37,28 @@ export default function InsightsScreen() {
 
           {/* Section 2: The Focus (Concerns + Goals woven together) */}
           <View style={styles.focusSection}>
-            <Text style={styles.proseText}>
-              You began this journey to address{' '}
+              <Text style={styles.proseText}>
+              {`You started this journey to address `}
               {activeConcerns.length > 0 ? (
                 activeConcerns.map((c, i) => (
                   <Text key={i}>
                     <Text style={styles.highlightAmber}>{c}</Text>
-                    {i < activeConcerns.length - 2 ? ', ' : i === activeConcerns.length - 2 ? ' and ' : ''}
+                    {i < activeConcerns.length - 2 ? ', ' : i === activeConcerns.length - 2 ? ` ${`and`} ` : ''}
                   </Text>
                 ))
               ) : (
-                <Text style={styles.highlightAmber}>your wellbeing</Text>
+                <Text style={styles.highlightAmber}>{`your wellbeing`}</Text>
               )}
-              . To make progress, your current focus is{' '}
+              . {`To progress, your current focus is `}
               {data.activeHabits.length > 0 ? (
-                data.activeHabits.map((h, i) => (
+                data.activeHabits.map((h: { id: string; title: string }, i: number) => (
                   <Text key={i}>
                     <Text style={styles.highlightTeal}>{h.title}</Text>
-                    {i < data.activeHabits.length - 2 ? ', ' : i === data.activeHabits.length - 2 ? ' and ' : ''}
+                    {i < data.activeHabits.length - 2 ? ', ' : i === data.activeHabits.length - 2 ? ` ${`and`} ` : ''}
                   </Text>
                 ))
               ) : (
-                <Text style={styles.highlightTeal}>building a healthy routine</Text>
+                <Text style={styles.highlightTeal}>{`building a healthy routine`}</Text>
               )}.
             </Text>
           </View>
@@ -68,9 +66,9 @@ export default function InsightsScreen() {
           {/* Section 3: Plan Insights (What we designed) */}
           {data.planInsights && data.planInsights.length > 0 && (
             <View style={styles.insightsSection}>
-              <Text style={styles.sectionHeading}>Plan Observations</Text>
+              <Text style={styles.sectionHeading}>{`Plan observations`}</Text>
               <View style={styles.insightBlockList}>
-                {data.planInsights.map((insight, idx) => (
+                {data.planInsights.map((insight: string, idx: number) => (
                   <View key={idx} style={styles.cleanInsightRow}>
                     <View style={styles.bulletDot} />
                     <Text style={styles.cleanInsightText}>{insight}</Text>
@@ -82,7 +80,7 @@ export default function InsightsScreen() {
 
           {/* Section 4: Behavioral Insights (How it's going) */}
           <View style={styles.insightsSection}>
-            <Text style={styles.sectionHeading}>Behavioral Learnings</Text>
+              <Text style={styles.sectionHeading}>{`Behavioral Insights`}</Text>
             {data.derivedInsights && data.derivedInsights.length > 0 ? (
               <View style={styles.insightBlockList}>
                 {data.derivedInsights.map((insight) => (
@@ -102,8 +100,8 @@ export default function InsightsScreen() {
                 ))}
               </View>
             ) : (
-              <Text style={styles.emptyText}>
-                Submit daily check-ins on the Today screen to generate behavioral and routine adaptation insights.
+                <Text style={styles.emptyText}>
+                {`Complete the daily check-in on the Today screen to generate insights about your behavior and routine adaptation.`}
               </Text>
             )}
           </View>
@@ -186,22 +184,22 @@ function useInsightsData(profile: any, planCheckInLog: any, personalPlan: any) {
       if (diff > 0) {
         list.push({
           id: 'adaptation-impact-positive',
-          title: 'Adapted Plan Impact',
-          text: `After transitioning from "${prevPhaseName}" to "${adaptedPhaseName}", your daily logging consistency increased by ${diff}% (from ${prevConsistency}% to ${currentConsistency}%). This indicates that the adapted targets and trigger anchors are a better fit for your daily flow.`,
+          title: 'Adapted plan impact',
+          text: `After transitioning from "${prevPhaseName}" to "${adaptedPhaseName}", daily completion consistency increased by ${diff}% (from ${prevConsistency}% to ${currentConsistency}%). This shows the adapted goals fit your daily rhythm better.`,
           type: 'success',
         });
       } else if (diff < 0) {
         list.push({
           id: 'adaptation-impact-friction',
-          title: 'Plan Adaptation Check',
-          text: `Your daily logging consistency has adjusted from ${prevConsistency}% in "${prevPhaseName}" to ${currentConsistency}% in the current "${adaptedPhaseName}". The new phase introduces additional steps that may be creating slight friction. Simplification or adjusting the anchor cue could help restore momentum.`,
+          title: 'Verificarea adaptării planului',
+          text: `Consecvența completărilor zilnice s-a ajustat de la ${prevConsistency}% în "${prevPhaseName}" la ${currentConsistency}% în faza curentă "${adaptedPhaseName}". Noua fază introduce pași suplimentari care pot crea puțină fricțiune. Simplificarea sau ajustarea reperului de declanșare ar putea ajuta la recâștigarea ritmului.`,
           type: 'info',
         });
       } else {
         list.push({
           id: 'adaptation-impact-stable',
-          title: 'Adapted Routine Stability',
-          text: `Your daily consistency has stabilized at ${currentConsistency}% following your plan's transition to "${adaptedPhaseName}". Maintaining this steady pace is a strong indicator of routine integration.`,
+          title: 'Adapted routine stability',
+          text: `Your daily consistency stabilized at ${currentConsistency}% after transitioning to "${adaptedPhaseName}". Maintaining this rhythm is a good sign the routine is integrating.`,
           type: 'success',
         });
       }
@@ -211,8 +209,8 @@ function useInsightsData(profile: any, planCheckInLog: any, personalPlan: any) {
         if (effortDiff > 0.3) {
           list.push({
             id: 'effort-reduction',
-            title: 'Friction Reduction',
-            text: `Following your routine adjustment, your average effort score decreased from ${prevAvgEffort.toFixed(1)}/5 to ${currAvgEffort.toFixed(1)}/5. This ${Math.round((effortDiff / prevAvgEffort) * 100)}% reduction in friction shows that the adapted micro-actions are significantly easier to perform.`,
+            title: 'Friction reduction',
+            text: `After adjusting the routine, the average effort score dropped from ${prevAvgEffort.toFixed(1)}/5 to ${currAvgEffort.toFixed(1)}/5. This ${Math.round((effortDiff / prevAvgEffort) * 100)}% reduction shows the adapted micro-actions are significantly easier to do.`,
             type: 'success',
           });
         }
@@ -221,22 +219,22 @@ function useInsightsData(profile: any, planCheckInLog: any, personalPlan: any) {
       if (currentConsistency > 75) {
         list.push({
           id: 'first-phase-momentum',
-          title: 'Strong Routine Momentum',
-          text: `You have successfully logged ${currentPhaseEntries.length} out of ${durationDays} days in your first phase, "${activePhaseObj?.title || 'Phase 1'}". Your consistency rate is ${currentConsistency}%, which is excellent for building a durable routine.`,
+          title: 'Good routine momentum',
+          text: `You successfully completed ${currentPhaseEntries.length} out of ${durationDays} days in your first phase, "${activePhaseObj?.title || 'Phase 1'}". The consistency rate is ${currentConsistency}%, which is excellent for building a durable routine.`,
           type: 'success',
         });
       } else if (currentConsistency > 40) {
         list.push({
           id: 'first-phase-building',
-          title: 'Routine Integration',
-          text: `You have logged ${currentPhaseEntries.length} days in "${activePhaseObj?.title || 'Phase 1'}". Your consistency of ${currentConsistency}% shows steady progress. To reduce logging friction, try placing a physical or visual reminder in your daily path.`,
+          title: 'Integrarea rutinei',
+          text: `Ai completat ${currentPhaseEntries.length} zile în "${activePhaseObj?.title || 'Faza 1'}". Consecvența ta de ${currentConsistency}% arată un progres constant. Ca să reduci fricțiunea, încearcă un reminder fizic sau vizual în traseul tău zilnic.`,
           type: 'info',
         });
       } else {
         list.push({
           id: 'first-phase-friction',
-          title: 'Simplification Window',
-          text: `Your initial logging consistency is ${currentConsistency}%. If you find the current routine difficult to remember or execute, you can use the review at the end of this phase to simplify your actions or change the daily trigger anchors.`,
+          title: 'Simplification window',
+          text: `Initial completion consistency is ${currentConsistency}%. If the current routine is hard to remember or execute, you can use the analysis at the end of this phase to simplify actions or change daily triggers.`,
           type: 'info',
         });
       }
@@ -278,8 +276,8 @@ function useInsightsData(profile: any, planCheckInLog: any, personalPlan: any) {
       if (difference > 0.5) {
         list.push({
           id: 'energy-friction-correlation',
-          title: 'Energy & Friction Link',
-          text: `On low-energy days, your routine resistance increases to ${lowEnergyAvgEffort.toFixed(1)}/5, compared to only ${highEnergyAvgEffort.toFixed(1)}/5 on high-energy days. This indicates that your routine is highly sensitive to fatigue. Focus on restorative triggers and consider a shorter 'backup' version of your routine when tired.`,
+          title: 'Energy & Friction connection',
+          text: `On low energy days, resistance to the routine increases to ${lowEnergyAvgEffort.toFixed(1)}/5, compared to only ${highEnergyAvgEffort.toFixed(1)}/5 on high energy days. This shows the routine is highly sensitive to fatigue. Focus on recovery triggers and consider a shorter fallback routine when tired.`,
           type: 'info',
         });
       }
@@ -311,8 +309,8 @@ function useInsightsData(profile: any, planCheckInLog: any, personalPlan: any) {
       const pct = Math.round((maxCount / loggedTimesCount) * 100);
       list.push({
         id: 'peak-completion-window',
-        title: 'Optimal Routine Window',
-        text: `You execute your routine in the ${peakBucket} ${pct}% of the time. This reveals that the ${peakBucket} hours provide your strongest environmental and mental triggers for consistency.`,
+          title: 'Optimal routine window',
+          text: `You execute your routine in the ${peakBucket} in ${pct}% of cases. This shows that the ${peakBucket} hours provide the strongest environmental and mental triggers for consistency.`,
         type: 'info',
       });
     }
@@ -385,7 +383,7 @@ const styles = StyleSheet.create({
   },
   sectionHeading: {
     fontSize: 20,
-    fontWeight: '800',
+    fontWeight: '700',
     color: palette.slate,
     letterSpacing: -0.5,
     marginBottom: 4,
@@ -425,4 +423,3 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 });
-

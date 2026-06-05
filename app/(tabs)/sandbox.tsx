@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View, Pressable } from 'react-native';
-import { Calendar, RefreshCw, Settings } from 'lucide-react-native';
+import { Calendar, RefreshCw } from 'lucide-react-native';
 import { router } from 'expo-router';
 
 import PageTitle from '@/components/PageTitle';
 import { Text } from '@/components/Themed';
 import { useHealth } from '@/context/HealthContext';
 import { getSimulatedDate } from '@/lib/localDate';
-import { palette, radii, spacing, typography, cardShadow } from '@/constants/theme';
+import { palette, typography, cardShadow } from '@/constants/theme';
 import { pageStyles, usePageLayout } from '@/hooks/usePageLayout';
 
 export default function SandboxScreen() {
   const { contentContainerStyle, pageStyle } = usePageLayout();
-  const [confirmReset, setConfirmReset] = useState(false);
+    const [confirmReset, setConfirmReset] = useState(false);
 
   const {
     simulatedOffsetDays,
@@ -30,21 +30,21 @@ export default function SandboxScreen() {
       return;
     }
     await resetAllData();
-    router.replace('/onboarding');
+    router.replace('/');
   };
 
   return (
     <ScrollView style={pageStyles.scroll} contentContainerStyle={contentContainerStyle}>
       <View style={pageStyle}>
-        <PageTitle title="Developer Sandbox" />
+        <PageTitle title={`Sandbox`} />
         <Text style={styles.lead}>
-          Simulate dates, plan phases, and inspect diagnostic telemetry to test client behavior.
+          {`Simulate dates, plan phases and inspect diagnostic telemetry to test app behavior.`}
         </Text>
 
         <View style={styles.sectionCard}>
           {/* 1. Time Travel Date Controls */}
           <View style={styles.sandboxSection}>
-            <Text style={styles.sandboxSectionTitle}>SIMULATED CURRENT DATE</Text>
+            <Text style={styles.sandboxSectionTitle}>{`SIMULATED CURRENT DATE`}</Text>
             
             <View style={styles.dateDisplayContainer}>
               <Calendar size={16} color={palette.slateMuted} />
@@ -59,8 +59,8 @@ export default function SandboxScreen() {
                 </Text>
                 <Text style={styles.dateDisplayOffset}>
                   {simulatedOffsetDays === 0
-                    ? 'Synced to actual system time'
-                    : `Advanced +${simulatedOffsetDays} day${simulatedOffsetDays > 1 ? 's' : ''} from live time`}
+                    ? `Synced with system time`
+                    : `Advanced by +${simulatedOffsetDays} days vs real time`}
                 </Text>
               </View>
             </View>
@@ -72,7 +72,7 @@ export default function SandboxScreen() {
                   pressed && styles.sandboxActionButtonPressed,
                 ]}
                 onPress={() => changeSimulatedOffsetDays(simulatedOffsetDays + 1)}>
-                <Text style={styles.sandboxActionButtonText}>+1 Day</Text>
+                <Text style={styles.sandboxActionButtonText}>+1 {`day`}</Text>
               </Pressable>
 
               <Pressable
@@ -81,7 +81,7 @@ export default function SandboxScreen() {
                   pressed && styles.sandboxActionButtonPressed,
                 ]}
                 onPress={() => changeSimulatedOffsetDays(simulatedOffsetDays + 7)}>
-                <Text style={styles.sandboxActionButtonText}>+7 Days</Text>
+                <Text style={styles.sandboxActionButtonText}>+7 {`days`}</Text>
               </Pressable>
 
               {simulatedOffsetDays !== 0 && (
@@ -92,7 +92,7 @@ export default function SandboxScreen() {
                   ]}
                   onPress={() => changeSimulatedOffsetDays(0)}>
                   <RefreshCw size={11} color="#D97706" style={styles.resetIcon} />
-                  <Text style={styles.sandboxActionButtonTextReset}>Reset to Today</Text>
+                  <Text style={styles.sandboxActionButtonTextReset}>{`Reset to today`}</Text>
                 </Pressable>
               )}
             </View>
@@ -103,9 +103,9 @@ export default function SandboxScreen() {
         <View style={styles.sectionCard}>
           {personalPlan ? (
             <View style={styles.sandboxSection}>
-              <Text style={styles.sandboxSectionTitle}>ACTIVE PLAN PHASE</Text>
+              <Text style={styles.sandboxSectionTitle}>{`ACTIVE PLAN PHASE`}</Text>
               <Text style={styles.sandboxSectionDesc}>
-                Force the active plan view and daily routines to target a specific phase.
+                {`Force active plan display and daily routine for a specific phase.`}
               </Text>
               <View style={styles.sandboxWeekRow}>
                 {(personalPlan.phases || []).map((phase: any, idx: number) => {
@@ -124,7 +124,7 @@ export default function SandboxScreen() {
                           styles.sandboxWeekChipLabel,
                           isActive && styles.sandboxWeekChipLabelActive,
                         ]}>
-                        Phase {phaseNumber}
+                        {`Phase`} {phaseNumber}
                       </Text>
                     </Pressable>
                   );
@@ -133,9 +133,9 @@ export default function SandboxScreen() {
             </View>
           ) : (
             <View style={styles.sandboxSection}>
-              <Text style={styles.sandboxSectionTitle}>ACTIVE PLAN PHASE</Text>
+              <Text style={styles.sandboxSectionTitle}>{`ACTIVE PLAN PHASE`}</Text>
               <Text style={styles.sandboxSectionDescDisabled}>
-                Please complete onboarding or generate a plan to simulate phases.
+                {`Complete onboarding or generate a plan to simulate phases.`}
               </Text>
             </View>
           )}
@@ -144,24 +144,24 @@ export default function SandboxScreen() {
         {/* 3. Diagnostic Data */}
         <View style={styles.sectionCard}>
           <View style={styles.sandboxSection}>
-            <Text style={styles.sandboxSectionTitle}>DIAGNOSTIC TELEMETRY</Text>
+            <Text style={styles.sandboxSectionTitle}>{`DIAGNOSTIC TELEMETRY`}</Text>
             <View style={styles.diagnosticsGrid}>
               <View style={styles.diagnosticItem}>
-                <Text style={styles.diagnosticLabel}>Date Key</Text>
+                <Text style={styles.diagnosticLabel}>{`Date key`}</Text>
                 <Text style={styles.diagnosticValue}>{getSimulatedDate().toISOString().split('T')[0]}</Text>
               </View>
               <View style={styles.diagnosticItem}>
-                <Text style={styles.diagnosticLabel}>Onboarded</Text>
-                <Text style={styles.diagnosticValue}>{profile ? 'Yes' : 'No'}</Text>
+                <Text style={styles.diagnosticLabel}>{`Profile configured`}</Text>
+                <Text style={styles.diagnosticValue}>{profile ? `Yes` : `No`}</Text>
               </View>
               <View style={styles.diagnosticItem}>
-                <Text style={styles.diagnosticLabel}>Active Habit ID</Text>
+                <Text style={styles.diagnosticLabel}>{`Active habit ID`}</Text>
                 <Text style={styles.diagnosticValue} numberOfLines={1} ellipsizeMode="tail">
-                  {personalPlan?.goalId || 'None'}
+                  {personalPlan?.goalId || `None`}
                 </Text>
               </View>
               <View style={styles.diagnosticItem}>
-                <Text style={styles.diagnosticLabel}>Check-ins Logged</Text>
+                <Text style={styles.diagnosticLabel}>{`Logged check-ins`}</Text>
                 <Text style={styles.diagnosticValue}>{Object.keys(planCheckInLog || {}).length}</Text>
               </View>
             </View>
@@ -171,16 +171,16 @@ export default function SandboxScreen() {
         {/* 4. Danger Zone (Destructive Actions) */}
         <View style={[styles.sectionCard, { borderColor: 'rgba(196, 92, 74, 0.2)', borderWidth: 1 }]}>
           <View style={styles.sandboxSection}>
-            <Text style={[styles.sandboxSectionTitle, { color: palette.high }]}>DANGER ZONE</Text>
+            <Text style={[styles.sandboxSectionTitle, { color: palette.high }]}>{`DANGER ZONE`}</Text>
             <Text style={styles.sandboxSectionDesc}>
-              Clear all profile information, daily logs, and custom plans. This will permanently reset the application state.
+              {`Delete all profile info, daily logs and personalized plans. This will permanently reset the app state.`}
             </Text>
             <Pressable
               style={[styles.resetButton, confirmReset && styles.resetButtonConfirm]}
               onPress={handleReset}
               accessibilityRole="button">
               <Text style={[styles.resetButtonText, confirmReset && styles.resetButtonTextConfirm]}>
-                {confirmReset ? 'Tap Again to Confirm Complete Reset' : 'Reset Profile & Re-Onboard'}
+                {confirmReset ? `Tap again to confirm hard reset` : `Reset profile and restart onboarding`}
               </Text>
             </Pressable>
           </View>
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
   },
   sandboxSectionTitle: {
     fontSize: typography.caption + 1,
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#B45309',
     letterSpacing: 0.8,
     marginBottom: 6,

@@ -21,6 +21,8 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   signInWithGoogle: () => Promise<void>;
   signOutUser: () => Promise<void>;
+  showAuthModal: boolean;
+  setShowAuthModal: (show: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -28,6 +30,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const googleClientId = Platform.select({
     ios: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
@@ -35,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     default: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
   }) || process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
 
-  const [request, response, promptAsync] = AuthSession.useAuthRequest(
+  const [, response, promptAsync] = AuthSession.useAuthRequest(
     {
       clientId: googleClientId,
       redirectUri: AuthSession.makeRedirectUri({ scheme: 'healthee' }),
@@ -124,6 +127,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: !!user,
     signInWithGoogle,
     signOutUser,
+    showAuthModal,
+    setShowAuthModal,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

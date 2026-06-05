@@ -1,2329 +1,1491 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Healthee App — Pitch Deck & Interactive Prototype</title>
-  
-  <!-- Modern Premium Typography -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Be Healthy — Investor Deck 2026</title>
+  <meta name="description" content="Be Healthy investor pitch deck 2026." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
   <style>
-    /* ==========================================
-       DESIGN SYSTEM & CSS VARIABLES
-       ========================================== */
+    /* ── Tokens ─────────────────────────────────── */
     :root {
-      --bg-dark: #07090e;
-      --bg-card: rgba(13, 20, 35, 0.7);
-      --bg-card-hover: rgba(20, 30, 55, 0.85);
-      --border-color: rgba(255, 255, 255, 0.08);
-      --border-glow: rgba(59, 130, 246, 0.3);
-      
-      --color-primary: #3b82f6;      /* Electric Blue */
-      --color-accent: #00f5d4;       /* Neon Cyan */
-      --color-success: #10b981;      /* Emerald */
-      --color-warning: #f59e0b;      /* Amber */
-      --color-danger: #ef4444;       /* Rose */
-      
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --text-dim: #64748b;
-      
-      --font-display: 'Outfit', sans-serif;
-      --font-body: 'Plus Jakarta Sans', sans-serif;
-      
-      --shadow-premium: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
-      --shadow-glow: 0 0 30px rgba(59, 130, 246, 0.15);
+      --white:    #ffffff;
+      --off:      #f8f6f2;
+      --stone:    #eeebe5;
+      --mist:     #e2ddd6;
+      --smoke:    #b8b0a6;
+      --mid:      #7a7168;
+      --ink-lt:   #42403a;
+      --ink:      #1e1c18;
+
+      --sage:     #3f7a52;
+      --sage-lt:  #5a9a6e;
+      --sage-bg:  #edf3ee;
+      --sage-ln:  #b8d4c0;
+
+      --blue-bg:  #eef2f9;
+      --warm-bg:  #fdf0e6;
+      --warm:     #b85a0a;
+      --blue:     #2b5da0;
+
+      --serif:  'DM Serif Display', Georgia, serif;
+      --sans:   'DM Sans', system-ui, sans-serif;
+      --r: 10px;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-font-smoothing: antialiased;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      scroll-snap-type: y mandatory;
+      overflow-y: scroll;
+      scroll-behavior: smooth;
     }
 
     body {
-      background-color: var(--bg-dark);
-      background-image: 
-        radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(0, 245, 212, 0.06) 0%, transparent 40%);
-      color: var(--text-main);
-      font-family: var(--font-body);
-      min-height: 100vh;
-      overflow-x: hidden;
-      display: flex;
-      flex-direction: column;
+      font-family: var(--sans);
+      background: var(--white);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ==========================================
-       VIEW TRANSITIONS (DIRECTIONAL NAVIGATION)
-       ========================================== */
-    ::view-transition-group(root) {
-      animation: 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
-    }
-
-    /* Keyframes for sliding out to left (Forward Old) */
-    @keyframes slide-to-left {
-      to { transform: translateX(-80px); opacity: 0; filter: blur(8px); }
-    }
-    /* Keyframes for sliding in from right (Forward New) */
-    @keyframes slide-from-right {
-      from { transform: translateX(80px); opacity: 0; filter: blur(8px); }
-    }
-    /* Keyframes for sliding out to right (Backward Old) */
-    @keyframes slide-to-right {
-      to { transform: translateX(80px); opacity: 0; filter: blur(8px); }
-    }
-    /* Keyframes for sliding in from left (Backward New) */
-    @keyframes slide-from-left {
-      from { transform: translateX(-80px); opacity: 0; filter: blur(8px); }
-    }
-
-    /* Apply animations based on active view transition type */
-    html:active-view-transition-type(forward)::view-transition-old(root) {
-      animation-name: slide-to-left;
-    }
-    html:active-view-transition-type(forward)::view-transition-new(root) {
-      animation-name: slide-from-right;
-    }
-    html:active-view-transition-type(backward)::view-transition-old(root) {
-      animation-name: slide-to-right;
-    }
-    html:active-view-transition-type(backward)::view-transition-new(root) {
-      animation-name: slide-from-left;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      ::view-transition-group(root) {
-        animation: none !important;
-      }
-    }
-
-    /* ==========================================
-       LAYOUT STRUCTURE
-       ========================================== */
-    header {
-      padding: 24px 48px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--border-color);
-      backdrop-filter: blur(12px);
-      z-index: 10;
-    }
-
-    .logo-container {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .logo-icon {
-      width: 32px;
-      height: 32px;
-      background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 15px rgba(0, 245, 212, 0.4);
-    }
-
-    .logo-icon svg {
-      width: 18px;
-      height: 18px;
-      fill: none;
-      stroke: var(--bg-dark);
-      stroke-width: 2.5;
-    }
-
-    .logo-text {
-      font-family: var(--font-display);
-      font-weight: 800;
-      font-size: 24px;
-      letter-spacing: -0.5px;
-      background: linear-gradient(135deg, #ffffff 60%, var(--text-muted));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .header-badge {
-      background: rgba(59, 130, 246, 0.1);
-      border: 1px solid rgba(59, 130, 246, 0.3);
-      color: var(--color-primary);
-      padding: 6px 14px;
-      border-radius: 100px;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      font-family: var(--font-display);
-      text-transform: uppercase;
-      box-shadow: 0 0 10px rgba(59, 130, 246, 0.05);
-    }
-
-    .main-container {
-      flex: 1;
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 40px;
-      padding: 40px 48px;
-      max-width: 1600px;
-      margin: 0 auto;
-      width: 100%;
-      align-items: center;
-    }
-
-    @media (max-width: 1024px) {
-      .main-container {
-        grid-template-columns: 1fr;
-        padding: 20px;
-        gap: 30px;
-      }
-    }
-
-    /* ==========================================
-       SLIDE DECK PRESENTATION PANEL (LEFT)
-       ========================================== */
-    .deck-panel {
-      display: flex;
-      flex-direction: column;
-      height: 620px;
-      justify-content: space-between;
-      position: relative;
-    }
-
-    .slide-wrapper {
-      flex: 1;
-      display: flex;
-      align-items: center;
-    }
-
+    /* ── Slide shell ─────────────────────────────── */
     .slide {
       width: 100%;
-      opacity: 0;
-      display: none;
-      animation: fadeIn 0.4s ease-out forwards;
-    }
-
-    .slide.active {
-      display: block;
-      opacity: 1;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .slide-tag {
-      color: var(--color-accent);
-      font-family: var(--font-display);
-      font-weight: 700;
-      font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      margin-bottom: 16px;
-      display: inline-block;
-    }
-
-    .slide-title {
-      font-family: var(--font-display);
-      font-weight: 800;
-      font-size: 42px;
-      line-height: 1.15;
-      margin-bottom: 20px;
-      letter-spacing: -1px;
-      background: linear-gradient(135deg, #ffffff 40%, var(--text-muted));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .slide-title span {
-      background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-shadow: 0 0 30px rgba(0, 245, 212, 0.15);
-    }
-
-    .slide-description {
-      font-size: 16px;
-      line-height: 1.6;
-      color: var(--text-muted);
-      margin-bottom: 30px;
-      max-width: 600px;
-    }
-
-    /* Content components inside slides */
-    .grid-benefits {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      margin-top: 10px;
-    }
-
-    .benefit-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 20px;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .benefit-card:hover {
-      background: var(--bg-card-hover);
-      border-color: rgba(59, 130, 246, 0.3);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-glow);
-    }
-
-    .benefit-title {
-      font-family: var(--font-display);
-      font-weight: 600;
-      font-size: 18px;
-      margin-bottom: 8px;
-      color: var(--text-main);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .benefit-title svg {
-      width: 18px;
-      height: 18px;
-      stroke: var(--color-accent);
-      stroke-width: 2.5;
-    }
-
-    .benefit-desc {
-      font-size: 13px;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-
-    .quote-block {
-      border-left: 3px solid var(--color-accent);
-      padding: 16px 24px;
-      background: rgba(0, 245, 212, 0.03);
-      border-radius: 0 12px 12px 0;
-      margin-bottom: 24px;
-    }
-
-    .quote-text {
-      font-style: italic;
-      color: var(--text-main);
-      font-size: 16px;
-      line-height: 1.5;
-    }
-
-    .quote-author {
-      margin-top: 8px;
-      font-size: 13px;
-      color: var(--text-muted);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-    }
-
-    .diagram-flow {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin: 20px 0;
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid var(--border-color);
-      padding: 16px;
-      border-radius: 12px;
-    }
-
-    .flow-node {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      padding: 10px 14px;
-      border-radius: 8px;
-      font-size: 11px;
-      font-weight: 600;
-      text-align: center;
-      max-width: 110px;
-      color: var(--text-main);
-      box-shadow: var(--shadow-premium);
-    }
-
-    .flow-node.active-node {
-      border-color: var(--color-accent);
-      box-shadow: 0 0 15px rgba(0, 245, 212, 0.15);
-    }
-
-    .flow-arrow {
-      color: var(--text-dim);
-      font-size: 16px;
-      animation: pulse-arrow 1.5s infinite ease-in-out;
-    }
-
-    @keyframes pulse-arrow {
-      0%, 100% { opacity: 0.4; transform: translateX(0); }
-      50% { opacity: 1; transform: translateX(4px); }
-    }
-
-    /* Deck Controls */
-    .deck-controls {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-top: 1px solid var(--border-color);
-      padding-top: 24px;
-    }
-
-    .nav-buttons {
-      display: flex;
-      gap: 12px;
-    }
-
-    .control-btn {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      color: var(--text-main);
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      cursor: pointer;
+      min-height: 100vh;
+      scroll-snap-align: start;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.2s ease;
+      padding: 5rem 4rem;
+      position: relative;
+      overflow: hidden;
     }
 
-    .control-btn:hover:not(:disabled) {
-      background: var(--color-primary);
-      border-color: var(--color-primary);
-      transform: scale(1.05);
-      box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+    .inner {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 980px;
     }
 
-    .control-btn:disabled {
-      opacity: 0.3;
-      cursor: not-allowed;
+    /* backgrounds */
+    .bg-white  { background: var(--white); }
+    .bg-off    { background: var(--off); }
+    .bg-stone  { background: var(--stone); }
+    .bg-ink    { background: var(--ink); }
+    .bg-sage   { background: var(--sage); }
+
+    /* ── Type ────────────────────────────────────── */
+    .label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--sage);
+      margin-bottom: 1.25rem;
+    }
+    .label-w { color: rgba(255,255,255,0.45); }
+
+    h1 {
+      font-family: var(--serif);
+      font-size: clamp(3rem, 6vw, 5rem);
+      font-weight: 400;
+      line-height: 1.06;
+      letter-spacing: -0.01em;
     }
 
-    .control-btn svg {
-      width: 18px;
-      height: 18px;
-      stroke: currentColor;
-      stroke-width: 2.5;
-      fill: none;
+    h2 {
+      font-family: var(--serif);
+      font-size: clamp(2.25rem, 4.5vw, 3.75rem);
+      font-weight: 400;
+      line-height: 1.1;
     }
 
-    .progress-container {
+    .sub {
+      font-size: clamp(1rem, 1.5vw, 1.125rem);
+      color: var(--mid);
+      font-weight: 300;
+      line-height: 1.65;
+      max-width: 520px;
+    }
+
+    .xs { font-size: 0.75rem; color: var(--smoke); line-height: 1.5; }
+
+    .rule {
+      width: 28px; height: 2px;
+      background: var(--sage);
+      margin-bottom: 1.5rem;
+    }
+    .rule-w { background: rgba(255,255,255,0.3); }
+
+    hr {
+      border: none;
+      border-top: 1px solid var(--mist);
+      margin: 1.75rem 0;
+    }
+    hr.dark { border-top-color: rgba(255,255,255,0.1); }
+
+    /* ── Layout helpers ─────────────────────────── */
+    .cols {
+      display: grid;
+      gap: 4rem;
+      align-items: start;
+    }
+    .cols-2 { grid-template-columns: 1fr 1fr; }
+    .cols-3 { grid-template-columns: repeat(3, 1fr); }
+    .cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+    @media (max-width: 720px) {
+      .cols-2, .cols-3, .cols-4 { grid-template-columns: 1fr; gap: 2rem; }
+      .slide { padding: 3rem 1.75rem; }
+    }
+
+    /* ── Nav dots ────────────────────────────────── */
+    #nav {
+      position: fixed;
+      right: 1.25rem;
+      top: 50%;
+      transform: translateY(-50%);
       display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .slide-dots {
-      display: flex;
-      gap: 8px;
+      flex-direction: column;
+      gap: 7px;
+      z-index: 500;
     }
 
     .dot {
-      width: 8px;
-      height: 8px;
-      background: var(--text-dim);
+      width: 5px; height: 5px;
       border-radius: 50%;
+      background: var(--smoke);
       cursor: pointer;
-      transition: all 0.3s ease;
+      border: none;
+      padding: 0;
+      transition: background 0.2s, transform 0.2s;
     }
 
-    .dot.active {
-      width: 24px;
-      border-radius: 100px;
-      background: var(--color-accent);
-      box-shadow: 0 0 10px rgba(0, 245, 212, 0.4);
+    .dot.on {
+      background: var(--sage);
+      transform: scale(1.8);
     }
 
-    .slide-counter {
-      font-family: var(--font-display);
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-muted);
+    /* ── Progress bar ────────────────────────────── */
+    #bar {
+      position: fixed;
+      top: 0; left: 0;
+      height: 2px;
+      background: var(--sage);
+      z-index: 600;
+      width: 0;
+      transition: width 0.12s linear;
     }
 
-    /* ==========================================
-       INTERACTIVE APP SIMULATOR PANEL (RIGHT)
-       ========================================== */
-    .simulator-panel {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      position: relative;
+    /* ── Counter ─────────────────────────────────── */
+    #ctr {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      font-size: 0.68rem;
+      color: var(--smoke);
+      letter-spacing: 0.06em;
+      z-index: 500;
     }
 
-    /* Glow backdrop behind the phone */
-    .phone-glow {
-      position: absolute;
-      width: 400px;
-      height: 400px;
-      background: radial-gradient(circle, rgba(59, 130, 246, 0.18) 0%, transparent 65%);
-      border-radius: 50%;
-      z-index: 1;
-      pointer-events: none;
+    /* ── Fade up ──────────────────────────────────── */
+    .up {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .up.show { opacity: 1; transform: none; }
+    .d1 { transition-delay: 0.08s; }
+    .d2 { transition-delay: 0.16s; }
+    .d3 { transition-delay: 0.24s; }
+    .d4 { transition-delay: 0.32s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .up { opacity:1; transform:none; transition:none; }
     }
 
-    /* Smartphone Device Frame */
-    .iphone {
-      width: 360px;
-      height: 720px;
-      background: #080b11;
-      border: 11px solid #1e293b;
-      border-radius: 46px;
-      box-shadow: 
-        0 25px 50px -12px rgba(0, 0, 0, 0.8),
-        0 0 0 4px rgba(255, 255, 255, 0.05),
-        inset 0 0 0 2px rgba(255, 255, 255, 0.1);
-      position: relative;
-      overflow: hidden;
-      z-index: 2;
-      display: flex;
-      flex-direction: column;
-      user-select: none;
-    }
 
-    /* Dynamic Island Notch */
-    .notch {
-      width: 110px;
-      height: 28px;
-      background: #000000;
-      border-radius: 100px;
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 100;
-      box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.1);
-      display: flex;
-      align-items: center;
-      justify-content: space-around;
-      padding: 0 10px;
-    }
+    /* ══════════════════════════════════════════════ */
+    /* SLIDE 1 — COVER                               */
+    /* ══════════════════════════════════════════════ */
 
-    .notch-camera {
-      width: 8px;
-      height: 8px;
-      background: #111827;
-      border-radius: 50%;
-    }
-
-    .notch-sensor {
-      width: 35px;
-      height: 4px;
-      background: #111827;
-      border-radius: 10px;
-    }
-
-    /* Phone Screen Area */
-    .screen {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      padding: 44px 16px 16px 16px;
-      height: 100%;
-      position: relative;
-      overflow: hidden;
-      background: #090d16;
-    }
-
-    /* ==========================================
-       SIMULATOR STATE 1: ONBOARDING SETUP
-       ========================================== */
-    .sim-state {
-      display: none;
-      flex-direction: column;
-      height: 100%;
-      animation: fadeIn 0.3s ease-out;
-    }
-
-    .sim-state.active {
-      display: flex;
-    }
-
-    .sim-onboarding {
-      justify-content: space-between;
-    }
-
-    .sim-title {
-      font-family: var(--font-display);
-      font-weight: 700;
-      font-size: 20px;
-      margin-top: 10px;
-      margin-bottom: 8px;
-      line-height: 1.2;
-    }
-
-    .sim-subtitle {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-bottom: 20px;
-      line-height: 1.4;
-    }
-
-    /* Custom selector groups */
-    .sim-group-label {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--text-dim);
-      margin-bottom: 8px;
-    }
-
-    .goal-buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 20px;
-    }
-
-    .goal-option {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1.5px solid var(--border-color);
-      border-radius: 12px;
-      padding: 12px 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .goal-option:hover {
-      background: rgba(255, 255, 255, 0.06);
-    }
-
-    .goal-option.selected {
-      background: rgba(59, 130, 246, 0.1);
-      border-color: var(--color-primary);
-      box-shadow: 0 0 10px rgba(59, 130, 246, 0.1);
-    }
-
-    .goal-meta {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .goal-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-main);
-    }
-
-    .goal-desc {
-      font-size: 10px;
-      color: var(--text-muted);
-    }
-
-    .checkbox-round {
-      width: 16px;
-      height: 16px;
-      border: 1.5px solid var(--text-dim);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-    }
-
-    .goal-option.selected .checkbox-round {
-      border-color: var(--color-primary);
-      background: var(--color-primary);
-    }
-
-    .checkbox-round svg {
-      width: 10px;
-      height: 10px;
-      stroke: var(--text-main);
-      stroke-width: 3;
-      display: none;
-    }
-
-    .goal-option.selected .checkbox-round svg {
-      display: block;
-    }
-
-    /* Conditions select */
-    .conditions-grid {
+    .cover-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 24px;
-    }
-
-    .condition-option {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1.5px solid var(--border-color);
-      padding: 10px;
-      border-radius: 10px;
-      font-size: 11px;
-      font-weight: 500;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      color: var(--text-muted);
-    }
-
-    .condition-option.selected {
-      background: rgba(0, 245, 212, 0.1);
-      border-color: var(--color-accent);
-      color: var(--color-accent);
-    }
-
-    /* Big Action Button */
-    .btn-generate {
-      background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-      color: var(--bg-dark);
-      border: none;
-      padding: 14px;
-      border-radius: 14px;
-      font-family: var(--font-display);
-      font-weight: 700;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
+      gap: 5rem;
       align-items: center;
-      justify-content: center;
-      gap: 8px;
-      box-shadow: 0 4px 15px rgba(0, 245, 212, 0.2);
     }
 
-    .btn-generate:hover {
-      transform: scale(1.02);
-      box-shadow: 0 6px 20px rgba(0, 245, 212, 0.35);
+    @media (max-width: 720px) { .cover-grid { grid-template-columns: 1fr; gap: 2.5rem; } }
+
+    .cover-right {
+      border-left: 1px solid var(--mist);
+      padding-left: 4rem;
     }
 
-    .btn-generate svg {
-      width: 16px;
-      height: 16px;
-      fill: none;
-      stroke: var(--bg-dark);
-      stroke-width: 2.5;
-    }
+    @media (max-width: 720px) { .cover-right { border-left: none; border-top: 1px solid var(--mist); padding-left: 0; padding-top: 2rem; } }
 
-    /* ==========================================
-       SIMULATOR STATE 2: LOADING PROGRESS SCREEN
-       ========================================== */
-    .sim-loading {
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 30px;
-    }
-
-    .loading-pulse {
-      width: 70px;
-      height: 70px;
-      border-radius: 50%;
-      background: radial-gradient(circle, var(--color-primary) 0%, var(--color-accent) 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 30px;
-      position: relative;
-      box-shadow: 0 0 30px rgba(0, 245, 212, 0.3);
-    }
-
-    .loading-pulse::before {
-      content: '';
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      border: 2px solid var(--color-accent);
-      animation: pulse-ring 1.5s infinite ease-out;
-    }
-
-    @keyframes pulse-ring {
-      0% { transform: scale(0.9); opacity: 1; }
-      100% { transform: scale(1.6); opacity: 0; }
-    }
-
-    .loading-pulse svg {
-      width: 32px;
-      height: 32px;
-      stroke: var(--bg-dark);
-      stroke-width: 2;
-    }
-
-    .loading-title {
-      font-family: var(--font-display);
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-
-    .loading-step {
-      font-size: 11px;
-      color: var(--color-accent);
+    .chip {
+      display: inline-block;
+      padding: 0.25rem 0.7rem;
+      border-radius: 2rem;
+      background: var(--sage-bg);
+      border: 1px solid var(--sage-ln);
+      color: var(--sage);
+      font-size: 0.7rem;
       font-weight: 600;
-      letter-spacing: 0.5px;
-      margin-bottom: 24px;
-      min-height: 16px;
     }
 
-    .progress-bar-bg {
-      width: 100%;
-      height: 4px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 100px;
+    .chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1.5rem; }
+
+    /* ══════════════════════════════════════════════ */
+    /* SLIDE 2 — PROBLEM: big 3-column layout        */
+    /* ══════════════════════════════════════════════ */
+
+    .prob-cols {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      margin-top: 3rem;
+      border: 1px solid var(--mist);
+      border-radius: var(--r);
       overflow: hidden;
     }
 
-    .progress-bar-fill {
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
-      border-radius: 100px;
-      transition: width 0.1s linear;
+    @media (max-width: 720px) { .prob-cols { grid-template-columns: 1fr; } }
+
+    .prob-col {
+      padding: 2rem 1.75rem;
+      border-right: 1px solid var(--mist);
+    }
+    .prob-col:last-child { border-right: none; }
+
+    .prob-n {
+      font-family: var(--serif);
+      font-size: 2.5rem;
+      color: var(--mist);
+      line-height: 1;
+      margin-bottom: 1.25rem;
     }
 
-    /* ==========================================
-       SIMULATOR STATE 3: APP LIVE CONTENT
-       ========================================== */
-    .sim-app {
-      padding: 0;
-    }
-
-    /* Phone Status Header (Inside screen) */
-    .phone-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-      padding: 0 4px;
-    }
-
-    .phone-greeting {
-      font-size: 10px;
-      color: var(--text-muted);
+    .prob-title {
+      font-size: 0.95rem;
       font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
     }
 
-    .phone-time-alert {
-      background: rgba(16, 185, 129, 0.1);
-      border: 1px solid rgba(16, 185, 129, 0.2);
-      color: var(--color-success);
-      padding: 2px 8px;
-      border-radius: 100px;
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.2px;
+    .prob-body {
+      font-size: 0.82rem;
+      color: var(--mid);
+      line-height: 1.6;
     }
 
-    .phone-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 0 4px;
-      margin-bottom: 60px; /* Leave space for bottom tab bar */
+    /* ══════════════════════════════════════════════ */
+    /* SLIDE 3 — SOLUTION                            */
+    /* ══════════════════════════════════════════════ */
+
+    .product-ui {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border: 1px solid var(--mist);
+      border-radius: var(--r);
+      overflow: hidden;
+      background: var(--white);
+      box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+      margin-top: 2.5rem;
     }
 
-    /* Custom Scrollbar for Phone Body */
-    .phone-body::-webkit-scrollbar {
-      width: 4px;
-    }
-    .phone-body::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-    }
-
-    /* TODAY TAB VIEW */
-    .view-today {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    /* Readiness Dial Card */
-    .readiness-card {
-      background: linear-gradient(135deg, rgba(13, 20, 35, 0.8), rgba(20, 24, 40, 0.8));
-      border: 1px solid var(--border-color);
-      border-radius: 16px;
-      padding: 16px;
+    .ui-bar {
+      grid-column: 1 / -1;
+      background: var(--stone);
+      padding: 0.6rem 1rem;
       display: flex;
       align-items: center;
-      gap: 16px;
-      position: relative;
+      gap: 0.4rem;
+      border-bottom: 1px solid var(--mist);
+    }
+
+    .ui-dot { width: 9px; height: 9px; border-radius: 50%; }
+
+    .ui-pane {
+      padding: 1.25rem 1.5rem;
+    }
+
+    .ui-pane + .ui-pane { border-left: 1px solid var(--mist); background: var(--off); }
+
+    .ui-label {
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--smoke);
+      margin-bottom: 0.75rem;
+    }
+
+    .bubble {
+      padding: 0.5rem 0.85rem;
+      border-radius: 0.7rem;
+      font-size: 0.78rem;
+      line-height: 1.5;
+      margin-bottom: 0.45rem;
+      max-width: 88%;
+    }
+
+    .bubble-u {
+      background: var(--sage-bg);
+      border: 1px solid var(--sage-ln);
+      margin-left: auto;
+    }
+
+    .bubble-a {
+      background: var(--white);
+      border: 1px solid var(--mist);
+      color: var(--ink-lt);
+    }
+
+    .card {
+      background: var(--white);
+      border: 1px solid var(--mist);
+      border-radius: 6px;
+      padding: 0.85rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .card-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--sage);
+      margin-bottom: 0.35rem;
+    }
+
+    .card-line {
+      font-size: 0.7rem;
+      color: var(--mid);
+      padding: 0.1rem 0;
+    }
+
+    /* ══════════════════════════════════════════════ */
+    /* SLIDE 4 — STATS                               */
+    /* ══════════════════════════════════════════════ */
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      margin-top: 3rem;
+      border: 1px solid var(--mist);
+      border-radius: var(--r);
       overflow: hidden;
     }
 
-    .readiness-card::before {
-      content: '';
-      position: absolute;
-      width: 100px;
-      height: 100px;
-      background: radial-gradient(circle, rgba(0, 245, 212, 0.08) 0%, transparent 60%);
-      top: -20px;
-      right: -20px;
-    }
-
-    .readiness-dial-wrapper {
-      position: relative;
-      width: 80px;
-      height: 80px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .dial-svg {
-      transform: rotate(-90deg);
-      width: 100%;
-      height: 100%;
-    }
-
-    .dial-bg {
-      fill: none;
-      stroke: rgba(255, 255, 255, 0.05);
-      stroke-width: 6;
-    }
-
-    .dial-fill {
-      fill: none;
-      stroke: url(#dialGrad);
-      stroke-width: 6;
-      stroke-dasharray: 220;
-      stroke-dashoffset: 70; /* baseline 68 score */
-      transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-      stroke-linecap: round;
-    }
-
-    .dial-text {
-      position: absolute;
-      font-family: var(--font-display);
-      font-weight: 800;
-      font-size: 22px;
-      color: var(--text-main);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .dial-unit {
-      font-size: 9px;
-      color: var(--text-muted);
-      font-weight: 500;
-      margin-top: -4px;
-    }
-
-    .readiness-info {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .readiness-label {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--text-muted);
-    }
-
-    .readiness-status {
-      font-family: var(--font-display);
-      font-weight: 700;
-      font-size: 15px;
-      color: var(--color-accent);
-    }
-
-    .readiness-desc {
-      font-size: 10px;
-      color: var(--text-muted);
-      line-height: 1.4;
-    }
-
-    /* Everyday Actions Checklist */
-    .checklist-title {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: var(--text-dim);
-    }
-
-    .checklist-group {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .check-item {
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 12px 14px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .check-item:hover {
-      background: rgba(255, 255, 255, 0.04);
-      border-color: rgba(255, 255, 255, 0.12);
-    }
-
-    .check-box {
-      width: 18px;
-      height: 18px;
-      border: 1.5px solid var(--text-dim);
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-    }
-
-    .check-item.completed .check-box {
-      border-color: var(--color-success);
-      background: var(--color-success);
-    }
-
-    .check-box svg {
-      width: 12px;
-      height: 12px;
-      stroke: var(--bg-dark);
-      stroke-width: 3.5;
-      display: none;
-    }
-
-    .check-item.completed .check-box svg {
-      display: block;
-    }
-
-    .check-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      transition: all 0.2s ease;
-    }
-
-    .check-item.completed .check-content {
-      opacity: 0.5;
-    }
-
-    .check-label {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-main);
-    }
-
-    .check-trigger {
-      font-size: 9px;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .check-trigger svg {
-      width: 10px;
-      height: 10px;
-      stroke: currentColor;
-    }
-
-    .check-badge {
-      font-size: 8px;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 4px;
-      text-transform: uppercase;
-    }
-
-    .check-badge.req {
-      background: rgba(59, 130, 246, 0.12);
-      color: var(--color-primary);
-    }
-
-    /* PLAN TAB VIEW */
-    .view-plan {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .plan-header-card {
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 12px 14px;
-    }
-
-    .plan-header-goal {
-      font-family: var(--font-display);
-      font-weight: 700;
-      font-size: 15px;
-      color: var(--color-accent);
-      margin-bottom: 4px;
-    }
-
-    .plan-header-summary {
-      font-size: 10px;
-      color: var(--text-muted);
-      line-height: 1.4;
-    }
-
-    .timeline-vertical {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      position: relative;
-      margin-left: 10px;
-    }
+    @media (max-width: 720px) { .stat-grid { grid-template-columns: 1fr 1fr; } }
 
-    .timeline-vertical::before {
-      content: '';
-      position: absolute;
-      width: 2px;
-      top: 10px;
-      bottom: 10px;
-      left: 6px;
-      background: rgba(255, 255, 255, 0.05);
+    .stat-cell {
+      padding: 2.25rem 2rem;
+      border-right: 1px solid var(--mist);
+      border-bottom: 1px solid var(--mist);
     }
 
-    .timeline-node {
-      display: flex;
-      gap: 14px;
-      position: relative;
-    }
-
-    .timeline-dot {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #090d16;
-      border: 2px solid var(--text-dim);
-      z-index: 2;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-top: 2px;
-      transition: all 0.3s ease;
-    }
-
-    .timeline-node.active-node .timeline-dot {
-      border-color: var(--color-accent);
-      background: var(--color-accent);
-      box-shadow: 0 0 10px rgba(0, 245, 212, 0.4);
-    }
-
-    .timeline-content {
-      flex: 1;
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
-      padding: 10px 12px;
-      transition: all 0.3s ease;
-    }
-
-    .timeline-node.active-node .timeline-content {
-      background: rgba(59, 130, 246, 0.05);
-      border-color: rgba(59, 130, 246, 0.25);
-    }
-
-    .timeline-title {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-main);
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .timeline-days {
-      font-size: 9px;
-      color: var(--color-accent);
-      font-weight: 600;
-    }
-
-    .timeline-desc {
-      font-size: 9px;
-      color: var(--text-muted);
-      margin-top: 4px;
-      line-height: 1.3;
-    }
-
-    /* INSIGHTS TAB VIEW */
-    .view-insights {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .insight-card {
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid var(--border-color);
-      border-left: 3px solid var(--color-primary);
-      border-radius: 0 12px 12px 0;
-      padding: 12px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .insight-card.high-severity {
-      border-left-color: var(--color-danger);
-    }
-
-    .insight-card.medium-severity {
-      border-left-color: var(--color-warning);
-    }
-
-    .insight-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .insight-tag-alert {
-      font-size: 8px;
-      font-weight: 700;
-      text-transform: uppercase;
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
-
-    .insight-card.high-severity .insight-tag-alert {
-      background: rgba(239, 68, 68, 0.12);
-      color: var(--color-danger);
-    }
-
-    .insight-card.medium-severity .insight-tag-alert {
-      background: rgba(245, 158, 11, 0.12);
-      color: var(--color-warning);
-    }
+    .stat-cell:nth-child(3n) { border-right: none; }
+    .stat-cell:nth-child(n+4) { border-bottom: none; }
 
-    .insight-time {
-      font-size: 8px;
-      color: var(--text-dim);
+    .stat-big {
+      font-family: var(--serif);
+      font-size: clamp(2.5rem, 4.5vw, 3.5rem);
+      line-height: 1;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
     }
 
-    .insight-card-title {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text-main);
+    .stat-txt {
+      font-size: 0.78rem;
+      color: var(--mid);
+      line-height: 1.5;
     }
 
-    .insight-card-summary {
-      font-size: 10px;
-      color: var(--text-muted);
-      line-height: 1.4;
-    }
-
-    .insight-card-action-title {
-      font-size: 9px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--text-dim);
-      margin-top: 4px;
-    }
-
-    .insight-action-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 10px;
-      color: var(--text-main);
-      margin-top: 4px;
-      background: rgba(255, 255, 255, 0.01);
-      padding: 6px;
-      border-radius: 6px;
-      border: 1px dashed var(--border-color);
-    }
-
-    .insight-action-circle {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--color-accent);
-    }
-
-    /* PDF upload simulation card */
-    .upload-sim-card {
-      background: rgba(59, 130, 246, 0.05);
-      border: 1.5px dashed rgba(59, 130, 246, 0.3);
-      border-radius: 12px;
-      padding: 16px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .upload-sim-card:hover {
-      background: rgba(59, 130, 246, 0.08);
-      border-color: var(--color-primary);
-    }
-
-    .upload-sim-card svg {
-      width: 24px;
-      height: 24px;
-      stroke: var(--color-primary);
-      stroke-width: 2;
-    }
-
-    .upload-sim-title {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-main);
-    }
-
-    .upload-sim-desc {
-      font-size: 9px;
-      color: var(--text-muted);
-      max-width: 180px;
-      line-height: 1.3;
-    }
-
-    /* PROFILE TAB VIEW */
-    .view-profile {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .profile-card {
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .profile-row {
-      display: flex;
-      justify-content: space-between;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-      padding-bottom: 8px;
-    }
-
-    .profile-row:last-child {
-      border: none;
-      padding-bottom: 0;
-    }
-
-    .profile-cell-label {
-      font-size: 10px;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    .profile-cell-value {
-      font-size: 10px;
-      color: var(--text-main);
-      font-weight: 600;
-    }
-
-    .profile-safety-badge {
-      background: rgba(16, 185, 129, 0.1);
-      border: 1px solid rgba(16, 185, 129, 0.2);
-      color: var(--color-success);
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 9px;
-      font-weight: 600;
-      text-align: center;
-    }
+    /* ══════════════════════════════════════════════ */
+    /* SLIDE 5 — HOW IT WORKS                        */
+    /* ══════════════════════════════════════════════ */
 
-    /* Phone Tab Bar Navigation */
-    .tab-bar {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 64px;
-      background: rgba(8, 11, 18, 0.95);
-      border-top: 1px solid var(--border-color);
-      backdrop-filter: blur(12px);
+    .steps {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      z-index: 10;
-      padding: 4px 8px 12px 8px;
+      gap: 0;
+      border: 1px solid var(--mist);
+      border-radius: var(--r);
+      overflow: hidden;
+      margin-top: 2.5rem;
     }
 
-    .tab-btn {
+    @media (max-width: 720px) { .steps { grid-template-columns: 1fr 1fr; } }
+
+    .step {
+      padding: 2rem 1.5rem;
+      border-right: 1px solid var(--mist);
+    }
+    .step:last-child { border-right: none; }
+
+    .step-n {
+      font-family: var(--serif);
+      font-size: 2rem;
+      color: var(--mist);
+      margin-bottom: 1rem;
+    }
+
+    .step-h {
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+
+    .step-b {
+      font-size: 0.78rem;
+      color: var(--mid);
+      line-height: 1.55;
+    }
+
+    /* ══════════════════════════════════════════════ */
+    /* SLIDE 6 — MARKET                              */
+    /* ══════════════════════════════════════════════ */
+
+    .market-rows {
+      margin-top: 3rem;
       display: flex;
       flex-direction: column;
+      gap: 0;
+      border: 1px solid var(--mist);
+      border-radius: var(--r);
+      overflow: hidden;
+    }
+
+    .mkt-row {
+      display: grid;
+      grid-template-columns: 140px 1fr 120px 120px;
       align-items: center;
-      justify-content: center;
-      gap: 2px;
-      cursor: pointer;
-      color: var(--text-dim);
-      background: none;
-      border: none;
-      transition: all 0.2s ease;
+      gap: 1.5rem;
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--mist);
     }
 
-    .tab-btn.active {
-      color: var(--color-primary);
+    .mkt-row:last-child { border-bottom: none; }
+    .mkt-row.head { background: var(--stone); padding: 0.75rem 2rem; }
+
+    .mkt-row.head span {
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--smoke);
     }
 
-    .tab-btn svg {
-      width: 18px;
-      height: 18px;
-      stroke: currentColor;
-      stroke-width: 2.2;
-      fill: none;
+    @media (max-width: 720px) {
+      .mkt-row { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+      .mkt-row.head { display: none; }
     }
 
-    .tab-btn span {
-      font-size: 8px;
+    .mkt-layer { font-weight: 600; font-size: 0.9rem; }
+
+    .mkt-bar-wrap { display: flex; align-items: center; gap: 0.75rem; }
+    .mkt-bar-bg {
+      flex: 1; height: 5px;
+      background: var(--mist);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .mkt-bar-fill {
+      height: 100%;
+      background: var(--sage);
+      border-radius: 3px;
+    }
+
+    .mkt-num {
+      font-family: var(--serif);
+      font-size: 1.5rem;
+      color: var(--ink);
+    }
+
+    .mkt-arr {
+      font-family: var(--serif);
+      font-size: 1.25rem;
+      color: var(--sage);
+    }
+
+    /* ══════════════════════════════════════════════ */
+    /* SLIDE 7 — COMPETITION                         */
+    /* ══════════════════════════════════════════════ */
+
+    .comp-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 2.5rem;
+    }
+
+    .comp-table th {
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--smoke);
+      text-align: left;
+      padding: 0 1rem 0.75rem 0;
+      border-bottom: 1px solid var(--mist);
+    }
+
+    .comp-table td {
+      padding: 1rem 1rem 1rem 0;
+      border-bottom: 1px solid var(--mist);
+      font-size: 0.82rem;
+      color: var(--ink-lt);
+      vertical-align: top;
+    }
+
+    .comp-table tr:last-child td { border-bottom: none; }
+
+    .comp-table .co { font-weight: 600; color: var(--ink); font-size: 0.875rem; }
+
+    .comp-table tr.us { background: var(--sage-bg); }
+    .comp-table tr.us td.co {
+      color: var(--sage);
+      font-size: 0.875rem;
+      border-left: 2px solid var(--sage);
+      padding-left: 0.75rem;
+    }
+
+    .gap-tag { color: var(--smoke); }
+    .win-tag { color: var(--sage); font-weight: 500; }
+
+    /* ══════════════════════════════════════════════ */
+    /* SLIDE 8 — BIZ MODEL                           */
+    /* ══════════════════════════════════════════════ */
+
+    .bm-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      margin-top: 2.5rem;
+    }
+
+    @media (max-width: 720px) { .bm-cols { grid-template-columns: 1fr; gap: 2rem; } }
+
+    .bm-list { display: flex; flex-direction: column; }
+
+    .bm-row {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      padding: 1.1rem 0;
+      border-bottom: 1px solid var(--mist);
+    }
+
+    .bm-row:first-child { border-top: 1px solid var(--mist); }
+
+    .bm-phase {
+      min-width: 52px;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .p-now  { background: var(--sage-bg); color: var(--sage); border: 1px solid var(--sage-ln); }
+    .p-next { background: var(--blue-bg); color: var(--blue); border: 1px solid #bdd0ec; }
+    .p-late { background: var(--warm-bg); color: var(--warm); border: 1px solid #f0c8a0; }
+
+    .bm-name { font-size: 0.875rem; font-weight: 600; color: var(--ink); }
+    .bm-sub  { font-size: 0.78rem; color: var(--mid); margin-top: 0.15rem; }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border: 1px solid var(--mist);
+      border-radius: var(--r);
+      overflow: hidden;
+    }
+
+    .kpi-cell {
+      padding: 1rem 1.25rem;
+      border-right: 1px solid var(--mist);
+      border-bottom: 1px solid var(--mist);
+      font-size: 0.82rem;
+    }
+
+    .kpi-cell:nth-child(2n) { border-right: none; }
+    .kpi-cell:nth-last-child(-n+2) { border-bottom: none; }
+
+    .kpi-cell strong { display: block; font-size: 0.7rem; color: var(--sage); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.2rem; }
+
+    /* ══════════════════════════════════════════════ */
+    /* SLIDE 9 — TRUST (dark)                        */
+    /* ══════════════════════════════════════════════ */
+
+    .trust-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      margin-top: 2.5rem;
+    }
+
+    @media (max-width: 720px) { .trust-cols { grid-template-columns: 1fr; gap: 2rem; } }
+
+    .trust-item {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      padding: 1rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .trust-item:first-child { border-top: 1px solid rgba(255,255,255,0.08); }
+
+    .t-dot {
+      width: 6px; height: 6px; min-width: 6px;
+      border-radius: 50%;
+      margin-top: 6px;
+    }
+
+    .t-green  { background: #5da87a; }
+    .t-yellow { background: #c9a52a; }
+
+    .t-h { font-size: 0.875rem; font-weight: 500; color: rgba(255,255,255,0.85); margin-bottom: 0.15rem; }
+    .t-b { font-size: 0.78rem; color: rgba(255,255,255,0.38); line-height: 1.5; }
+
+    .reg-row {
+      padding: 1rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .reg-row:first-child { border-top: 1px solid rgba(255,255,255,0.08); }
+    .reg-h { font-size: 0.82rem; font-weight: 600; color: rgba(255,255,255,0.6); margin-bottom: 0.3rem; }
+    .reg-b { font-size: 0.78rem; color: rgba(255,255,255,0.35); line-height: 1.5; }
+
+    /* ══════════════════════════════════════════════ */
+    /* SLIDE 10 — ROADMAP                            */
+    /* ══════════════════════════════════════════════ */
+
+    .rm-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      border: 1px solid var(--mist);
+      border-radius: var(--r);
+      overflow: hidden;
+      margin-top: 2.5rem;
+    }
+
+    @media (max-width: 720px) { .rm-grid { grid-template-columns: 1fr 1fr; } }
+
+    .rm-col {
+      padding: 1.75rem 1.5rem;
+      border-right: 1px solid var(--mist);
+    }
+
+    .rm-col:last-child { border-right: none; }
+
+    .rm-ph {
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--sage);
+      margin-bottom: 0.25rem;
+    }
+
+    .rm-title {
+      font-family: var(--serif);
+      font-size: 1.3rem;
+      color: var(--ink);
+      margin-bottom: 0.2rem;
+    }
+
+    .rm-time {
+      font-size: 0.7rem;
+      color: var(--smoke);
+      margin-bottom: 1.25rem;
+    }
+
+    .rm-item {
+      font-size: 0.78rem;
+      color: var(--mid);
+      padding: 0.25rem 0;
+      display: flex;
+      gap: 0.5rem;
+    }
+    .rm-item::before { content: '–'; color: var(--mist); }
+
+    /* ══════════════════════════════════════════════ */
+    /* SLIDE 11 — ASK                                */
+    /* ══════════════════════════════════════════════ */
+
+    .ask-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+      margin-top: 2.5rem;
+    }
+
+    @media (max-width: 720px) { .ask-cols { grid-template-columns: 1fr; gap: 2rem; } }
+
+    .use-list { display: flex; flex-direction: column; }
+
+    .use-row {
+      display: flex;
+      gap: 1.25rem;
+      padding: 1.1rem 0;
+      border-bottom: 1px solid var(--mist);
+      align-items: flex-start;
+    }
+
+    .use-row:first-child { border-top: 1px solid var(--mist); }
+
+    .use-ico {
+      width: 34px; height: 34px; min-width: 34px;
+      border: 1px solid var(--mist);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.95rem;
+      background: var(--white);
+    }
+
+    .use-h { font-size: 0.875rem; font-weight: 600; margin-bottom: 0.15rem; }
+    .use-b { font-size: 0.78rem; color: var(--mid); line-height: 1.5; }
+
+    .why-list { display: flex; flex-direction: column; }
+
+    .why-row {
+      padding: 1.1rem 0;
+      border-bottom: 1px solid var(--mist);
+    }
+
+    .why-row:first-child { border-top: 1px solid var(--mist); }
+
+    .why-kw {
+      font-size: 0.62rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.2px;
+      letter-spacing: 0.1em;
+      color: var(--sage);
+      margin-bottom: 0.2rem;
     }
 
-    /* Helper elements */
-    .reset-prototype-btn {
-      background: transparent;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: var(--text-muted);
-      font-size: 10px;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 12px;
-      transition: all 0.2s ease;
-      align-self: center;
+    .why-b { font-size: 0.82rem; color: var(--ink-lt); line-height: 1.55; }
+
+    /* ══════════════════════════════════════════════ */
+    /* SLIDE 12 — CLOSE                              */
+    /* ══════════════════════════════════════════════ */
+
+    .close-wrap { max-width: 700px; }
+
+    .close-q {
+      font-family: var(--serif);
+      font-size: clamp(1.75rem, 4vw, 3rem);
+      font-style: italic;
+      font-weight: 400;
+      color: rgba(255,255,255,0.9);
+      line-height: 1.3;
+      margin: 2rem 0 1.75rem;
     }
-    .reset-prototype-btn:hover {
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--text-main);
+
+    .close-sub {
+      font-size: 1rem;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.65;
+      max-width: 520px;
     }
+
+    .mailto {
+      color: rgba(255,255,255,0.85);
+      font-weight: 500;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(255,255,255,0.25);
+      padding-bottom: 1px;
+    }
+
+    .mailto:hover { border-color: rgba(255,255,255,0.7); }
   </style>
 </head>
 <body>
 
-  <!-- HEADER -->
-  <header>
-    <div class="logo-container">
-      <div class="logo-icon">
-        <svg viewBox="0 0 24 24">
-          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-        </svg>
+<div id="bar"></div>
+<nav id="nav" aria-label="Slide navigation"></nav>
+<div id="ctr" aria-live="polite"></div>
+
+<!-- ═══════════════════════ 1 — COVER ══════════════════════════ -->
+<section class="slide bg-off" id="s1" data-slide="1" data-label="Cover">
+  <div class="inner">
+    <div class="cover-grid">
+      <div>
+        <p class="label up">Investor Deck · 2026</p>
+        <h1 class="up d1">Be Healthy</h1>
+        <p class="up d2" style="margin-top:1.25rem; font-size:1.125rem; color:var(--ink-lt); font-weight:300; line-height:1.6; max-width:440px;">
+          An AI-powered personal health workspace — turning scattered health data into clear, reusable action plans.
+        </p>
+        <div class="chip-row up d3">
+          <span class="chip">Seed Stage</span>
+          <span class="chip">Self-Management Copilot</span>
+          <span class="chip">Consumer → B2B2C</span>
+        </div>
       </div>
-      <div class="logo-text">Healthee</div>
+      <div class="cover-right up d2">
+        <p class="label" style="margin-bottom:1rem;">One-line pitch</p>
+        <p style="font-family:var(--serif); font-size:1.45rem; color:var(--ink); line-height:1.4;">
+          "The layer between generic AI chat and formal healthcare."
+        </p>
+        <hr />
+        <p class="xs">Not an AI doctor. Not a symptom checker.<br/>
+        A <strong>self-management copilot</strong> for people managing recurring conditions.</p>
+        <p class="xs" style="margin-top:2rem;">Confidential · For discussion purposes only</p>
+      </div>
     </div>
-    <div class="header-badge">AI Pitch Presentation</div>
-  </header>
+  </div>
+</section>
 
-  <!-- MAIN CONTAINER (LEFT: PRESENTATION DECK, RIGHT: PHONE SIMULATOR) -->
-  <main class="main-container">
-    
-    <!-- LEFT PANEL: PRESENTATION SLIDES -->
-    <div class="deck-panel">
-      
-      <!-- SLIDE WINDOW -->
-      <div class="slide-wrapper">
-        
-        <!-- SLIDE 1: INTRO -->
-        <div class="slide active" id="slide-0">
-          <span class="slide-tag">Introductory Pitch</span>
-          <h1 class="slide-title">Empathetic <span>Adaptive AI</span> Health Companion</h1>
-          <p class="slide-description">
-            Most health apps fail because they force users into rigid calendars or push toxic diet-culture streaks. 
-            <strong>Healthee</strong> connects diagnostic documents with everyday metrics to create personalized, 
-            phase-based plans that adapt autonomously.
-          </p>
-          <div class="quote-block">
-            <p class="quote-text">"Here's what's happening in your body, and what to do about it."</p>
-            <p class="quote-author">Healthee Value Proposition</p>
-          </div>
-        </div>
+<!-- ══════════════════════ 2 — PROBLEM ════════════════════════ -->
+<section class="slide bg-white" id="s2" data-slide="2" data-label="Problem">
+  <div class="inner">
+    <p class="label up">The Problem</p>
+    <div class="rule up d1"></div>
+    <h2 class="up d1">Health data is everywhere.<br/>Usable guidance is nowhere.</h2>
 
-        <!-- SLIDE 2: THE PROBLEM -->
-        <div class="slide" id="slide-1">
-          <span class="slide-tag">The Problem</span>
-          <h1 class="slide-title">The Health Tech <span>Landscape is Broken</span></h1>
-          <p class="slide-description">
-            Current solutions focus on raw metrics, rigid shaming patterns, and complex diagnostics without clear guidance.
-          </p>
-          <div class="grid-benefits">
-            <div class="benefit-card">
-              <div class="benefit-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>
-                Rigid Streak Guilt
-              </div>
-              <p class="benefit-desc">Static calendars declare you a "failure" if you miss a single day, ignoring life's irregular schedules and sicknesses.</p>
-            </div>
-            <div class="benefit-card">
-              <div class="benefit-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>
-                Metric Toxicity
-              </div>
-              <p class="benefit-desc">Obsession with scale weight, calorie counting, and intense restrictive diets leads to burnout and stress.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- SLIDE 3: THE INNOVATION -->
-        <div class="slide" id="slide-2">
-          <span class="slide-tag">The Innovation</span>
-          <h1 class="slide-title">Dynamic <span>Phase-Based</span> Rhythms</h1>
-          <p class="slide-description">
-            Healthee replaces weekly checklists with a flexible structure of 1 to 6 phases. It adapts directly to the user's current baseline.
-          </p>
-          <div class="grid-benefits">
-            <div class="benefit-card">
-              <div class="benefit-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M2 12h20M12 2v20"/></svg>
-                Observation First
-              </div>
-              <p class="benefit-desc">If a user lacks clarity about their baseline, the AI schedules a low-friction phase to simply observe patterns before taking action.</p>
-            </div>
-            <div class="benefit-card">
-              <div class="benefit-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                Autopilot Adaptation
-              </div>
-              <p class="benefit-desc">Custom-built mathematical signals and transition rules let the app simplify, repeat, or progress phases automatically.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- SLIDE 4: TECHNICAL ENGINE -->
-        <div class="slide" id="slide-3">
-          <span class="slide-tag">Technical Architecture</span>
-          <h1 class="slide-title">The <span>AI Adaptive</span> State Machine</h1>
-          <p class="slide-description">
-            A secure LLM engine maps onboarding, diagnostics, and daily check-ins into structured JSON plan models.
-          </p>
-          
-          <div class="diagram-flow">
-            <div class="flow-node active-node" id="flow-1">1. Onboarding Vitals</div>
-            <div class="flow-arrow">→</div>
-            <div class="flow-node" id="flow-2">2. LLM Engine (JSON Schema)</div>
-            <div class="flow-arrow">→</div>
-            <div class="flow-node" id="flow-3">3. Daily Logs & Signals</div>
-            <div class="flow-arrow">→</div>
-            <div class="flow-node" id="flow-4">4. Autopilot Shift</div>
-          </div>
-          
-          <p class="slide-description" style="font-size: 13px; margin-top: 10px;">
-            The engine evaluates logs at the end of each phase. It computes metrics like <em>Resistance Rating</em> 
-            or <em>Completion Consistency</em> to dynamically alter triggers and rules.
-          </p>
-        </div>
-
-        <!-- SLIDE 5: BEHAVIORAL SAFETY -->
-        <div class="slide" id="slide-4">
-          <span class="slide-tag">Behavioral Safety</span>
-          <h1 class="slide-title">Built-in <span>Empathy & Safety</span></h1>
-          <p class="slide-description">
-            Healthee stands as a safe space in behavioral habit tailorship. No diet culture, BMI indexes, or restriction.
-          </p>
-          <div class="grid-benefits">
-            <div class="benefit-card">
-              <div class="benefit-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                Physical Constraints
-              </div>
-              <p class="benefit-desc">Safely scales and adapts if the user reports physical concerns or fatigue history (e.g. joint pain, sleep issues).</p>
-            </div>
-            <div class="benefit-card">
-              <div class="benefit-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                Stress-Free Boundaries
-              </div>
-              <p class="benefit-desc">We focus on neutral observations and direct consistency guidelines without pushing toxic restriction goals.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- SLIDE 6: SIMULATION PROMPT -->
-        <div class="slide" id="slide-5">
-          <span class="slide-tag">Interactive Preview</span>
-          <h1 class="slide-title">Experience the <span>Healthee Engine</span></h1>
-          <p class="slide-description">
-            We've built a live interactive simulator of the actual mobile application. Walk through onboarding on the right, 
-            and see how the AI designs a tailored, adaptive routine in real time!
-          </p>
-          <div class="quote-block" style="border-left-color: var(--color-primary); background: rgba(59, 130, 246, 0.03);">
-            <p class="quote-text">"Choose a Goal and click 'Generate Adaptive Plan' on the smartphone mockup to trigger the AI demo."</p>
-          </div>
-        </div>
-
-        <!-- SLIDE 7: VISION -->
-        <div class="slide" id="slide-6">
-          <span class="slide-tag">The Business Opportunity</span>
-          <h1 class="slide-title">The Future of <span>Preventative Wellness</span></h1>
-          <p class="slide-description">
-            Healthee targets a premium market of health-conscious individuals who want evidence-based, stress-free routine management.
-          </p>
-          <div class="grid-benefits">
-            <div class="benefit-card">
-              <div class="benefit-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-                B2B Integrations
-              </div>
-              <p class="benefit-desc">Connects with corporate wellness platforms and wellness advisors to provide validated advice.</p>
-            </div>
-            <div class="benefit-card">
-              <div class="benefit-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                High Premium AI Sub
-              </div>
-              <p class="benefit-desc">Premium model includes smart routine integrations, custom checklists, and push reminders.</p>
-            </div>
-          </div>
-        </div>
-
+    <div class="prob-cols up d2">
+      <div class="prob-col">
+        <div class="prob-n">01</div>
+        <div class="prob-title">Fragmented context</div>
+        <div class="prob-body">Patient portals, PDFs, food trackers, notes apps — all siloed. No tool unifies them into a coherent picture.</div>
       </div>
-
-      <!-- DECK CONTROLS (BOTTOM OF LEFT PANEL) -->
-      <div class="deck-controls">
-        <div class="progress-container">
-          <div class="slide-dots" id="slide-dots">
-            <!-- Dots added dynamically by JS -->
-          </div>
-          <div class="slide-counter" id="slide-counter">Slide 1 of 7</div>
-        </div>
-        <div class="nav-buttons">
-          <button class="control-btn" id="btn-prev" disabled>
-            <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
-          </button>
-          <button class="control-btn" id="btn-next">
-            <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
-          </button>
-        </div>
+      <div class="prob-col">
+        <div class="prob-n">02</div>
+        <div class="prob-title">Generic AI falls short</div>
+        <div class="prob-body">ChatGPT has no memory of your body, no knowledge of your records, and no way to save plans and follow through.</div>
       </div>
+      <div class="prob-col">
+        <div class="prob-n">03</div>
+        <div class="prob-title">Point solutions are too narrow</div>
+        <div class="prob-body">Symptom checkers, meal planners, medication reminders — each solves one slice. No one owns the full workflow.</div>
+      </div>
+    </div>
+  </div>
+</section>
 
+<!-- ══════════════════════ 3 — SOLUTION ═══════════════════════ -->
+<section class="slide bg-off" id="s3" data-slide="3" data-label="Solution">
+  <div class="inner">
+    <p class="label up">The Solution</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:end;" class="up d1">
+      <div>
+        <div class="rule"></div>
+        <h2>A personal health workspace.<br/><span style="color:var(--smoke); font-style:italic;">Not just a chatbot.</span></h2>
+      </div>
+      <div>
+        <p class="sub" style="font-size:0.9rem;">
+          Chat on the left. A saveable artifact on the right. Every conversation becomes a plan, explanation, or routine that gets smarter with every session.
+        </p>
+        <p class="xs" style="margin-top:1rem;">The chat is the interface. <strong>The context graph is the moat.</strong></p>
+      </div>
     </div>
 
-    <!-- RIGHT PANEL: SMARTPHONE INTERACTIVE SIMULATOR -->
-    <div class="simulator-panel">
-      <div class="phone-glow"></div>
-      
-      <div class="iphone">
-        <!-- Notch/Dynamic Island -->
-        <div class="notch">
-          <div class="notch-camera"></div>
-          <div class="notch-sensor"></div>
+    <div class="product-ui up d2">
+      <div class="ui-bar">
+        <div class="ui-dot" style="background:#e5605a;"></div>
+        <div class="ui-dot" style="background:#f0b429;"></div>
+        <div class="ui-dot" style="background:#57c754;"></div>
+        <span style="font-size:0.68rem; color:var(--smoke); margin-left:0.5rem;">Be Healthy — Health Workspace</span>
+      </div>
+      <div class="ui-pane">
+        <p class="ui-label">Chat</p>
+        <div class="bubble bubble-u">My TSH came back at 4.2. What does this mean for my energy?</div>
+        <div class="bubble bubble-a">Based on your profile and uploaded labs, your TSH is upper-normal. Here's a plain-language summary and 3 questions for your next appointment.</div>
+        <div class="bubble bubble-u">Can you make a thyroid-friendly meal plan for the week?</div>
+        <div class="bubble bubble-a" style="color:var(--smoke); font-style:italic;">Generating meal plan — saving to artifacts…</div>
+      </div>
+      <div class="ui-pane">
+        <p class="ui-label">Saved Artifacts</p>
+        <div class="card">
+          <div class="card-title">Lab Summary — June 2026</div>
+          <div class="card-line">TSH 4.2 — upper normal, monitor</div>
+          <div class="card-line">3 questions prepared for next visit</div>
+          <div class="card-line">Δ vs. Feb result: +0.4</div>
         </div>
-        
-        <!-- Screen container -->
-        <div class="screen" id="phone-screen">
-          
-          <!-- STATE A: ONBOARDING SIMULATOR -->
-          <div class="sim-state active sim-onboarding" id="sim-state-onboarding">
+        <div class="card">
+          <div class="card-title">7-Day Thyroid-Friendly Meal Plan</div>
+          <div class="card-line">Iodine + selenium focused</div>
+          <div class="card-line">Saved · Reopened 3× this week</div>
+        </div>
+        <p class="xs" style="margin-top:0.5rem;">Context: profile + 3 docs + 2 prior sessions</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════ 4 — WHY NOW ════════════════════════ -->
+<section class="slide bg-white" id="s4" data-slide="4" data-label="Why Now">
+  <div class="inner">
+    <p class="label up">Why Now</p>
+    <div class="rule up d1"></div>
+    <h2 class="up d1" style="max-width:600px;">Consumers are already here.<br/>Trust is the gap to close.</h2>
+
+    <div class="stat-grid up d2">
+      <div class="stat-cell">
+        <div class="stat-big">32%</div>
+        <div class="stat-txt">of U.S. adults used AI for health info last year <em>(KFF)</em></div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-big">81%</div>
+        <div class="stat-txt">took at least one action after the AI interaction <em>(Rock Health)</em></div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-big">41%</div>
+        <div class="stat-txt">already uploaded personal medical data into a general AI tool <em>(KFF)</em></div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-big">77%</div>
+        <div class="stat-txt">are concerned about privacy — the opening for a purpose-built product <em>(KFF)</em></div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-big">65%</div>
+        <div class="stat-txt">accessed their online health records in 2024 — data is digital and ready <em>(ONC)</em></div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-big">$4B</div>
+        <div class="stat-txt">in digital health funding in Q1 2026 alone — capital is active <em>(Rock Health)</em></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════ 5 — HOW IT WORKS ═════════════════════ -->
+<section class="slide bg-off" id="s5" data-slide="5" data-label="How It Works">
+  <div class="inner">
+    <p class="label up">How It Works</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:end;" class="up d1">
+      <div>
+        <div class="rule"></div>
+        <h2>Context in.<br/>Artifacts out.</h2>
+      </div>
+      <div>
+        <p class="sub" style="font-size:0.9rem;">A bounded architecture — not open-ended AI. Three defined skills, a six-question intake, and a preview panel that turns conversations into persistent, reusable outputs.</p>
+      </div>
+    </div>
+
+    <div class="steps up d2">
+      <div class="step">
+        <div class="step-n">01</div>
+        <div class="step-h">Build Context</div>
+        <div class="step-b">Intake, profile, document uploads, mobile health signals</div>
+      </div>
+      <div class="step">
+        <div class="step-n">02</div>
+        <div class="step-h">Skill Router</div>
+        <div class="step-b">3 bounded skills: movement, meal planning, medical-data explanation</div>
+      </div>
+      <div class="step">
+        <div class="step-n">03</div>
+        <div class="step-h">Generate Artifact</div>
+        <div class="step-b">Personalized plan, explanation, or routine in the preview panel</div>
+      </div>
+      <div class="step">
+        <div class="step-n">04</div>
+        <div class="step-h">Save &amp; Return</div>
+        <div class="step-b">Artifacts persist. Revisit rate is the north-star metric.</div>
+      </div>
+    </div>
+
+    <div style="margin-top:1.75rem; padding:1.25rem 1.5rem; background:var(--sage-bg); border:1px solid var(--sage-ln); border-radius:var(--r);" class="up d3">
+      <p style="font-size:0.875rem; color:var(--sage-lt);">
+        <strong style="color:var(--sage);">Positioning:</strong> &nbsp;
+        Personal health workspace &nbsp;·&nbsp; Self-management copilot &nbsp;·&nbsp; Wellness-first, clinically conservative &nbsp;·&nbsp;
+        <em style="color:var(--smoke);">Not an AI doctor. Not a diagnostic engine.</em>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════ 6 — MARKET ════════════════════════ -->
+<section class="slide bg-white" id="s6" data-slide="6" data-label="Market">
+  <div class="inner">
+    <p class="label up">Market Opportunity</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:end;" class="up d1">
+      <div>
+        <div class="rule"></div>
+        <h2>A focused wedge<br/>with significant upside.</h2>
+      </div>
+      <div>
+        <p class="sub" style="font-size:0.9rem;">We start narrow — recurring-condition self-managers who are already digital, already using AI, and already uploading health data. Bottom-up U.S. sizing. EU is upside.</p>
+        <p class="xs" style="margin-top:0.75rem;">Comp benchmarks: MyFitnessPal $99/yr · Noom $209/yr. Consumers already pay for structured health planning.</p>
+      </div>
+    </div>
+
+    <div class="market-rows up d2">
+      <div class="mkt-row head">
+        <span>Layer</span>
+        <span>Addressable population</span>
+        <span>Users</span>
+        <span>Illustrative ARR</span>
+      </div>
+      <div class="mkt-row">
+        <div>
+          <div class="mkt-layer">TAM</div>
+          <div class="xs">AI-health U.S. adults</div>
+        </div>
+        <div class="mkt-bar-wrap">
+          <div class="mkt-bar-bg"><div class="mkt-bar-fill" style="width:100%;"></div></div>
+        </div>
+        <div class="mkt-num">85.4M</div>
+        <div class="xs">—</div>
+      </div>
+      <div class="mkt-row">
+        <div>
+          <div class="mkt-layer">SAM</div>
+          <div class="xs">Chronic + digital + AI-ready</div>
+        </div>
+        <div class="mkt-bar-wrap">
+          <div class="mkt-bar-bg"><div class="mkt-bar-fill" style="width:39%;"></div></div>
+        </div>
+        <div class="mkt-num">33.3M</div>
+        <div class="xs">—</div>
+      </div>
+      <div class="mkt-row" style="background:var(--sage-bg);">
+        <div>
+          <div class="mkt-layer">SOM</div>
+          <div class="xs">3–5 yr reachable (0.5–1.5%)</div>
+        </div>
+        <div class="mkt-bar-wrap">
+          <div class="mkt-bar-bg"><div class="mkt-bar-fill" style="width:5%;"></div></div>
+        </div>
+        <div class="mkt-num">167K–500K</div>
+        <div class="mkt-arr">$24–72M</div>
+      </div>
+    </div>
+    <p class="xs" style="margin-top:0.75rem;">$144/yr ARPU · Illustrative, not a forecast · Replace with real cohort data</p>
+  </div>
+</section>
+
+<!-- ════════════════════ 7 — COMPETITION ════════════════════ -->
+<section class="slide bg-off" id="s7" data-slide="7" data-label="Competition">
+  <div class="inner">
+    <p class="label up">Competitive Landscape</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:end;" class="up d1">
+      <div>
+        <div class="rule"></div>
+        <h2>Point solutions solve slices.<br/>We own the layer.</h2>
+      </div>
+      <div>
+        <p class="sub" style="font-size:0.9rem;">Not trying to beat each category leader in their lane. The opportunity is the cross-category context and artifact workflow that none of them offer.</p>
+      </div>
+    </div>
+
+    <table class="comp-table up d2" aria-label="Competitor comparison">
+      <thead>
+        <tr>
+          <th style="width:150px;">Product</th>
+          <th>Category</th>
+          <th>Their gap</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="us">
+          <td class="co">Be Healthy ✦</td>
+          <td class="win-tag">Cross-category health workspace · context graph · artifact layer · bounded skills</td>
+          <td class="win-tag">The only product combining context, structure, and reusable outputs</td>
+        </tr>
+        <tr>
+          <td class="co">Ada</td>
+          <td>Symptom assessment & navigation</td>
+          <td class="gap-tag">No persistent context or multi-skill artifacts</td>
+        </tr>
+        <tr>
+          <td class="co">K Health</td>
+          <td>Integrated primary care, clinical AI</td>
+          <td class="gap-tag">Care delivery infrastructure, not self-serve workspace</td>
+        </tr>
+        <tr>
+          <td class="co">MyFitnessPal</td>
+          <td>Nutrition tracking, $99/yr</td>
+          <td class="gap-tag">No medical documents, no cross-domain context</td>
+        </tr>
+        <tr>
+          <td class="co">Noom</td>
+          <td>Behavior-change, weight, $209/yr</td>
+          <td class="gap-tag">Single use case — no longitudinal health context</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════════════════════ 8 — BIZ MODEL ════════════════════ -->
+<section class="slide bg-white" id="s8" data-slide="8" data-label="Business Model">
+  <div class="inner">
+    <p class="label up">Business Model</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:end;" class="up d1">
+      <div>
+        <div class="rule"></div>
+        <h2>Consumer-first.<br/>B2B2C upside.</h2>
+      </div>
+      <div>
+        <p class="sub" style="font-size:0.9rem;">MVP stage means consumer DTC first. No provider-first, no payer-first. Prove the wedge, then expand.</p>
+      </div>
+    </div>
+
+    <div class="bm-cols up d2">
+      <div>
+        <p class="label" style="margin-bottom:1rem;">Go-to-market</p>
+        <div class="bm-list">
+          <div class="bm-row">
+            <span class="bm-phase p-now">Now</span>
             <div>
-              <div class="sim-title">Let's build your routine</div>
-              <div class="sim-subtitle">Answer a few quick questions to customize your adaptive health phases.</div>
-              
-              <div class="sim-group-label">Focus Area (Select one)</div>
-              <div class="goal-buttons">
-                <div class="goal-option selected" data-goal="sleep-schedule">
-                  <div class="goal-meta">
-                    <span class="goal-title">Sleep Better</span>
-                    <span class="goal-desc">Build a calm bedtime routine & offset debt</span>
-                  </div>
-                  <div class="checkbox-round">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>
-                  </div>
-                </div>
-                <div class="goal-option" data-goal="hydration">
-                  <div class="goal-meta">
-                    <span class="goal-title">Stay Hydrated</span>
-                    <span class="goal-desc">Track and hit your cellular hydration needs</span>
-                  </div>
-                  <div class="checkbox-round">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>
-                  </div>
-                </div>
-                <div class="goal-option" data-goal="screen-time">
-                  <div class="goal-meta">
-                    <span class="goal-title">Reduce Phone Screen Time</span>
-                    <span class="goal-desc">Minimize night scrolls & digital fatigue</span>
-                  </div>
-                  <div class="checkbox-round">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="sim-group-label">Focus Concerns (Tailor safeguards)</div>
-              <div class="conditions-grid">
-                <div class="condition-option" data-cond="fatigue">Constant Fatigue</div>
-                <div class="condition-option" data-cond="joints">Joint Stiffness</div>
-                <div class="condition-option" data-cond="stress">High Stress</div>
-                <div class="condition-option selected" data-cond="none">None</div>
-              </div>
-            </div>
-            
-            <button class="btn-generate" id="btn-simulate-generate">
-              <svg viewBox="0 0 24 24"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-              Generate Adaptive Plan
-            </button>
-          </div>
-          
-          <!-- STATE B: LOADING AI GENERATION -->
-          <div class="sim-state sim-loading" id="sim-state-loading">
-            <div class="loading-pulse">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            </div>
-            <div class="loading-title">Healthee AI Core</div>
-            <div class="loading-step" id="loading-step-text">Assembling onboarding context...</div>
-            <div class="progress-bar-bg">
-              <div class="progress-bar-fill" id="loading-progress-fill"></div>
+              <div class="bm-name">DTC freemium → paid</div>
+              <div class="bm-sub">Free chat intake. Paid: saved artifacts, history, premium plans, document organization.</div>
             </div>
           </div>
-          
-          <!-- STATE C: DYNAMIC APP LAYOUT -->
-          <div class="sim-state sim-app" id="sim-state-app">
-            
-            <!-- App Header -->
-            <div class="phone-header">
-              <div class="phone-greeting">Welcome back, Alex</div>
-              <div class="phone-time-alert" id="phone-phase-indicator">Phase 1: Observation</div>
+          <div class="bm-row">
+            <span class="bm-phase p-next">Next</span>
+            <div>
+              <div class="bm-name">Condition-specific B2B2C</div>
+              <div class="bm-sub">Digital clinics, cash-pay providers, employer wellness. PMPM licensing.</div>
             </div>
-            
-            <!-- App Body (Scrollable content) -->
-            <div class="phone-body" id="app-body-content">
-              
-              <!-- TODAY TAB (DEFAULT ACTIVE VIEW) -->
-              <div class="view-today" id="app-view-today">
-                
-                <!-- Readiness dial card -->
-                <div class="readiness-card">
-                  <div class="readiness-dial-wrapper">
-                    <svg class="dial-svg">
-                      <defs>
-                        <linearGradient id="dialGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stop-color="var(--color-primary)" />
-                          <stop offset="100%" stop-color="var(--color-accent)" />
-                        </linearGradient>
-                      </defs>
-                      <circle class="dial-bg" cx="40" cy="40" r="35"></circle>
-                      <circle class="dial-fill" id="readiness-dial-fill" cx="40" cy="40" r="35"></circle>
-                    </svg>
-                    <div class="dial-text">
-                      <span id="readiness-score-text">68</span>
-                      <span class="dial-unit">pts</span>
-                    </div>
-                  </div>
-                  <div class="readiness-info">
-                    <div class="readiness-label">Daily Readiness Score</div>
-                    <div class="readiness-status" id="readiness-status-text">Needs Attention</div>
-                    <p class="readiness-desc" id="readiness-desc-text">Sleep debt is your top driver. Completing actions tonight resets recovery.</p>
-                  </div>
-                </div>
-                
-                <!-- Everyday Action Checklist -->
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                  <div class="checklist-title">TODAY'S ADAPTIVE ACTIONS</div>
-                  <div class="checklist-group" id="today-actions-group">
-                    <!-- Loaded dynamically based on Goal selection -->
-                  </div>
-                </div>
-                
-              </div>
-              
-              <!-- PLAN TAB VIEW -->
-              <div class="view-plan" id="app-view-plan" style="display: none;">
-                
-                <div class="plan-header-card">
-                  <div class="plan-header-goal" id="plan-header-goal-title">Sleep Rhythm</div>
-                  <div class="plan-header-summary" id="plan-header-goal-desc">Tailored program to eliminate 4.2h sleep debt and stabilize circadian clock.</div>
-                </div>
-                
-                <div class="checklist-title">PHASE TIMELINE</div>
-                <div class="timeline-vertical" id="plan-timeline-group">
-                  <!-- Loaded dynamically -->
-                </div>
-                
-              </div>
-              
-              <!-- INSIGHTS TAB VIEW -->
-              <div class="view-insights" id="app-view-insights" style="display: none;">
-                
-                <div class="upload-sim-card" id="btn-sim-upload">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 6v6l4 2"/></svg>
-                  <div class="upload-sim-title">Connect Wearable Devices</div>
-                  <div class="upload-sim-desc">Sync Apple Health, Oura, or Garmin logs to analyze circadian alignment.</div>
-                </div>
-                
-                <div class="checklist-title" style="margin-top: 8px;">ACTIVE DETECTED INSIGHTS</div>
-                
-                <div class="insight-card high-severity" id="insight-main-card">
-                  <div class="insight-header">
-                    <span class="insight-tag-alert">High Severity</span>
-                    <span class="insight-time">Detected Just Now</span>
-                  </div>
-                  <div class="insight-card-title" id="insight-main-title">Sleep debt is building</div>
-                  <div class="insight-card-summary" id="insight-main-desc">You averaged 5.8 hours over 3 nights. Recovery is lagging by 14%.</div>
-                  <div class="insight-card-action-title">HIGH-IMPACT RECOMMENDATION</div>
-                  <div class="insight-action-item">
-                    <div class="insight-action-circle"></div>
-                    <span id="insight-action-text">Tonight: Lights out by 10:30 PM (dim phone)</span>
-                  </div>
-                </div>
-                
-              </div>
-              
-              <!-- PROFILE TAB VIEW -->
-              <div class="view-profile" id="app-view-profile" style="display: none;">
-                
-                <div class="checklist-title">Biometric Snapshot</div>
-                <div class="profile-card">
-                  <div class="profile-row">
-                    <span class="profile-cell-label">Age / Sex</span>
-                    <span class="profile-cell-value">28 / Female</span>
-                  </div>
-                  <div class="profile-row">
-                    <span class="profile-cell-label">Calculated Horizon</span>
-                    <span class="profile-cell-value">28 Days (Adaptive)</span>
-                  </div>
-                  <div class="profile-row">
-                    <span class="profile-cell-label">Safety Filter Mode</span>
-                    <span class="profile-cell-value" id="profile-safety-mode-text">Standard Medical</span>
-                  </div>
-                </div>
-                
-                <div class="profile-safety-badge">
-                  ✓ Empathetic guidelines: diet-talk filtering is fully active.
-                </div>
-                
-                <button class="reset-prototype-btn" id="btn-reset-prototype">← Reset Simulator</button>
-              </div>
-              
-            </div>
-            
-            <!-- Bottom Tab Bar -->
-            <div class="tab-bar">
-              <button class="tab-btn active" data-tab="today">
-                <svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                <span>Today</span>
-              </button>
-              <button class="tab-btn" data-tab="plan">
-                <svg viewBox="0 0 24 24"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
-                <span>Plan</span>
-              </button>
-              <button class="tab-btn" data-tab="insights">
-                <svg viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
-                <span>Insights</span>
-              </button>
-              <button class="tab-btn" data-tab="profile">
-                <svg viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                <span>Profile</span>
-              </button>
-            </div>
-            
           </div>
-          
+          <div class="bm-row">
+            <span class="bm-phase p-late">Later</span>
+            <div>
+              <div class="bm-name">Provider / EHR integration</div>
+              <div class="bm-sub">SMART on FHIR, appointments, meds, care-management workflows.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="label" style="margin-bottom:1rem;">Key metrics</p>
+        <div class="kpi-grid">
+          <div class="kpi-cell">
+            <strong>North Star</strong>
+            Artifact revisit @ D30
+          </div>
+          <div class="kpi-cell">
+            <strong>Retention</strong>
+            D90 active users
+          </div>
+          <div class="kpi-cell">
+            <strong>Conversion</strong>
+            Free → paid rate
+          </div>
+          <div class="kpi-cell">
+            <strong>Trust</strong>
+            Unsafe output rate
+          </div>
+          <div class="kpi-cell">
+            <strong>Moat signal</strong>
+            Context depth / user
+          </div>
+          <div class="kpi-cell">
+            <strong>Unit econ.</strong>
+            LTV / CAC ratio
+          </div>
+        </div>
+        <div style="margin-top:1.25rem; padding:1rem 1.25rem; background:var(--sage-bg); border:1px solid var(--sage-ln); border-radius:var(--r);">
+          <p style="font-size:0.82rem; color:var(--sage);">If users return to saved artifacts, the preview-panel thesis is working. <strong>That is the north-star metric.</strong></p>
         </div>
       </div>
     </div>
-    
-  </main>
+  </div>
+</section>
 
-  <!-- PRESENTATION SCRIPT & INTERACTIVE SIMULATION LOGIC -->
-  <script>
-    // ==========================================
-    // PRESENTATION SLIDE CONTROLLER (LEFT)
-    // ==========================================
-    const slides = document.querySelectorAll('.slide');
-    const dotsContainer = document.getElementById('slide-dots');
-    const counter = document.getElementById('slide-counter');
-    const btnPrev = document.getElementById('btn-prev');
-    const btnNext = document.getElementById('btn-next');
-    
-    let currentSlide = 0;
-    const totalSlides = slides.length;
-    
-    // Build navigation dots
-    for (let i = 0; i < totalSlides; i++) {
-      const dot = document.createElement('div');
-      dot.classList.add('dot');
-      if (i === 0) dot.classList.add('active');
-      dot.addEventListener('click', () => jumpToSlide(i));
-      dotsContainer.appendChild(dot);
-    }
-    
-    const dots = document.querySelectorAll('.dot');
-    
-    function updateSlideUI() {
-      // Toggle slides
-      slides.forEach((slide, index) => {
-        if (index === currentSlide) {
-          slide.classList.add('active');
-        } else {
-          slide.classList.remove('active');
-        }
-      });
-      
-      // Update dots
-      dots.forEach((dot, index) => {
-        if (index === currentSlide) {
-          dot.classList.add('active');
-        } else {
-          dot.classList.remove('active');
-        }
-      });
-      
-      // Update text count
-      counter.innerText = `Slide ${currentSlide + 1} of ${totalSlides}`;
-      
-      // Disable buttons at boundaries
-      btnPrev.disabled = currentSlide === 0;
-      btnNext.disabled = currentSlide === totalSlides - 1;
+<!-- ══════════════════════ 9 — TRUST (dark) ══════════════════ -->
+<section class="slide bg-ink" id="s9" data-slide="9" data-label="Trust & Safety">
+  <div class="inner">
+    <p class="label label-w up">Trust, Safety &amp; Compliance</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:end;" class="up d1">
+      <div>
+        <div class="rule rule-w"></div>
+        <h2 class="text-w" style="color:rgba(255,255,255,0.9);">Compliance is part<br/>of the product.</h2>
+      </div>
+      <div>
+        <p style="font-size:0.9rem; color:rgba(255,255,255,0.45); line-height:1.65; max-width:420px;">Claims create obligations. The strategy: wellness-first, clinically conservative, compliance-aware, progressively validated.</p>
+      </div>
+    </div>
 
-      // Sync active architectural nodes on Slide 4
-      if (currentSlide === 3) {
-        syncFlowNodes();
-      }
-    }
-
-    function syncFlowNodes() {
-      const nodes = ['flow-1', 'flow-2', 'flow-3', 'flow-4'];
-      nodes.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.remove('active-node');
-      });
-      
-      let step = 0;
-      const interval = setInterval(() => {
-        if (currentSlide !== 3) {
-          clearInterval(interval);
-          return;
-        }
-        nodes.forEach(id => document.getElementById(id)?.classList.remove('active-node'));
-        document.getElementById(nodes[step])?.classList.add('active-node');
-        step = (step + 1) % nodes.length;
-      }, 1500);
-    }
-    
-    function navigateSlide(direction) {
-      const targetSlide = direction === 'next' ? currentSlide + 1 : currentSlide - 1;
-      
-      if (targetSlide < 0 || targetSlide >= totalSlides) return;
-      
-      // Transition helper with View Transitions support
-      const applyTransition = () => {
-        currentSlide = targetSlide;
-        updateSlideUI();
-      };
-      
-      if (document.startViewTransition) {
-        document.startViewTransition({
-          update: applyTransition,
-          types: [direction === 'next' ? 'forward' : 'backward']
-        });
-      } else {
-        applyTransition();
-      }
-    }
-    
-    function jumpToSlide(index) {
-      if (index === currentSlide) return;
-      const direction = index > currentSlide ? 'next' : 'prev';
-      
-      const applyTransition = () => {
-        currentSlide = index;
-        updateSlideUI();
-      };
-      
-      if (document.startViewTransition) {
-        document.startViewTransition({
-          update: applyTransition,
-          types: [direction === 'next' ? 'forward' : 'backward']
-        });
-      } else {
-        applyTransition();
-      }
-    }
-    
-    // Click listeners
-    btnPrev.addEventListener('click', () => navigateSlide('prev'));
-    btnNext.addEventListener('click', () => navigateSlide('next'));
-    
-    // Keyboard listeners
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowRight' || e.key === ' ') {
-        e.preventDefault();
-        navigateSlide('next');
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        navigateSlide('prev');
-      }
-    });
-
-    // ==========================================
-    // INTERACTIVE SMARTPHONE PROTOTYPE CODE
-    // ==========================================
-    
-    // State Selection
-    const stateOnboarding = document.getElementById('sim-state-onboarding');
-    const stateLoading = document.getElementById('sim-state-loading');
-    const stateApp = document.getElementById('sim-state-app');
-    
-    // Config values
-    let selectedGoal = 'sleep-schedule';
-    let selectedConditions = ['none'];
-    
-    // Interaction: Onboarding buttons
-    const goalBtns = document.querySelectorAll('.goal-option');
-    goalBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        goalBtns.forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        selectedGoal = btn.getAttribute('data-goal');
-      });
-    });
-    
-    const condBtns = document.querySelectorAll('.condition-option');
-    condBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const cond = btn.getAttribute('data-cond');
-        if (cond === 'none') {
-          condBtns.forEach(b => b.classList.remove('selected'));
-          btn.classList.add('selected');
-          selectedConditions = ['none'];
-        } else {
-          document.querySelector('[data-cond="none"]').classList.remove('selected');
-          btn.classList.toggle('selected');
-          
-          selectedConditions = Array.from(document.querySelectorAll('.condition-option.selected'))
-            .map(b => b.getAttribute('data-cond'))
-            .filter(c => c !== 'none');
-            
-          if (selectedConditions.length === 0) {
-            document.querySelector('[data-cond="none"]').classList.add('selected');
-            selectedConditions = ['none'];
-          }
-        }
-      });
-    });
-    
-    // Simulation: Generate adaptive plan
-    const btnSimGenerate = document.getElementById('btn-simulate-generate');
-    const loadingText = document.getElementById('loading-step-text');
-    const loadingBarFill = document.getElementById('loading-progress-fill');
-    
-    btnSimGenerate.addEventListener('click', () => {
-      // Transition Onboarding -> Loading
-      stateOnboarding.classList.remove('active');
-      stateLoading.classList.add('active');
-      
-      // Loading simulation sequence
-      const steps = [
-        { progress: 20, label: 'Reading your baseline conditions...' },
-        { progress: 50, label: 'Creating routine prompt packet...' },
-        { progress: 75, label: 'Running Healthee AI Engine (Strict JSON)...' },
-        { progress: 95, label: 'Formatting phase transition rules...' },
-        { progress: 100, label: 'Plan compiled successfully!' }
-      ];
-      
-      let currentStep = 0;
-      const interval = setInterval(() => {
-        if (currentStep < steps.length) {
-          loadingText.innerText = steps[currentStep].label;
-          loadingBarFill.style.width = `${steps[currentStep].progress}%`;
-          currentStep++;
-        } else {
-          clearInterval(interval);
-          setTimeout(() => {
-            // Loading -> Live App
-            stateLoading.classList.remove('active');
-            stateApp.classList.add('active');
-            loadMockPlanIntoApp();
-          }, 400);
-        }
-      }, 500);
-    });
-    
-    // Dynamic loading of App details based on Goal selection
-    function loadMockPlanIntoApp() {
-      const actionsGroup = document.getElementById('today-actions-group');
-      const planTimelineGroup = document.getElementById('plan-timeline-group');
-      
-      // Clear contents
-      actionsGroup.innerHTML = '';
-      planTimelineGroup.innerHTML = '';
-      
-      // Update general app layout tags
-      const phaseIndicator = document.getElementById('phone-phase-indicator');
-      const goalTitle = document.getElementById('plan-header-goal-title');
-      const goalDesc = document.getElementById('plan-header-goal-desc');
-      const safetyText = document.getElementById('profile-safety-mode-text');
-      
-      // Apply safety mode tag
-      safetyText.innerText = selectedConditions.includes('none') ? 'Standard Core' : 'Adaptive Guardrail';
-      
-      // Data models based on selection
-      if (selectedGoal === 'sleep-schedule') {
-        phaseIndicator.innerText = 'Phase 1: Observation';
-        goalTitle.innerText = 'Restful Bedtime';
-        goalDesc.innerText = 'Rebuild wind-down schedule, identify circadian cues, and eliminate sleep debt.';
-        
-        // Load Daily Actions (Observation focus)
-        const actions = [
-          { label: 'Recall today’s screen-off anchor', trigger: 'Before dimming lights', req: true },
-          { label: 'Notice sleep-cue trigger feeling', trigger: 'Around 10:00 PM', req: true },
-          { label: 'Recall night wind-down obstacles', trigger: 'In bedtime journal', req: false }
-        ];
-        
-        actions.forEach((act, idx) => {
-          actionsGroup.appendChild(createActionElement(act, idx));
-        });
-        
-        // Load Plan Phases Roadmap
-        const phases = [
-          { title: 'Phase 1: Circadian Baselining', duration: '7 Days', desc: 'Observe sleep barriers & record exact bedtime cue patterns without changes.' },
-          { title: 'Phase 2: The 2-Min Wind-down', duration: '7 Days', desc: 'Introduce light dimming 30 min before bed tied to a standard daily anchor.' },
-          { title: 'Phase 3: Screen replacement', duration: '14 Days', desc: 'Replace phone usage with a recovery book/audio stretch routing.' },
-          { title: 'Phase 4: Restful Autopilot', duration: '7 Days', desc: 'Verify whether bedtime triggers fire automatically without alerts.' }
-        ];
-        
-        phases.forEach((p, idx) => {
-          planTimelineGroup.appendChild(createTimelineElement(p, idx === 0));
-        });
-        
-        // Load Custom Insight Card details
-        document.getElementById('insight-main-title').innerText = 'Sleep debt is building';
-        document.getElementById('insight-main-desc').innerText = 'You averaged 5.8 hours over 3 nights. Recovery is lagging by 14%.';
-        document.getElementById('insight-action-text').innerText = 'Tonight: Lights out by 10:30 PM (dim screen early)';
-        
-      } else if (selectedGoal === 'hydration') {
-        phaseIndicator.innerText = 'Phase 1: Observation';
-        goalTitle.innerText = 'Cellular Hydration';
-        goalDesc.innerText = 'Observe hydration triggers, combat fatigue blocks, and reach stable cellular fluid levels.';
-        
-        // Load Daily Actions
-        const actions = [
-          { label: 'Recall trigger after morning anchor', trigger: 'Right after waking', req: true },
-          { label: 'Log barrier when feeling thirsty', trigger: 'During daily activities', req: true },
-          { label: 'Track daily glass count', trigger: 'Before dinner check-in', req: false }
-        ];
-        
-        actions.forEach((act, idx) => {
-          actionsGroup.appendChild(createActionElement(act, idx));
-        });
-        
-        // Load Phases
-        const phases = [
-          { title: 'Phase 1: Fluid Baselining', duration: '7 Days', desc: 'Simply track water glasses and record when you forget to hydrate.' },
-          { title: 'Phase 2: Anchor Drinking', duration: '7 Days', desc: 'Tie a glass of water directly to waking up and having lunch.' },
-          { title: 'Phase 3: Stress Hydration', duration: '14 Days', desc: 'Double intake during high-stress hours recorded in Phase 1.' },
-          { title: 'Phase 4: Autopilot Fluidity', duration: '7 Days', desc: 'Check whether hydration triggers have turned into second-nature habits.' }
-        ];
-        
-        phases.forEach((p, idx) => {
-          planTimelineGroup.appendChild(createTimelineElement(p, idx === 0));
-        });
-        
-        // Update Insight Card
-        document.getElementById('insight-main-title').innerText = 'Hydration Alert';
-        document.getElementById('insight-main-desc').innerText = 'Elevated heart rate (+8 bpm) and fatigue signals may point to mild dehydration.';
-        document.getElementById('insight-action-text').innerText = 'Take 500ml water now with pinch of sea salt/electrolytes';
-        
-      } else if (selectedGoal === 'screen-time') {
-        phaseIndicator.innerText = 'Phase 1: Observation';
-        goalTitle.innerText = 'Circadian Focus';
-        goalDesc.innerText = 'Analyze nighttime phone anchors, limit mindless scrolls, and reclaim evening quiet hours.';
-        
-        // Load Daily Actions
-        const actions = [
-          { label: 'Notice trigger cue of phone grab', trigger: 'When feel urge to scroll', req: true },
-          { label: 'Record scroll length tonight', trigger: 'Before sleeping', req: true },
-          { label: 'Name the stressor behind phone grabs', trigger: 'Midday reflection', req: false }
-        ];
-        
-        actions.forEach((act, idx) => {
-          actionsGroup.appendChild(createActionElement(act, idx));
-        });
-        
-        // Load Phases
-        const phases = [
-          { title: 'Phase 1: Scroll Baselining', duration: '7 Days', desc: 'Identify primary phone-grab hooks (social, news) and timings.' },
-          { title: 'Phase 2: Digital Curfew', duration: '10 Days', desc: 'Lock work/social applications 45 minutes before sleep anchor.' },
-          { title: 'Phase 3: Screen replacement', duration: '14 Days', desc: 'Place physical book on nightstand; replace screen grabs with light stretches.' },
-          { title: 'Phase 4: Digital Autopilot', duration: '7 Days', desc: 'Verify whether phone-free evenings occur smoothly without locks.' }
-        ];
-        
-        phases.forEach((p, idx) => {
-          planTimelineGroup.appendChild(createTimelineElement(p, idx === 0));
-        });
-        
-        // Update Insight Card
-        document.getElementById('insight-main-title').innerText = 'Digital fatigue detected';
-        document.getElementById('insight-main-desc').innerText = 'Late-night phone scrolls are pushing sleep onset back by 48 minutes.';
-        document.getElementById('insight-action-text').innerText = 'Lock phone in separate room at 10:00 PM tonight';
-      }
-      
-      // Reset daily scoring values
-      checkedCount = 0;
-      totalActions = actionsGroup.children.length;
-      updateReadinessScore(68);
-    }
-    
-    // Create elements dynamically
-    function createActionElement(act, index) {
-      const item = document.createElement('div');
-      item.classList.add('check-item');
-      item.setAttribute('data-index', index);
-      
-      item.innerHTML = `
-        <div class="check-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>
-        </div>
-        <div class="check-content">
-          <span class="check-label">${act.label}</span>
-          <span class="check-trigger">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            ${act.trigger}
-          </span>
-        </div>
-        <span class="check-badge ${act.req ? 'req' : ''}">${act.req ? 'req' : 'opt'}</span>
-      `;
-      
-      // Checklist interaction
-      item.addEventListener('click', () => {
-        item.classList.toggle('completed');
-        if (item.classList.contains('completed')) {
-          checkedCount++;
-        } else {
-          checkedCount--;
-        }
-        
-        // Dynamic scoring update
-        const finalScore = 68 + Math.round((checkedCount / totalActions) * 17);
-        updateReadinessScore(finalScore);
-      });
-      
-      return item;
-    }
-    
-    function createTimelineElement(p, isActive) {
-      const node = document.createElement('div');
-      node.classList.add('timeline-node');
-      if (isActive) node.classList.add('active-node');
-      
-      node.innerHTML = `
-        <div class="timeline-dot"></div>
-        <div class="timeline-content">
-          <div class="timeline-title">
-            <span>${p.title}</span>
-            <span class="timeline-days">${p.duration}</span>
+    <div class="trust-cols up d2">
+      <div>
+        <p class="label label-w" style="margin-bottom:0.75rem;">Mitigations in place</p>
+        <div>
+          <div class="trust-item">
+            <div class="t-dot t-green"></div>
+            <div>
+              <div class="t-h">Wellness-first positioning</div>
+              <div class="t-b">FDA enforcement discretion for self-management software without specific treatment suggestions</div>
+            </div>
           </div>
-          <p class="timeline-desc">${p.desc}</p>
+          <div class="trust-item">
+            <div class="t-dot t-green"></div>
+            <div>
+              <div class="t-h">Bounded skill architecture</div>
+              <div class="t-b">3 defined skills prevent diagnostic drift. Consistent with WHO and NIST guidance.</div>
+            </div>
+          </div>
+          <div class="trust-item">
+            <div class="t-dot t-green"></div>
+            <div>
+              <div class="t-h">Privacy-by-design</div>
+              <div class="t-b">Explicit consent, GDPR-aligned, minimal permissions for HealthKit / Health Connect</div>
+            </div>
+          </div>
+          <div class="trust-item">
+            <div class="t-dot t-yellow"></div>
+            <div>
+              <div class="t-h">Safety layer &amp; escalation</div>
+              <div class="t-b">Hard-coded crisis pathways, red-flag escalation, refusal policies</div>
+            </div>
+          </div>
+          <div class="trust-item">
+            <div class="t-dot t-yellow"></div>
+            <div>
+              <div class="t-h">Full auditability</div>
+              <div class="t-b">Log prompt version, model, source context, output category per generation</div>
+            </div>
+          </div>
         </div>
-      `;
-      
-      return node;
+      </div>
+      <div>
+        <p class="label label-w" style="margin-bottom:0.75rem;">Regulatory landscape</p>
+        <div>
+          <div class="reg-row">
+            <div class="reg-h">🇺🇸 United States</div>
+            <div class="reg-b">FDA discretion for lower-risk self-management. FTC Health Breach Notification Rule applies. GoodRx precedent = real risk for ad-based health data sharing.</div>
+          </div>
+          <div class="reg-row">
+            <div class="reg-h">🇪🇺 European Union</div>
+            <div class="reg-b">AI Act broadly applicable August 2026. MDR/IVDR classification by intended purpose. EHDS in force March 2025. GDPR: health data is special category.</div>
+          </div>
+          <div class="reg-row" style="border-bottom:none;">
+            <div class="reg-h" style="color:rgba(255,255,255,0.3);">Medical-data interpretation = educational only</div>
+            <div class="reg-b">Lab explanation · question prep for clinical visits · care navigation — never diagnosis.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════ 10 — ROADMAP ═══════════════════════ -->
+<section class="slide bg-off" id="s10" data-slide="10" data-label="Roadmap">
+  <div class="inner">
+    <p class="label up">Roadmap</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:end;" class="up d1">
+      <div>
+        <div class="rule"></div>
+        <h2>Proof before scale.</h2>
+      </div>
+      <div>
+        <p class="sub" style="font-size:0.9rem;">Each phase unlocks the next — only when retention data supports it. No assumed clinical readiness.</p>
+      </div>
+    </div>
+
+    <div class="rm-grid up d2">
+      <div class="rm-col">
+        <div class="rm-ph">Phase 1</div>
+        <div class="rm-title">Foundation</div>
+        <div class="rm-time">Now → Q3 2026</div>
+        <div class="rm-item">Wedge selection & messaging</div>
+        <div class="rm-item">Safety & audit logging</div>
+        <div class="rm-item">MVP instrumentation</div>
+        <div class="rm-item">20–30 user pilot</div>
+      </div>
+      <div class="rm-col">
+        <div class="rm-ph">Phase 2</div>
+        <div class="rm-title">Consumer</div>
+        <div class="rm-time">Q3 → Q4 2026</div>
+        <div class="rm-item">Document ingestion hardening</div>
+        <div class="rm-item">Artifact library & revisit UX</div>
+        <div class="rm-item">Paid subscription test</div>
+        <div class="rm-item">Context depth A/B test</div>
+      </div>
+      <div class="rm-col">
+        <div class="rm-ph">Phase 3</div>
+        <div class="rm-title">Mobile</div>
+        <div class="rm-time">Q1 → Q2 2027</div>
+        <div class="rm-item">iOS HealthKit read-only</div>
+        <div class="rm-item">Android Health Connect</div>
+        <div class="rm-item">Mobile artifact workflow</div>
+        <div class="rm-item">Medication module</div>
+      </div>
+      <div class="rm-col">
+        <div class="rm-ph">Phase 4</div>
+        <div class="rm-title">Expansion</div>
+        <div class="rm-time">H2 2027</div>
+        <div class="rm-item">First B2B2C pilot</div>
+        <div class="rm-item">Appointment workflow</div>
+        <div class="rm-item">SMART on FHIR discovery</div>
+        <div class="rm-item">Regulatory decision point</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 11 — ASK ══════════════════════════ -->
+<section class="slide bg-white" id="s11" data-slide="11" data-label="The Ask">
+  <div class="inner">
+    <p class="label up">The Ask</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:end;" class="up d1">
+      <div>
+        <div class="rule"></div>
+        <h2>What this round<br/>unlocks.</h2>
+      </div>
+      <div>
+        <p class="sub" style="font-size:0.9rem;">Seed capital to validate the artifact-and-context thesis with a focused cohort — before expanding to mobile, B2B2C, and broader integrations.</p>
+      </div>
+    </div>
+
+    <div class="ask-cols up d2">
+      <div>
+        <p class="label" style="margin-bottom:0.75rem;">Use of funds</p>
+        <div class="use-list">
+          <div class="use-row">
+            <div class="use-ico">🔬</div>
+            <div>
+              <div class="use-h">Validate the wedge</div>
+              <div class="use-b">20–30 user concierge pilot. Prove artifact reuse and the core job to be done.</div>
+            </div>
+          </div>
+          <div class="use-row">
+            <div class="use-ico">📱</div>
+            <div>
+              <div class="use-h">Launch mobile (read-only first)</div>
+              <div class="use-b">iOS HealthKit + Android Health Connect. Minimal permissions. Purpose-limited from day one.</div>
+            </div>
+          </div>
+          <div class="use-row">
+            <div class="use-ico">💳</div>
+            <div>
+              <div class="use-h">Prove paid conversion</div>
+              <div class="use-b">Activation, artifact retention, and free-to-paid conversion metrics before Series A.</div>
+            </div>
+          </div>
+          <div class="use-row">
+            <div class="use-ico">🛡</div>
+            <div>
+              <div class="use-h">Harden safety infrastructure</div>
+              <div class="use-b">Audit logging, red-team protocols, escalation logic before growth acceleration.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="label" style="margin-bottom:0.75rem;">Why Be Healthy wins</p>
+        <div class="why-list">
+          <div class="why-row">
+            <div class="why-kw">The Context Graph</div>
+            <div class="why-b">Profile + documents + providers + mobile signals = compounding personalization generic AI cannot replicate</div>
+          </div>
+          <div class="why-row">
+            <div class="why-kw">The Artifact Layer</div>
+            <div class="why-b">Reusable plans, explanations, and routines are harder to replace than answers. That is the retention moat.</div>
+          </div>
+          <div class="why-row">
+            <div class="why-kw">The Bounded Architecture</div>
+            <div class="why-b">Three defined skills create the right operating envelope — trustworthy, defensible, compliant</div>
+          </div>
+          <div class="why-row">
+            <div class="why-kw">The Market Timing</div>
+            <div class="why-b">Consumers are already here. Trust is the gap. A focused, privacy-first product is positioned to win it.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ 12 — CLOSE ══════════════════════ -->
+<section class="slide bg-sage" id="s12" data-slide="12" data-label="Close">
+  <div class="inner">
+    <div class="close-wrap">
+      <p class="label label-w up">Be Healthy · 2026</p>
+      <div class="rule rule-w up d1"></div>
+      <p class="close-q up d2">
+        "The step between fragmented health data and usable action."
+      </p>
+      <p class="close-sub up d3">
+        Prove one narrow wedge. Show users return to saved outputs. Demonstrate disciplined safety and privacy. That is the seed-stage story.
+      </p>
+      <hr class="dark up d4" style="margin:2rem 0;" />
+      <p class="up d4" style="font-size:0.875rem; color:rgba(255,255,255,0.5);">
+        Get in touch: <a href="mailto:hello@behealthy.app" class="mailto" id="cta-email">hello@behealthy.app</a>
+      </p>
+      <p class="up" style="font-size:0.68rem; color:rgba(255,255,255,0.2); margin-top:2.5rem;">
+        Confidential · For discussion purposes only · Not an offer of securities
+      </p>
+    </div>
+  </div>
+</section>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide[data-slide]')];
+  const navEl  = document.getElementById('nav');
+  const barEl  = document.getElementById('bar');
+  const ctrEl  = document.getElementById('ctr');
+  const total  = slides.length;
+  let cur = 0;
+
+  // Build dots
+  slides.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.className = 'dot';
+    b.setAttribute('aria-label', `Slide ${i + 1}: ${s.dataset.label}`);
+    b.addEventListener('click', () => s.scrollIntoView({ behavior: 'smooth' }));
+    navEl.appendChild(b);
+  });
+
+  const dots = [...navEl.querySelectorAll('.dot')];
+
+  function activate(i) {
+    dots.forEach((d, j) => d.classList.toggle('on', j === i));
+    barEl.style.width = (i / (total - 1) * 100) + '%';
+    ctrEl.textContent = `${i + 1} / ${total}`;
+    cur = i;
+  }
+
+  // Active slide observer
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) activate(+e.target.dataset.slide - 1);
+    });
+  }, { threshold: 0.5 });
+
+  slides.forEach(s => io.observe(s));
+
+  // Fade-in observer
+  const upEls = document.querySelectorAll('.up');
+  const upIo  = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('show'); upIo.unobserve(e.target); }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+
+  upEls.forEach(el => upIo.observe(el));
+
+  // Keyboard nav
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+      e.preventDefault();
+      slides[Math.min(cur + 1, total - 1)]?.scrollIntoView({ behavior: 'smooth' });
     }
-    
-    // Interaction: Toggle Checklist Daily Actions
-    let checkedCount = 0;
-    let totalActions = 0;
-    
-    function updateReadinessScore(score) {
-      const text = document.getElementById('readiness-score-text');
-      const status = document.getElementById('readiness-status-text');
-      const desc = document.getElementById('readiness-desc-text');
-      const fill = document.getElementById('readiness-dial-fill');
-      
-      text.innerText = score;
-      
-      // Calculate dash offset for SVG circle (circumference = 220)
-      const maxOffset = 220;
-      const fillPercentage = score / 100;
-      const offset = maxOffset - (maxOffset * fillPercentage);
-      fill.style.strokeDashoffset = offset;
-      
-      // Update messages based on score
-      if (score < 75) {
-        status.innerText = 'Needs Attention';
-        status.style.color = 'var(--color-warning)';
-        desc.innerText = 'Sleep debt is your top driver. Completing actions tonight resets recovery.';
-      } else if (score < 84) {
-        status.innerText = 'Recovery Steady';
-        status.style.color = 'var(--color-primary)';
-        desc.innerText = 'Routine is stabilizing. Good heart rhythm consistency observed.';
-      } else {
-        status.innerText = 'Peak Readiness';
-        status.style.color = 'var(--color-success)';
-        desc.innerText = 'Outstanding routine execution! Circadian rhythm and recovery scores are optimal.';
-      }
+    if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+      e.preventDefault();
+      slides[Math.max(cur - 1, 0)]?.scrollIntoView({ behavior: 'smooth' });
     }
-    
-    // Navigation: Mobile Tab Bar Click
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const views = {
-      today: document.getElementById('app-view-today'),
-      plan: document.getElementById('app-view-plan'),
-      insights: document.getElementById('app-view-insights'),
-      profile: document.getElementById('app-view-profile')
-    };
-    
-    tabBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        tabBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        
-        const targetTab = btn.getAttribute('data-tab');
-        
-        // Hide all views, show targeted view
-        Object.keys(views).forEach(key => {
-          views[key].style.display = 'none';
-        });
-        views[targetTab].style.display = 'flex';
-      });
-    });
-    
-    // Interaction: Reset prototype to onboarding
-    const btnReset = document.getElementById('btn-reset-prototype');
-    btnReset.addEventListener('click', () => {
-      stateApp.classList.remove('active');
-      stateOnboarding.classList.add('active');
-      
-      // Reset active tab button
-      tabBtns.forEach(b => b.classList.remove('active'));
-      document.querySelector('[data-tab="today"]').classList.add('active');
-      
-      Object.keys(views).forEach(key => {
-        views[key].style.display = 'none';
-      });
-      views.today.style.display = 'flex';
-    });
-    
-    // Simulation: Wearable connection action inside Insights tab
-    const btnSimUpload = document.getElementById('btn-sim-upload');
-    btnSimUpload.addEventListener('click', () => {
-      btnSimUpload.style.borderColor = 'var(--color-success)';
-      btnSimUpload.style.background = 'rgba(16, 185, 129, 0.05)';
-      btnSimUpload.querySelector('.upload-sim-title').innerText = 'Wearable Synced!';
-      btnSimUpload.querySelector('.upload-sim-desc').innerText = 'Healthee AI synced your device sleep logs. A new circadian pattern has been identified!';
-      
-      setTimeout(() => {
-        // Morph the active main warning insight card to fit the wearable sync
-        const mainCard = document.getElementById('insight-main-card');
-        mainCard.classList.remove('medium-severity');
-        mainCard.classList.add('high-severity');
-        
-        document.getElementById('insight-main-title').innerText = 'Circadian Bedtime Alignment';
-        document.getElementById('insight-main-desc').innerText = 'Your sleep logs reveal a 90-minute bedtime drift on weekends, disrupting sleep quality. Anchoring bedtime is recommended.';
-        document.getElementById('insight-action-text').innerText = 'Set a weekend wind-down alarm for 10:15 PM';
-      }, 1000);
-    });
-  </script>
+    if (e.key === 'f' || e.key === 'F') {
+      document.fullscreenElement
+        ? document.exitFullscreen()
+        : document.documentElement.requestFullscreen();
+    }
+  });
+
+  activate(0);
+</script>
 </body>
 </html>

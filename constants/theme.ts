@@ -1,6 +1,51 @@
 /** Brand leaf accent on page titles */
 export const leafGreen = '#3D6B5E';
 
+/**
+ * Dark sidebar palette — used by the collapsible left navigation rail
+ * and mirrored in the right panel header strip.
+ */
+export const sidebarPalette = {
+  /** Main sidebar background */
+  bg: '#F8FAF9',
+  /** Subtle separator lines */
+  border: 'rgba(0,0,0,0.06)',
+  /** Hover state for nav items */
+  hover: 'rgba(42,122,114,0.05)',
+  /** Active / selected nav item */
+  active: 'rgba(42,122,114,0.10)',
+  /** Active item left-edge accent bar */
+  activeAccent: '#2A7A72',
+  /** Primary text on light sidebar */
+  text: '#2C3338',
+  /** Secondary / muted text */
+  textMuted: '#5C6570',
+  /** Section label text */
+  textLabel: '#8C9BA5',
+  /** Status dot — checked in */
+  dotGreen: '#10B981',
+  /** Status dot — missed */
+  dotGray: '#D1D5DB',
+  /** Logo / brand name gradient start */
+  brandFrom: '#2A7A72',
+  /** Logo / brand name gradient end */
+  brandTo: '#5BA89E',
+};
+
+/**
+ * Right-panel palette — the toggleable generate/insights drawer.
+ */
+export const rightPanelPalette = {
+  bg: '#F8FAF9',
+  border: '#E2E8E6',
+  headerBg: '#FFFFFF',
+  tabActive: '#2A7A72',
+  tabInactive: '#718096',
+  tabActiveBg: '#E8F2EE',
+  inputBg: '#F0F4F3',
+  inputBorder: '#D1DBD8',
+};
+
 export const palette = {
   sage: '#3D6B5E',
   sageLight: '#E8F2EE',
@@ -15,11 +60,13 @@ export const palette = {
   slateSubtle: '#5C6570',
   border: '#E2E8E6',
   white: '#FFFFFF',
-  background: '#F7FAF9',
+  background: '#FFFFFF',
   card: '#FFFFFF',
   high: '#C45C4A',
   medium: '#D4A24A',
   low: '#3D6B5E',
+  slateDark: '#1A202C',
+  danger: '#E53E3E',
 };
 
 export const categoryColors: Record<string, string> = {
@@ -57,16 +104,28 @@ export const metricScaleColors = {
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 32 };
 export const radii = { sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, pill: 9999 };
 export const typography = { 
-  caption: 10, body: 14, subtitle: 16, title: 20, heading: 24, hero: 34 
+  caption: 12, body: 15, subtitle: 17, title: 22, heading: 24, hero: 34 
 };
 
 /**
  * Ultra-subtle card shadow — just enough lift to separate white cards from
- * the off-white #F7FAF9 background without being distracting.
+ * the off-white #F9FAFB background without being distracting.
  * Use on any View that has backgroundColor: palette.card.
  */
 export const cardShadow = {
   boxShadow: '0px 1px 4px 0px rgba(44, 51, 56, 0.06)',
   elevation: 2,
+};
+
+/** Sidebar panel shadow — right edge lift for the dark left nav */
+export const sidebarShadow = {
+  boxShadow: '2px 0px 12px 0px rgba(0,0,0,0.18)',
+  elevation: 8,
+};
+
+/** Right panel shadow — left edge lift for the right drawer */
+export const rightPanelShadow = {
+  boxShadow: '-2px 0px 12px 0px rgba(44,51,56,0.08)',
+  elevation: 6,
 };
 

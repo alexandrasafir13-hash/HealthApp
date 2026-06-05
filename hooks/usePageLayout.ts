@@ -20,7 +20,7 @@ export function usePageLayout() {
       pageStyles.content,
       isTabletUp && pageStyles.contentTablet,
       { 
-        paddingTop: insets.top + (isTabletUp ? 24 : 8),
+        paddingTop: isTabletUp ? 24 : 8,
         paddingBottom: bottomPadding,
       },
     ],

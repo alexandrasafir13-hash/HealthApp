@@ -2,7 +2,7 @@
   "expo": {
     "name": "Healthee",
     "slug": "healthee",
-    "description": "Understand your body. Connect health data. Get clear explanations and practical steps.",
+    "description": "Înțelege-ți corpul. Conectează datele de sănătate. Primește explicații clare și pași practici.",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -32,13 +32,13 @@
         {
           "image": "./assets/images/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#F7FAF9"
+          "backgroundColor": "#F9FAFB"
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Healthee to access your photos to upload lab test results."
+          "photosPermission": "Permite aplicației Healthee să acceseze fotografiile pentru a încărca rezultatele analizelor."
         }
       ],
       "@react-native-community/datetimepicker"

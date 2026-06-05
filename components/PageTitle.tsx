@@ -1,9 +1,11 @@
-import { ReactElement } from 'react';
+import { ReactElement, useCallback, useContext } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 
 import { Text } from '@/components/Themed';
 import { palette } from '@/constants/theme';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
+import { LayoutContext } from '@/app/(tabs)/_layout';
 
 interface Props {
   title: string;
@@ -11,13 +13,26 @@ interface Props {
   /** Softer weight for friendly headlines (e.g. Today) */
   friendly?: boolean;
   accessory?: ReactElement;
+  onBack?: () => void;
 }
 
-export default function PageTitle({ title, subtitle, friendly, accessory }: Props) {
+export default function PageTitle({ title, subtitle, friendly, accessory, onBack }: Props) {
   const { isTabletUp, isDesktop } = useBreakpoint();
+  const { setHeaderTitle, setHeaderBackAction } = useContext(LayoutContext);
+
+  useFocusEffect(
+    useCallback(() => {
+      setHeaderTitle(title);
+      setHeaderBackAction(() => onBack || null);
+      
+      return () => {
+        // Optional cleanup
+      };
+    }, [title, setHeaderTitle, setHeaderBackAction, onBack])
+  );
 
   return (
-    <View style={[styles.header, accessory != null && styles.headerWithAccessory]}>
+    <View style={[styles.header, accessory != null && styles.headerWithAccessory, { marginBottom: 12 }]}>
       <View style={styles.titleBlock}>
         <View style={styles.titleRow}>
           <Text
@@ -27,7 +42,8 @@ export default function PageTitle({ title, subtitle, friendly, accessory }: Prop
               isTabletUp && styles.titleTablet,
               isDesktop && styles.titleDesktop,
             ]}
-            maxFontSizeMultiplier={1.35}>
+            numberOfLines={1}
+            maxFontSizeMultiplier={1.2}>
             {title}
           </Text>
         </View>
@@ -70,7 +86,7 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: '700',
     lineHeight: 28,
     color: palette.slate,
     letterSpacing: -0.3,
@@ -87,8 +103,8 @@ const styles = StyleSheet.create({
     lineHeight: 38,
   },
   subtitle: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 22,
     color: palette.slateMuted,
     marginTop: 8,
   },

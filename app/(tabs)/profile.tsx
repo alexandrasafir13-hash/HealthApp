@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
-  Modal,
   ScrollView,
   StyleSheet,
   View,
@@ -10,8 +9,10 @@ import {
   Platform,
   KeyboardAvoidingView,
   Image,
+  Alert,
+  Share,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import PageTitle from '@/components/PageTitle';
 import { Text } from '@/components/Themed';
 import { useHealth } from '@/context/HealthContext';
@@ -20,10 +21,10 @@ import { pageStyles, usePageLayout } from '@/hooks/usePageLayout';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { palette, typography, cardShadow } from '@/constants/theme';
 import { BiologicalSex } from '@/types/onboarding';
+import { confirmDestructiveAction } from '@/lib/confirmDestructiveAction';
 import {
   Calendar,
   ChevronRight,
-  RefreshCw,
   CloudUpload,
   Pencil,
   X,
@@ -33,14 +34,19 @@ import {
   Ruler,
   Moon,
   Heart,
+  Watch,
+  Smartphone,
+  Download,
+  Activity,
 } from 'lucide-react-native';
 
 const bmiPosition = (bmi: number) => Math.min(95, Math.max(5, ((bmi - 15) / 25) * 100));
 
 export default function ProfileScreen() {
   const { contentContainerStyle, pageStyle } = usePageLayout();
-  const { isTabletUp } = useBreakpoint();
+  useBreakpoint();
   const router = useRouter();
+  const navigation = useNavigation();
   const {
     profile,
     personalPlan,
@@ -49,20 +55,27 @@ export default function ProfileScreen() {
     planCheckInLog,
   } = useHealth();
 
-  const { user, isAuthenticated, signOutUser, signInWithGoogle, loading: authLoading } = useAuth();
+  const { user, isAuthenticated, signOutUser } = useAuth();
 
   const handleSignOut = async () => {
+    const confirmed = await confirmDestructiveAction({
+      title: 'Log out and clear local data?',
+      message: 'This will log you out and clear local profile info, documents, providers, conversations, saved items, logs, and plans from this device.',
+      confirmText: 'Log out',
+    });
+    if (!confirmed) return;
+
     try {
       await signOutUser();
       await resetAllData();
-      router.replace('/onboarding');
+      router.replace('/');
     } catch (e) {
       console.error('Logout error:', e);
     }
   };
 
   const [isEditing, setIsEditing] = useState(false);
-  const [confirmReset, setConfirmReset] = useState(false);
+  const [, setConfirmReset] = useState(false);
 
   // Form states
   const [name, setName] = useState('');
@@ -77,7 +90,6 @@ export default function ProfileScreen() {
   // UI state
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [showCreateAccount, setShowCreateAccount] = useState(false);
 
   // Prepopulate form if profile data is available
   useEffect(() => {
@@ -92,12 +104,7 @@ export default function ProfileScreen() {
       if (profile.sleepDurationHrs != null) {
         setSleepDuration(String(profile.sleepDurationHrs));
       } else {
-        const onboardingSleep = profile.goalDetails?.['sleep-schedule']?.['sleep-hours'];
-        if (onboardingSleep != null && onboardingSleep !== '') {
-          setSleepDuration(String(onboardingSleep));
-        } else {
-          setSleepDuration('');
-        }
+        setSleepDuration('');
       }
     }
   }, [profile]);
@@ -123,7 +130,7 @@ export default function ProfileScreen() {
         setIsEditing(false);
       }, 1500);
     } catch (e) {
-      console.error('Failed to update profile:', e);
+    console.error('Could not update profile:', e);
     } finally {
       setSaving(false);
     }
@@ -141,8 +148,7 @@ export default function ProfileScreen() {
       if (profile.sleepDurationHrs != null) {
         setSleepDuration(String(profile.sleepDurationHrs));
       } else {
-        const onboardingSleep = profile.goalDetails?.['sleep-schedule']?.['sleep-hours'];
-        setSleepDuration(onboardingSleep != null && onboardingSleep !== '' ? String(onboardingSleep) : '');
+        setSleepDuration('');
       }
     }
     setIsEditing(false);
@@ -157,13 +163,13 @@ export default function ProfileScreen() {
                        sex ? (sex.charAt(0).toUpperCase() + sex.slice(1)) : '—';
 
   const biometricsData = [
-    { label: 'Age', value: age ? `${age} yrs` : '—', Icon: Calendar, tint: '#3B82F6', bg: 'rgba(59, 130, 246, 0.08)' },
-    { label: 'Biological Sex', value: formattedSex, Icon: User, tint: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.08)' },
-    { label: 'Weight', value: weight ? `${weight} kg` : '—', Icon: Scale, tint: '#10B981', bg: 'rgba(16, 185, 129, 0.08)' },
-    { label: 'Height', value: height ? `${height} cm` : '—', Icon: Ruler, tint: '#EC4899', bg: 'rgba(236, 72, 153, 0.08)' },
-    { label: 'Resting HR', value: restingHeartRate ? `${restingHeartRate} BPM` : '—', Icon: Heart, tint: '#EF4444', bg: 'rgba(239, 68, 68, 0.08)' },
-    { label: 'Sleep Target', value: sleepDuration ? `${sleepDuration} hrs` : '—', Icon: Moon, tint: '#6366F1', bg: 'rgba(99, 102, 241, 0.08)' },
-    { label: 'Waist Line', value: waist ? `${waist} cm` : '—', Icon: Ruler, tint: '#F59E0B', bg: 'rgba(245, 158, 11, 0.08)' },
+    { label: 'Age', value: age ? `${age} years` : '—', Icon: Calendar, tint: palette.teal, bg: 'rgba(42,122,114,0.08)' },
+    { label: 'Biological Sex', value: formattedSex, Icon: User, tint: palette.teal, bg: 'rgba(42,122,114,0.08)' },
+    { label: 'Weight', value: weight ? `${weight} kg` : '—', Icon: Scale, tint: palette.teal, bg: 'rgba(42,122,114,0.08)' },
+    { label: 'Height', value: height ? `${height} cm` : '—', Icon: Ruler, tint: palette.teal, bg: 'rgba(42,122,114,0.08)' },
+    { label: 'Resting Heart Rate', value: restingHeartRate ? `${restingHeartRate} BPM` : '—', Icon: Heart, tint: palette.teal, bg: 'rgba(42,122,114,0.08)' },
+    { label: 'Sleep Target', value: sleepDuration ? `${sleepDuration} hours` : '—', Icon: Moon, tint: palette.teal, bg: 'rgba(42,122,114,0.08)' },
+    { label: 'Waist', value: waist ? `${waist} cm` : '—', Icon: Ruler, tint: palette.teal, bg: 'rgba(42,122,114,0.08)' },
   ];
 
   const profileData = useProfileData(profile, planCheckInLog, personalPlan);
@@ -187,24 +193,23 @@ export default function ProfileScreen() {
                 <CheckCircle color={palette.teal} size={18} />
               </View>
               <View style={styles.promoTextContainer}>
-                <Text style={styles.promoTitle}>Cloud Backup Sync Active</Text>
-                <Text style={styles.promoSubtitle}>Synced securely as {user.email}</Text>
+                <Text style={styles.promoTitle}>Cloud backup sync is active</Text>
+                <Text style={styles.promoSubtitle}>Securely synced as {user.email}</Text>
               </View>
               <Pressable style={styles.signOutButton} onPress={handleSignOut}>
-                <Text style={styles.signOutButtonText}>Sign Out</Text>
+                <Text style={styles.signOutButtonText}>Log out</Text>
               </Pressable>
             </View>
           ) : (
-            <Pressable style={styles.promoCard} onPress={() => setShowCreateAccount(true)}>
+            <View style={styles.promoCard}>
               <View style={styles.promoIconContainer}>
                 <CloudUpload color={palette.teal} size={18} />
               </View>
               <View style={styles.promoTextContainer}>
-                <Text style={styles.promoTitle}>Back Up Your Health Data</Text>
-                <Text style={styles.promoSubtitle}>Create a secure account to sync your progress.</Text>
+                <Text style={styles.promoTitle}>Back up your health data</Text>
+                <Text style={styles.promoSubtitle}>Use the Create Account button in the sidebar to sync.</Text>
               </View>
-              <ChevronRight color={palette.slateSubtle} size={12} />
-            </Pressable>
+            </View>
           )}
 
           <BiometricsSection
@@ -229,19 +234,13 @@ export default function ProfileScreen() {
           {!isEditing && (
             <>
               <CalculatedBiometricsCard data={profileData} onPressEdit={() => setIsEditing(true)} />
-              <CheckInAnalyticsCard analytics={profileData.analytics} onPressCheckIn={() => router.push('/')} />
+              <ConnectDevicesSection />
+              <ExportDataSection profile={profile} planCheckInLog={planCheckInLog} personalPlan={personalPlan} />
             </>
           )}
 
         </View>
       </ScrollView>
-
-      <CreateAccountModal
-        visible={showCreateAccount}
-        onClose={() => setShowCreateAccount(false)}
-        signInWithGoogle={signInWithGoogle}
-        authLoading={authLoading}
-      />
     </KeyboardAvoidingView>
   );
 }
@@ -258,48 +257,9 @@ function ProfileHeroCard({ name, userInitial, userPhotoUrl }: any) {
       </View>
       <View style={styles.heroMeta}>
         <Text style={styles.heroName}>{name || 'Healthee User'}</Text>
-        <Text style={styles.heroSub}>Wellness Companion Plan Active</Text>
+        <Text style={styles.heroSub}>Health plan is active</Text>
       </View>
     </View>
-  );
-}
-
-function CreateAccountModal({ visible, onClose, signInWithGoogle, authLoading }: any) {
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Create Your Account</Text>
-          <Text style={styles.modalSubtitle}>Unlock the full potential of your wellness journey.</Text>
-          <View style={styles.benefitsList}>
-            {[
-              { text: 'Sync your data across all your devices seamlessly' },
-              { text: 'Back up your daily check-ins, progress, and history' },
-              { text: 'Access personalized insights and long-term trend analysis' },
-              { text: 'Get reminders and notifications to stay on track' },
-            ].map((benefit, idx) => (
-              <View key={idx} style={styles.benefitRow}>
-                <Text style={styles.benefitIcon}>✦</Text>
-                <Text style={styles.benefitText}>{benefit.text}</Text>
-              </View>
-            ))}
-          </View>
-          <Pressable
-            style={[styles.modalButton, authLoading && styles.modalButtonDisabled]}
-            onPress={async () => { await signInWithGoogle(); onClose(); }}
-            disabled={authLoading}>
-            {authLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.modalButtonText}>Sign up with Google</Text>
-            )}
-          </Pressable>
-          <Pressable style={styles.modalDismiss} onPress={onClose}>
-            <Text style={styles.modalDismissText}>Maybe later</Text>
-          </Pressable>
-        </View>
-      </View>
-    </Modal>
   );
 }
 
@@ -434,13 +394,13 @@ function BiometricsSection({
             />
             <View style={styles.infoBox}>
               <Text style={styles.infoBoxText}>
-                ❤️ <Text style={{ fontWeight: '600' }}>Measure manually:</Text> Place index and middle finger on your wrist below the thumb base. Count beats for 15 seconds, then multiply by 4.
+                ❤️ <Text style={{ fontWeight: '600' }}>Measure manually:</Text> Place your index and middle finger on your wrist, below the base of the thumb. Count the beats for 15 seconds, then multiply by 4.
               </Text>
             </View>
           </View>
           <View style={styles.metricsRow}>
             <View style={[styles.inputGroup, { flex: 1 }]}>
-              <Text style={styles.inputLabel}>Waist Circumference (cm)</Text>
+              <Text style={styles.inputLabel}>Waist circumference (cm)</Text>
               <TextInput
                 style={styles.textInput}
                 placeholder="e.g. 82"
@@ -452,7 +412,7 @@ function BiometricsSection({
               />
             </View>
             <View style={[styles.inputGroup, { flex: 1, marginLeft: 12 }]}>
-              <Text style={styles.inputLabel}>Sleep Duration (hours)</Text>
+              <Text style={styles.inputLabel}>Sleep duration (hours)</Text>
               <TextInput
                 style={styles.textInput}
                 placeholder="e.g. 7.5"
@@ -480,7 +440,7 @@ function BiometricsSection({
                   <Text style={styles.saveButtonText}>Saved!</Text>
                 </View>
               ) : (
-                <Text style={styles.saveButtonText}>Save Changes</Text>
+                <Text style={styles.saveButtonText}>Save changes</Text>
               )}
             </Pressable>
           </View>
@@ -509,9 +469,9 @@ function CalculatedBiometricsCard({ data, onPressEdit }: any) {
     return (
       <View style={styles.sectionCard}>
         <Text style={styles.sectionTitle}>Physiological Biometrics</Text>
-        <Text style={styles.emptyText}>Add your age, weight, and height to unlock automatic BMI, BMR, and hydration calculations.</Text>
+        <Text style={styles.emptyText}>Add your age, weight, and height to unlock automated calculations for BMI, BMR, and hydration.</Text>
         <Pressable onPress={onPressEdit}>
-          <Text style={styles.linkText}>Edit Profile</Text>
+          <Text style={styles.linkText}>Edit profile</Text>
         </Pressable>
       </View>
     );
@@ -554,9 +514,9 @@ function CalculatedBiometricsCard({ data, onPressEdit }: any) {
         )}
         {data.bmr != null && (
           <View style={styles.calcTile}>
-            <Text style={styles.calcTileLabel}>BMR</Text>
+            <Text style={styles.calcTileLabel}>Basal Metabolic Rate</Text>
             <Text style={styles.calcTileValue}>{data.bmr}</Text>
-            <Text style={styles.calcTileSub}>kcal resting</Text>
+            <Text style={styles.calcTileSub}>kcal at rest</Text>
           </View>
         )}
         {data.rhrCategory && (
@@ -585,43 +545,106 @@ function CalculatedBiometricsCard({ data, onPressEdit }: any) {
   );
 }
 
-function CheckInAnalyticsCard({ analytics, onPressCheckIn }: any) {
+/* ─── Connect Devices Section ───────────────────────────────────── */
+
+const DEVICES = [
+  { id: 'apple-health', label: 'Apple Health',  Icon: Heart,      tint: '#EF4444', bg: 'rgba(239,68,68,0.08)' },
+  { id: 'google-fit',   label: 'Google Fit',    Icon: Activity,   tint: '#4285F4', bg: 'rgba(66,133,244,0.08)' },
+  { id: 'garmin',       label: 'Garmin Connect', Icon: Watch,     tint: '#00A6A6', bg: 'rgba(0,166,166,0.08)' },
+  { id: 'whoop',        label: 'WHOOP',          Icon: Smartphone, tint: '#FF4500', bg: 'rgba(255,69,0,0.08)'  },
+];
+
+function ConnectDevicesSection() {
+  const handleConnect = (label: string) => {
+    Alert.alert(
+      `${label} — coming soon`,
+      'Device integration will be available soon. We will notify you when it becomes active.',
+      [{ text: 'Got it', style: 'default' }],
+    );
+  };
+
   return (
     <View style={styles.sectionCard}>
-      <Text style={styles.sectionTitle}>Check-In Analytics</Text>
-
-      {analytics ? (
-        <View style={styles.analyticsList}>
-          {[
-            { label: 'Consistency', value: `${analytics.consistency}%`, tag: `${analytics.totalDays} day${analytics.totalDays === 1 ? '' : 's'} logged` },
-            analytics.recognitionRate !== null && { label: 'Adherence', value: `${analytics.recognitionRate}%`, tag: 'observation rate' },
-            analytics.avgEffort !== null && {
-              label: 'Resistance',
-              value: `${analytics.avgEffort}/5`,
-              tag: analytics.avgEffort <= 2.5 ? 'Low friction' : analytics.avgEffort <= 3.8 ? 'Moderate friction' : 'High resistance',
-            },
-            analytics.peakBucket && { label: 'Peak trigger', value: analytics.peakBucket, tag: 'most frequent window' },
-          ].filter((m): m is { label: string; value: string; tag: string } => !!m).map((m, i, arr) => (
-            <View key={m.label} style={[styles.analyticsRow, i === arr.length - 1 && styles.rowLast]}>
-              <Text style={styles.analyticsLabel}>{m.label}</Text>
-              <Text style={styles.analyticsValue}>
-                {m.value}
-                <Text style={styles.analyticsTag}>  {m.tag}</Text>
-              </Text>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.sectionHeading}>Connect devices</Text>
+        <View style={styles.soonBadge}>
+          <Text style={styles.soonBadgeText}>Coming soon</Text>
+        </View>
+      </View>
+      <View style={styles.deviceGrid}>
+        {DEVICES.map(({ id, label, Icon, tint, bg }) => (
+          <Pressable
+            key={id}
+            style={({ pressed }) => [styles.deviceCard, pressed && { opacity: 0.75 }]}
+            onPress={() => handleConnect(label)}
+            id={`connect-device-${id}`}
+          >
+            <View style={[styles.deviceIconWrap, { backgroundColor: bg }]}>
+              <Icon size={20} color={tint} />
             </View>
-          ))}
-        </View>
-      ) : (
-        <View>
-          <Text style={styles.emptyText}>Submit daily check-ins on the Today screen to populate your trend dashboard.</Text>
-          <Pressable onPress={onPressCheckIn}>
-            <Text style={styles.linkText}>Check In Today</Text>
+            <Text style={styles.deviceLabel} numberOfLines={1}>{label}</Text>
+            <ChevronRight size={12} color={palette.slateSubtle} />
           </Pressable>
-        </View>
-      )}
+        ))}
+      </View>
     </View>
   );
 }
+
+/* ─── Export Data Section ───────────────────────────────────────── */
+
+function ExportDataSection({ profile, planCheckInLog, personalPlan }: any) {
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const exportPayload = {
+        exportedAt: new Date().toISOString(),
+        profile: profile ?? {},
+        personalPlan: personalPlan ?? {},
+        checkInLog: planCheckInLog ?? {},
+      };
+      const json = JSON.stringify(exportPayload, null, 2);
+      await Share.share({
+        title: 'Healthee — data export',
+        message: json,
+      });
+    } catch (e) {
+      Alert.alert('Export failed', 'Could not export data. Try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <View style={styles.sectionCard}>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.sectionHeading}>Data & Privacy</Text>
+      </View>
+      <Text style={styles.exportDescription}>
+        Download a complete copy of your health data - profile, plan, and all check-ins - in JSON format.
+      </Text>
+      <Pressable
+        style={({ pressed }) => [styles.exportBtn, pressed && { opacity: 0.8 }, exporting && styles.exportBtnLoading]}
+        onPress={handleExport}
+        disabled={exporting}
+        id="export-data-btn"
+      >
+        {exporting ? (
+          <ActivityIndicator size="small" color={palette.teal} />
+        ) : (
+          <>
+            <Download size={15} color={palette.teal} />
+            <Text style={styles.exportBtnLabel}>Export my data</Text>
+          </>
+        )}
+      </Pressable>
+    </View>
+  );
+}
+
+/* ─── Profile data hook ──────────────────────────────────────────── */
 
 function useProfileData(profile: any, planCheckInLog: any, personalPlan: any) {
   const hasBiometrics = !!(profile?.weightKg && profile?.heightCm && profile?.age);
@@ -635,9 +658,9 @@ function useProfileData(profile: any, planCheckInLog: any, personalPlan: any) {
   const bmiCategory = useMemo(() => {
     if (!bmi) return null;
     if (bmi < 18.5) return { label: 'Underweight', color: '#3B82F6' };
-    if (bmi < 25.0) return { label: 'Optimal Weight', color: '#10B981' };
+    if (bmi < 25.0) return { label: 'Optimal weight', color: '#10B981' };
     if (bmi < 30.0) return { label: 'Overweight', color: '#F59E0B' };
-    return { label: 'Elevated Weight', color: '#EF4444' };
+    return { label: 'Obese', color: '#EF4444' };
   }, [bmi]);
 
   const hydrationTarget = useMemo(() => {
@@ -686,58 +709,10 @@ function useProfileData(profile: any, planCheckInLog: any, personalPlan: any) {
     return { label: `Extended (${s} hrs)`, color: '#3B82F6' };
   }, [profile?.sleepDurationHrs]);
 
-  const analytics = useMemo(() => {
-    const entries = Object.values(planCheckInLog || {});
-    if (entries.length === 0) return null;
-
-    let totalDays = entries.length;
-    let effortSum = 0, effortCount = 0;
-    let observeYes = 0, observePartial = 0;
-    let observeTotal = 0;
-    const timeBuckets: Record<string, number> = { Morning: 0, Afternoon: 0, Evening: 0, Night: 0 };
-
-    entries.forEach((entry: any) => {
-      Object.entries(entry.answers || {}).forEach(([qId, val]) => {
-        if ((qId.includes('observe-step') || qId.includes('noticed-trigger')) && typeof val === 'string') {
-          observeTotal++;
-          if (val === 'Yes') observeYes++;
-          else if (val === 'Partially') observePartial++;
-        }
-        if (qId.includes('effort') && typeof val === 'number') {
-          effortSum += val;
-          effortCount++;
-        }
-        if ((qId.includes('pattern-time') || qId.includes('first-scroll') || qId.includes('time')) && typeof val === 'string' && val.includes(':')) {
-          const hr = parseInt(val.split(':')[0], 10);
-          if (!Number.isNaN(hr)) {
-            if (hr >= 5 && hr < 12) timeBuckets.Morning++;
-            else if (hr >= 12 && hr < 17) timeBuckets.Afternoon++;
-            else if (hr >= 17 && hr < 21) timeBuckets.Evening++;
-            else timeBuckets.Night++;
-          }
-        }
-      });
-    });
-
-    const currentPhaseNum = personalPlan?.activeWeekNumber ?? 1;
-    const activePhaseObj = personalPlan?.phases?.[currentPhaseNum - 1];
-    const durationDays = activePhaseObj?.durationDays ?? 7;
-
-    const consistency = Math.min(100, Math.round((totalDays / durationDays) * 100));
-    const recognitionRate = observeTotal > 0 ? Math.round(((observeYes + observePartial * 0.5) / observeTotal) * 100) : null;
-    const avgEffort = effortCount > 0 ? Number((effortSum / effortCount).toFixed(1)) : null;
-    let peakBucket: string | null = null;
-    let maxCount = 0;
-    Object.entries(timeBuckets).forEach(([b, c]) => { if (c > maxCount) { maxCount = c; peakBucket = b; } });
-
-    return { totalDays, consistency, recognitionRate, avgEffort, peakBucket: maxCount > 0 ? peakBucket : null };
-  }, [planCheckInLog, personalPlan]);
-
   return {
     hasBiometrics,
     bmi, bmiCategory, hydrationTarget, bmr,
     whtr, whtrCategory, rhrCategory, sleepAnalysis,
-    analytics,
   };
 }
 
@@ -745,31 +720,35 @@ const styles = StyleSheet.create({
   heroCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: palette.sageLight,
-    padding: 20,
-    borderRadius: 20,
-    marginBottom: 16,
+    backgroundColor: palette.card,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   avatarContainer: {
-    width: 56, height: 56, borderRadius: 28,
-    backgroundColor: palette.teal,
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: 'rgba(42,122,114,0.08)',
     justifyContent: 'center', alignItems: 'center',
   },
   avatarText: {
-    color: '#fff', fontSize: typography.heading, fontWeight: '800',
+    color: palette.teal, fontSize: 20, fontWeight: '700',
   },
   heroMeta: {
     marginLeft: 16, flex: 1,
   },
   heroName: {
-    fontSize: typography.title, fontWeight: '800', color: palette.slate,
+    fontSize: 18, fontWeight: '700', color: palette.slateDark,
   },
   heroSub: {
-    fontSize: typography.body, color: palette.slateMuted, marginTop: 2,
+    fontSize: 13, color: palette.slateMuted, marginTop: 3,
   },
   promoCard: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: palette.card, borderRadius: 16, padding: 16, marginBottom: 20, gap: 12,
+    backgroundColor: palette.card, borderRadius: 12, padding: 16, marginBottom: 12, gap: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
     ...cardShadow,
   },
   promoIconContainer: {
@@ -781,7 +760,9 @@ const styles = StyleSheet.create({
   promoTitle: { fontSize: typography.body, fontWeight: '700', color: palette.slate },
   promoSubtitle: { fontSize: typography.body - 1, color: palette.slateSubtle, lineHeight: 14 },
   sectionCard: {
-    backgroundColor: palette.card, borderRadius: 20, padding: 20, marginBottom: 20,
+    backgroundColor: palette.card, borderRadius: 12, padding: 16, marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
     ...cardShadow,
   },
   sectionTitle: {
@@ -800,8 +781,10 @@ const styles = StyleSheet.create({
   editToggleText: { fontSize: typography.body - 1, fontWeight: '700', color: palette.teal },
   metricGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, width: '100%' },
   metricCard: {
-    width: '48%', flexGrow: 1, backgroundColor: palette.background, borderRadius: 14, padding: 12,
+    width: '48%', flexGrow: 1, backgroundColor: palette.card, borderRadius: 12, padding: 12,
     flexDirection: 'row', alignItems: 'center', gap: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   metricIconContainer: {
     width: 32, height: 32, borderRadius: 8, justifyContent: 'center', alignItems: 'center',
@@ -813,10 +796,10 @@ const styles = StyleSheet.create({
   metricValue: { fontSize: typography.subtitle, fontWeight: '700', color: palette.slate },
   inputGroup: { marginBottom: 14 },
   inputLabel: { fontSize: typography.body, fontWeight: '600', color: palette.slateMuted, marginBottom: 6 },
-  textInput: { backgroundColor: palette.background, borderRadius: 12, padding: 12, fontSize: 16, color: palette.slate },
+  textInput: { backgroundColor: '#F8FAF9', borderRadius: 12, padding: 12, fontSize: 16, color: palette.slate, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' },
   metricsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
   chipsTray: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, backgroundColor: palette.background },
+  chip: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 20, backgroundColor: palette.card, borderWidth: 1, borderColor: 'rgba(42,122,114,0.15)' },
   chipSelected: { backgroundColor: palette.sageLight },
   chipLabel: { fontSize: typography.body - 1, color: palette.slateMuted, fontWeight: '500' },
   chipLabelSelected: { color: palette.tealDark, fontWeight: '700' },
@@ -835,7 +818,7 @@ const styles = StyleSheet.create({
   customSexInput: { fontSize: 16, color: palette.slate, padding: 0 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 },
   modalContent: { width: '100%', maxWidth: 400, backgroundColor: palette.card, borderRadius: 24, padding: 28, alignItems: 'center', ...cardShadow },
-  modalTitle: { fontSize: typography.heading, fontWeight: '800', color: palette.slate, marginBottom: 6 },
+  modalTitle: { fontSize: typography.heading, fontWeight: '700', color: palette.slate, marginBottom: 6 },
   modalSubtitle: { fontSize: typography.body, color: palette.slateMuted, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
   benefitsList: { width: '100%', gap: 14, marginBottom: 28 },
   benefitRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -847,15 +830,17 @@ const styles = StyleSheet.create({
   modalDismissText: { fontSize: typography.body, color: palette.slateMuted, fontWeight: '600' },
   signOutButton: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: palette.border, backgroundColor: 'transparent' },
   signOutButtonText: { fontSize: typography.body - 1, fontWeight: '700', color: palette.high },
-  avatarImage: { width: 56, height: 56, borderRadius: 28 },
+  avatarImage: { width: 48, height: 48, borderRadius: 24 },
   modalButtonDisabled: { opacity: 0.5 },
 
   calcGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   calcTile: {
-    width: '48%', flexGrow: 1, backgroundColor: palette.sageLight, borderRadius: 16, padding: 16, gap: 2,
+    width: '48%', flexGrow: 1, backgroundColor: '#F8FAF9', borderRadius: 12, padding: 16, gap: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   calcTileLabel: { fontSize: 12, fontWeight: '600', color: palette.slateSubtle, letterSpacing: 0.3, marginBottom: 2 },
-  calcTileValue: { fontSize: 22, fontWeight: '800', color: palette.slate, letterSpacing: -0.3 },
+  calcTileValue: { fontSize: 22, fontWeight: '700', color: palette.slate, letterSpacing: -0.3 },
   calcTileSub: { fontSize: 12, fontWeight: '500', color: palette.slateMuted, marginTop: 1 },
   calcTileStatus: { fontSize: 11, fontWeight: '600', marginTop: 1 },
   bmiScaleWrap: { marginTop: 10, gap: 6 },
@@ -875,4 +860,43 @@ const styles = StyleSheet.create({
 
   emptyText: { fontSize: 14, lineHeight: 20, color: palette.slateMuted, marginBottom: 12 },
   linkText: { fontSize: 14, fontWeight: '700', color: palette.teal },
+
+  // Connect Devices
+  deviceGrid: { gap: 8 },
+  deviceCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: palette.card, borderRadius: 12,
+    paddingVertical: 12, paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  deviceIconWrap: {
+    width: 36, height: 36, borderRadius: 10,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  deviceLabel: {
+    flex: 1, fontSize: typography.body, fontWeight: '600', color: palette.slate,
+  },
+  soonBadge: {
+    backgroundColor: 'rgba(212, 162, 74, 0.12)',
+    paddingVertical: 4, paddingHorizontal: 10, borderRadius: 10,
+  },
+  soonBadgeText: {
+    fontSize: 11, fontWeight: '700', color: palette.amber, letterSpacing: 0.2,
+  },
+
+  // Export Data
+  exportDescription: {
+    fontSize: typography.body, color: palette.slateMuted, lineHeight: 20, marginBottom: 14,
+  },
+  exportBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, paddingVertical: 12, borderRadius: 12,
+    borderWidth: 1, borderColor: palette.teal,
+    backgroundColor: 'rgba(42, 122, 114, 0.04)',
+  },
+  exportBtnLoading: { opacity: 0.6 },
+  exportBtnLabel: {
+    fontSize: typography.body, fontWeight: '700', color: palette.teal,
+  },
 });

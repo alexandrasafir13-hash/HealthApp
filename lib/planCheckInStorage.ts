@@ -29,3 +29,11 @@ export async function savePlanCheckInEntry(entry: PlanCheckInEntry): Promise<voi
   log[entry.date] = entry;
   await AsyncStorage.setItem(PLAN_CHECKINS_KEY, JSON.stringify(log));
 }
+
+export async function savePlanCheckInLog(log: PlanCheckInLog): Promise<void> {
+  await AsyncStorage.setItem(PLAN_CHECKINS_KEY, JSON.stringify(log));
+}
+
+export async function clearPlanCheckInLog(): Promise<void> {
+  await AsyncStorage.removeItem(PLAN_CHECKINS_KEY);
+}

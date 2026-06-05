@@ -11,13 +11,13 @@ import { palette, cardShadow } from '@/constants/theme';
 export default function PlanScreen() {
   const { contentContainerStyle, pageStyle } = usePageLayout();
   const { personalPlan, isReady } = useHealth();
-
+  
   if (!isReady) return null;
 
   return (
     <ScrollView style={pageStyles.scroll} contentContainerStyle={contentContainerStyle}>
       <View style={pageStyle}>
-        <PageTitle title="My active plan" />
+        <PageTitle title={'Your Plan'} />
 
         {personalPlan ? (
           <ActivePlanCard
@@ -31,9 +31,9 @@ export default function PlanScreen() {
               color={palette.slateSubtle}
               size={48}
             />
-            <Text style={styles.emptyTitle}>No active plan yet</Text>
+            <Text style={styles.emptyTitle}>{'No active plans'}</Text>
             <Text style={styles.emptyBody}>
-              Complete onboarding to generate your personalized wellness plan and track your daily routines.
+              {'Generate your first personalized plan.'}
             </Text>
           </View>
         )}

@@ -7,38 +7,38 @@ import { pageStyles, usePageLayout } from '@/hooks/usePageLayout';
 
 export default function ModalScreen() {
   const { contentContainerStyle, pageStyle } = usePageLayout();
-
+  
   return (
     <ScrollView style={pageStyles.scroll} contentContainerStyle={contentContainerStyle}>
       <View style={pageStyle}>
-      <Text style={styles.title}>About Healthee</Text>
+      <Text style={styles.title}>{`About Healthee`}</Text>
       <Text style={styles.lead}>
-        Healthee connects your health logs and daily check-ins to explain what your body is doing—and what to do about it.
+        {`Healthee connects your health logs and daily check-ins to explain what your body is doing—and what to do about it.`}
       </Text>
 
       <View style={styles.block} lightColor={palette.sageLight} darkColor="#1F2937">
-        <Text style={styles.blockTitle}>Our promise</Text>
+        <Text style={styles.blockTitle}>{`Our promise`}</Text>
         <Text style={styles.body}>
-          No mystery scores—just clear, personalized explanations and practical steps based on your health data.
+          {`No mystery scores—just clear, personalized explanations and practical steps based on your health data.`}
         </Text>
       </View>
 
       <View style={styles.block}>
-        <Text style={styles.blockTitle}>What we connect</Text>
+        <Text style={styles.blockTitle}>{`What we connect`}</Text>
         <Text style={styles.body}>
-          Sleep, heart rate, HRV, SpO₂, activity, temperature, and how you feel each day—unified into one story about your body.
+          {`Sleep, heart rate, HRV, SpO₂, activity, temperature, and how you feel each day—unified into one story about your body.`}
         </Text>
       </View>
 
       <View style={styles.block}>
-        <Text style={styles.blockTitle}>Prevention first</Text>
+        <Text style={styles.blockTitle}>{`Prevention first`}</Text>
         <Text style={styles.body}>
-          Early patterns (like elevated resting HR before you feel sick) trigger gentle actions so you can rest, recover, and avoid pushing through.
+          {`Early patterns (like elevated resting HR before you feel sick) trigger gentle actions so you can rest, recover, and avoid pushing through.`}
         </Text>
       </View>
 
       <Text style={styles.note}>
-        This demo uses sample data. In production, upload your health documents and log daily check-ins for personalized insights.
+        {`This demo uses sample data. In production, upload your health documents and log daily check-ins for personalized insights.`}
       </Text>
 
       <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
@@ -50,7 +50,7 @@ export default function ModalScreen() {
 const styles = StyleSheet.create({
   title: {
     fontSize: 24,
-    fontWeight: '800',
+    fontWeight: '700',
     marginBottom: 12,
   },
   lead: {

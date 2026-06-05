@@ -1,10 +1,10 @@
 import { DataMethodOption, HabitOption, SexOption } from '@/types/onboarding';
 
 export const sexOptions: SexOption[] = [
-  { id: 'female', label: 'Female' },
-  { id: 'male', label: 'Male' },
-  { id: 'other', label: 'Other' },
-  { id: 'prefer-not-say', label: 'Prefer not to say' },
+  { id: 'female', label: 'Feminin' },
+  { id: 'male', label: 'Masculin' },
+  { id: 'other', label: 'Altul' },
+  { id: 'prefer-not-say', label: 'Prefer să nu spun' },
 ];
 
 export const dataMethodOptions: DataMethodOption[] = [];
@@ -13,33 +13,33 @@ export const dataMethodOptions: DataMethodOption[] = [];
 export const habitCatalog: HabitOption[] = [
   {
     id: 'sleep-schedule',
-    title: 'Sleep better',
+    title: 'Dormi mai bine',
     time: '10:30 PM',
-    reason: 'Build a calmer bedtime routine',
+    reason: 'Construiește o rutină de seară mai calmă',
   },
   {
     id: 'exercise-routine',
-    title: 'Move more',
+    title: 'Mișcă-te mai mult',
     time: '7:00 AM',
-    reason: 'Add simple activity to your day',
+    reason: 'Adaugă mișcare simplă în ziua ta',
   },
   {
     id: 'eating-habits',
-    title: 'Eat better',
+    title: 'Mănâncă mai bine',
     time: '12:00 PM',
-    reason: 'Make food choices easier',
+    reason: 'Fă alegerile alimentare mai ușoare',
   },
   {
     id: 'hydration',
-    title: 'Stay hydrated',
+    title: 'Hidratează-te',
     time: '10:00 AM',
-    reason: 'Keep your intake on track',
+    reason: 'Ține aportul de apă sub control',
   },
   {
     id: 'screen-time',
-    title: 'Use your phone less',
+    title: 'Folosește mai puțin telefonul',
     time: '9:00 PM',
-    reason: 'Create more quiet time',
+    reason: 'Creează mai mult timp liniștit',
   },
 ];
 

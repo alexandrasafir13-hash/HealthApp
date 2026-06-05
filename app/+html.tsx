@@ -36,7 +36,7 @@ body,
 }
 body {
   margin: 0;
-  background-color: #F7FAF9;
+  background-color: #FFFFFF;
 }
 #root {
   display: flex;

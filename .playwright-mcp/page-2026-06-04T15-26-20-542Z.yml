@@ -1,0 +1,6 @@
+- generic [ref=e11]:
+  - progressbar [ref=e12]:
+    - img [ref=e14]
+  - generic [ref=e17]:
+    - generic [ref=e18]: Bundling...
+    - generic [ref=e19]: app/(tabs)/_layout.tsx

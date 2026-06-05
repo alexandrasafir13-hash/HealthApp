@@ -1,5 +1,4 @@
 import { findGoalQuestion, labelForGoalAnswer } from '@/data/onboardingGoalQuestions';
-import { improvementGoalsFromHabitIds } from '@/lib/buildHealthInsightsContext';
 import { habitCatalog, sexOptions } from '@/data/onboardingOptions';
 import { GoalDetails, UserProfile } from '@/types/onboarding';
 
@@ -26,7 +25,7 @@ export interface PlanGenerationContext {
   onboardingMessages?: { role: 'user' | 'assistant'; content: string }[];
 }
 
-function baselineMetricsFromProfile(profile: UserProfile, goalId: string) {
+function baselineMetricsFromProfile(profile: any, goalId: string) {
   const metrics: PlanGenerationContext['baselineMetrics'] = [];
   const answers = profile.goalDetails?.[goalId];
   if (!answers) return metrics;
@@ -34,7 +33,7 @@ function baselineMetricsFromProfile(profile: UserProfile, goalId: string) {
   for (const [questionId, value] of Object.entries(answers)) {
     const question = findGoalQuestion(goalId, questionId);
     if (!question || value == null) continue;
-    const label = labelForGoalAnswer(question, value);
+    const label = labelForGoalAnswer(question, value as string | string[]);
     if (!label) continue;
     metrics.push({
       label: question.title,
@@ -45,28 +44,28 @@ function baselineMetricsFromProfile(profile: UserProfile, goalId: string) {
   return metrics.slice(0, 12);
 }
 
-function onboardingAnswersForGoal(profile: UserProfile, goalId: string) {
+function onboardingAnswersForGoal(profile: any, goalId: string) {
   const answers = profile.goalDetails?.[goalId];
   if (!answers) return [];
   return Object.entries(answers)
     .map(([questionId, value]) => {
       const question = findGoalQuestion(goalId, questionId);
       if (!question || value == null) return null;
-      const answer = labelForGoalAnswer(question, value);
+      const answer = labelForGoalAnswer(question, value as string | string[]);
       if (!answer) return null;
       return { question: question.title, answer };
     })
     .filter((row): row is { question: string; answer: string } => row != null);
 }
 
-function constraintsFromProfile(profile: UserProfile): string[] {
+function constraintsFromProfile(profile: any): string[] {
   const constraints: string[] = [];
   const concerns = (profile.physicalConcernIds ?? [])
-    .filter((id) => id.length > 0)
-    .map((id) =>
+    .filter((id: string) => id.length > 0)
+    .map((id: string) =>
       id
         .split('-')
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
         .join(' ')
     );
   constraints.push(...concerns);
@@ -74,17 +73,17 @@ function constraintsFromProfile(profile: UserProfile): string[] {
   return constraints;
 }
 
-export function buildRoutineGenerationContext(profile: UserProfile): PlanGenerationContext {
-  const goalId = rankGoalIds(profile.habitIds, profile.goalDetails)[0] ?? profile.habitIds[0] ?? 'sleep-schedule';
+export function buildRoutineGenerationContext(profile: any): PlanGenerationContext {
+  const goalId = rankGoalIds(profile.habitIds, profile.goalDetails)[0] ?? profile.habitIds?.[0] ?? 'sleep-schedule';
   const habit = habitCatalog.find((h) => h.id === goalId);
   const onboardingAnswers = onboardingAnswersForGoal(profile, goalId);
 
   const physicalConcerns = (profile.physicalConcernIds ?? [])
-    .filter((id) => id.length > 0)
-    .map((id) =>
+    .filter((id: string) => id.length > 0)
+    .map((id: string) =>
       id
         .split('-')
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
         .join(' ')
     );
 
